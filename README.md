@@ -1,3 +1,3 @@
-Forked and customized a website template to create my own personal site
+Forked and customized a website template to create my own personal site.
 
-I'm a supporter of opensource code. Feel free to fork my website
+Feel free to fork my edited version of this website template. I've restructured much of the label layouts and popup windows.
