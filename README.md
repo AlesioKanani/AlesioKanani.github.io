@@ -1,1 +1,1 @@
-Here's my implementation of forking a website template to customize it as my own
+Here's my implementation of a forked website template and customizing it
