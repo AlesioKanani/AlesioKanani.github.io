@@ -1372,7 +1372,6 @@ button {
 		left: calc(50% - 1px);
 		width: 1px;
 		height: 100%;
-		background: #ffffff;
 	}
 
 	#header nav.use-middle ul li.is-middle {
