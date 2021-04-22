@@ -1,6 +1,6 @@
 # Summary
 
-Visit the website (alesiokanani.github.io "here")
+Visit the website: <AlesioKanani.github.io>
 
 I forked and customized much of Astrosite's template layout and popup window details to make it more relevant to my preferences.
 
