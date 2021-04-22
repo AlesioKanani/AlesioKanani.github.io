@@ -1,1 +1,1 @@
-Here's my implementation of a forked website template and customizing it
+Here's my cuztomization of a forked website template to create my own personal site
