@@ -1,4 +1,4 @@
-#Thanks for looking
+# Thanks for looking
 
 Visit the website <a href="alesiokanani.github.io/" target="_blank">here</a>
 
