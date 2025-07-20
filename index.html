@@ -65,8 +65,11 @@
         this.y = getRandomInt(-centerY, centerY);
         this.counter = getRandomInt(1, canvasWidth);
 
-        this.radiusMax = 1 + Math.random() * 10;
+        this.radiusMax = 1 + Math.random() * 3; // Smaller max radius for realism
         this.speed = getRandomInt(1, 5);
+
+        this.twinklePhase = Math.random() * Math.PI * 2; // Random starting phase
+        this.twinkleSpeed = 0.05 + Math.random() * 0.1; // Vary twinkle speed
 
         this.context = mainContext;
       }
@@ -79,8 +82,10 @@
           this.x = getRandomInt(-centerX, centerX);
           this.y = getRandomInt(-centerY, centerY);
 
-          this.radiusMax = getRandomInt(1, 10);
+          this.radiusMax = 1 + Math.random() * 3;
           this.speed = getRandomInt(1, 5);
+          this.twinklePhase = Math.random() * Math.PI * 2;
+          this.twinkleSpeed = 0.05 + Math.random() * 0.1;
         }
 
         let xRatio = this.x / this.counter;
@@ -91,12 +96,19 @@
 
         this.radius = remap(this.counter, 0, canvasWidth, this.radiusMax, 0);
 
-        mainContext.beginPath();
+        // Twinkling effect: vary alpha
+        let alpha = 0.6 + 0.4 * Math.sin(this.twinklePhase);
+        this.twinklePhase += this.twinkleSpeed;
 
+        // Add subtle white glow
+        mainContext.shadowBlur = this.radius * 3;
+        mainContext.shadowColor = `rgba(255, 255, 255, ${alpha * 0.5})`; // Glow intensity tied to alpha
+
+        mainContext.beginPath();
         mainContext.arc(starX, starY, this.radius, 0, Math.PI * 2, false);
         mainContext.closePath();
 
-        mainContext.fillStyle = "#FFF";
+        mainContext.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         mainContext.fill();
       }
     }
@@ -117,7 +129,7 @@
         previousTime = currentTime - (deltaTime % interval);
 
         mainContext.clearRect(0, 0, canvasWidth, canvasHeight);
-        mainContext.fillStyle = "#111";
+        mainContext.fillStyle = "#000"; // Darker background for contrast
         mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
 
         mainContext.translate(centerX, centerY);
@@ -128,6 +140,9 @@
         }
 
         mainContext.translate(-centerX, -centerY);
+
+        // Reset shadow after drawing
+        mainContext.shadowBlur = 0;
       }
 
       requestAnimationFrame(draw);
