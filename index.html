@@ -32,10 +32,36 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
+        .settings {
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid white;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        select:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,255,255,0.3);
+        }
+
+        option {
+            background: #1a1a1a;
+            color: white;
+        }
+
         .puzzle-grid {
             display: grid;
-            grid-template-columns: repeat(3, 150px);
-            grid-template-rows: repeat(3, 150px);
             gap: 5px;
             background: rgba(255,255,255,0.1);
             padding: 10px;
@@ -44,14 +70,32 @@
             box-shadow: 0 8px 32px rgba(255,255,255,0.2);
         }
 
+        .puzzle-grid.grid-3x3 {
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+        }
+
+        .puzzle-grid.grid-4x4 {
+            grid-template-columns: repeat(4, 112.5px);
+            grid-template-rows: repeat(4, 112.5px);
+        }
+
         .puzzle-piece {
-            width: 150px;
-            height: 150px;
             background-size: 450px 450px;
             cursor: pointer;
             border: 2px solid white;
             border-radius: 5px;
             transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .grid-3x3 .puzzle-piece {
+            width: 150px;
+            height: 150px;
+        }
+
+        .grid-4x4 .puzzle-piece {
+            width: 112.5px;
+            height: 112.5px;
         }
 
         .puzzle-piece:hover {
@@ -145,7 +189,14 @@
 <body>
     <div class="container">
         <h1>🧩 9-Piece Puzzle Game</h1>
-        <div class="puzzle-grid" id="puzzleGrid"></div>
+        <div class="settings">
+            <label for="gridSize" style="color: white; margin-right: 10px; font-weight: bold;">Difficulty:</label>
+            <select id="gridSize" onchange="changeGridSize()">
+                <option value="3">3x3 (Easy)</option>
+                <option value="4">4x4 (Hard)</option>
+            </select>
+        </div>
+        <div class="puzzle-grid grid-3x3" id="puzzleGrid"></div>
         <div class="controls">
             <button onclick="shufflePuzzle()">Shuffle</button>
         </div>
@@ -157,25 +208,29 @@
         const message = document.getElementById('message');
         let pieces = [];
         let selectedPiece = null;
+        let gridSize = 3;
         const IMAGE_PATH = 'bitcoin.png';
 
         function initPuzzle() {
-            pieces = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+            const totalPieces = gridSize * gridSize;
+            pieces = Array.from({length: totalPieces}, (_, i) => i);
             renderPuzzle();
         }
 
         function renderPuzzle() {
             grid.innerHTML = '';
+            const pieceSize = gridSize === 3 ? 150 : 112.5;
+            
             pieces.forEach((pieceIndex, position) => {
                 const piece = document.createElement('div');
                 piece.className = 'puzzle-piece';
                 piece.dataset.position = position;
                 piece.dataset.piece = pieceIndex;
                 
-                const row = Math.floor(pieceIndex / 3);
-                const col = pieceIndex % 3;
+                const row = Math.floor(pieceIndex / gridSize);
+                const col = pieceIndex % gridSize;
                 piece.style.backgroundImage = `url('${IMAGE_PATH}')`;
-                piece.style.backgroundPosition = `-${col * 150}px -${row * 150}px`;
+                piece.style.backgroundPosition = `-${col * pieceSize}px -${row * pieceSize}px`;
                 
                 piece.addEventListener('click', () => selectPiece(position));
                 grid.appendChild(piece);
@@ -207,6 +262,21 @@
             renderPuzzle();
             message.textContent = '';
             selectedPiece = null;
+        }
+
+        function changeGridSize() {
+            const select = document.getElementById('gridSize');
+            gridSize = parseInt(select.value);
+            
+            grid.className = 'puzzle-grid grid-' + gridSize + 'x' + gridSize;
+            
+            const h1 = document.querySelector('h1');
+            h1.textContent = `🧩 ${gridSize * gridSize}-Piece Puzzle Game`;
+            
+            message.textContent = '';
+            selectedPiece = null;
+            initPuzzle();
+            shufflePuzzle();
         }
 
         function checkSolution() {
