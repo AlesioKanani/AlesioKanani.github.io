@@ -138,6 +138,14 @@
             transform: translateY(0);
         }
 
+        .pdf-button {
+            background: #ff6b6b;
+        }
+
+        .pdf-button:hover {
+            background: #ff5252;
+        }
+
         .message {
             color: white;
             font-size: 20px;
@@ -184,6 +192,63 @@
                 opacity: 0;
             }
         }
+
+        .pdf-viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .pdf-viewer.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pdf-header h2 {
+            color: white;
+            margin: 0;
+        }
+
+        .close-pdf {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .close-pdf:hover {
+            background: #ff5252;
+        }
+
+        .pdf-container {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .pdf-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -199,8 +264,19 @@
         <div class="puzzle-grid grid-3x3" id="puzzleGrid"></div>
         <div class="controls">
             <button onclick="shufflePuzzle()">Shuffle</button>
+            <button class="pdf-button" onclick="openPDF()">📄 Read PDF</button>
         </div>
         <div class="message" id="message"></div>
+    </div>
+
+    <div class="pdf-viewer" id="pdfViewer">
+        <div class="pdf-header">
+            <h2>📄 Bitcoin PDF</h2>
+            <button class="close-pdf" onclick="closePDF()">✕ Close</button>
+        </div>
+        <div class="pdf-container">
+            <iframe id="pdfFrame" src=""></iframe>
+        </div>
     </div>
 
     <script>
@@ -277,6 +353,20 @@
             selectedPiece = null;
             initPuzzle();
             shufflePuzzle();
+        }
+
+        function openPDF() {
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfFrame = document.getElementById('pdfFrame');
+            pdfFrame.src = 'bitcoin.pdf';
+            pdfViewer.classList.add('active');
+        }
+
+        function closePDF() {
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfFrame = document.getElementById('pdfFrame');
+            pdfViewer.classList.remove('active');
+            pdfFrame.src = '';
         }
 
         function checkSolution() {
