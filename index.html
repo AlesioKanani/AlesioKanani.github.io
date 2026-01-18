@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>9-Piece Puzzle Game</title>
+    <title>Alesio's Puzzle Game</title>
     <style>
         * {
             margin: 0;
@@ -277,36 +277,36 @@
             }
 
             .puzzle-grid.grid-3x3 {
-                grid-template-columns: repeat(3, 110px);
-                grid-template-rows: repeat(3, 110px);
+                grid-template-columns: repeat(3, 135px);
+                grid-template-rows: repeat(3, 135px);
             }
 
             .puzzle-grid.grid-4x4 {
-                grid-template-columns: repeat(4, 82.5px);
-                grid-template-rows: repeat(4, 82.5px);
+                grid-template-columns: repeat(4, 101.25px);
+                grid-template-rows: repeat(4, 101.25px);
             }
 
             .puzzle-grid.grid-5x5 {
-                grid-template-columns: repeat(5, 66px);
-                grid-template-rows: repeat(5, 66px);
+                grid-template-columns: repeat(5, 81px);
+                grid-template-rows: repeat(5, 81px);
             }
 
             .grid-3x3 .puzzle-piece {
-                width: 110px;
-                height: 110px;
-                background-size: 330px 330px;
+                width: 135px;
+                height: 135px;
+                background-size: 405px 405px;
             }
 
             .grid-4x4 .puzzle-piece {
-                width: 82.5px;
-                height: 82.5px;
-                background-size: 330px 330px;
+                width: 101.25px;
+                height: 101.25px;
+                background-size: 405px 405px;
             }
 
             .grid-5x5 .puzzle-piece {
-                width: 66px;
-                height: 66px;
-                background-size: 330px 330px;
+                width: 81px;
+                height: 81px;
+                background-size: 405px 405px;
             }
 
             h1 {
@@ -379,9 +379,9 @@
             const isMobile = window.innerWidth <= 768;
             
             if (isMobile) {
-                if (gridSize === 3) pieceSize = 110;
-                else if (gridSize === 4) pieceSize = 82.5;
-                else pieceSize = 66;
+                if (gridSize === 3) pieceSize = 135;
+                else if (gridSize === 4) pieceSize = 101.25;
+                else pieceSize = 81;
             } else {
                 if (gridSize === 3) pieceSize = 150;
                 else if (gridSize === 4) pieceSize = 112.5;
