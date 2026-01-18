@@ -202,7 +202,7 @@
             height: 100%;
             background: #000000;
             z-index: 1000;
-            padding: 20px;
+            padding: 0;
         }
 
         .pdf-viewer.active {
@@ -214,12 +214,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #1a1a1a;
+            flex-shrink: 0;
         }
 
         .pdf-header h2 {
             color: white;
             margin: 0;
+            font-size: 18px;
         }
 
         .close-pdf {
@@ -239,15 +242,29 @@
 
         .pdf-container {
             flex: 1;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .pdf-container iframe {
+            background: #333;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
             width: 100%;
             height: 100%;
-            border: none;
+        }
+
+        .pdf-container embed,
+        .pdf-container object {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .pdf-header h2 {
+                font-size: 14px;
+            }
+            
+            .close-pdf {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -274,8 +291,8 @@
             <h2>📄 Bitcoin PDF</h2>
             <button class="close-pdf" onclick="closePDF()">✕ Close</button>
         </div>
-        <div class="pdf-container">
-            <iframe id="pdfFrame" src=""></iframe>
+        <div class="pdf-container" id="pdfContainer">
+            <embed id="pdfEmbed" src="" type="application/pdf" width="100%" height="100%">
         </div>
     </div>
 
@@ -357,16 +374,39 @@
 
         function openPDF() {
             const pdfViewer = document.getElementById('pdfViewer');
-            const pdfFrame = document.getElementById('pdfFrame');
-            pdfFrame.src = 'bitcoin.pdf';
+            const pdfContainer = document.getElementById('pdfContainer');
+            const pdfEmbed = document.getElementById('pdfEmbed');
+            
+            // Check if mobile device
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // For mobile, create a link to open in native viewer or new tab
+                pdfContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center;">
+                        <p style="color: white; margin-bottom: 20px; font-size: 16px;">
+                            For the best mobile experience, the PDF will open in your device's PDF viewer.
+                        </p>
+                        <a href="bitcoin.pdf" target="_blank" style="background: white; color: #000; padding: 15px 30px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px;">
+                            Open PDF
+                        </a>
+                    </div>
+                `;
+            } else {
+                // For desktop, use embed
+                pdfEmbed.src = 'bitcoin.pdf';
+            }
+            
             pdfViewer.classList.add('active');
         }
 
         function closePDF() {
             const pdfViewer = document.getElementById('pdfViewer');
-            const pdfFrame = document.getElementById('pdfFrame');
+            const pdfEmbed = document.getElementById('pdfEmbed');
+            const pdfContainer = document.getElementById('pdfContainer');
             pdfViewer.classList.remove('active');
-            pdfFrame.src = '';
+            pdfEmbed.src = '';
+            pdfContainer.innerHTML = '<embed id="pdfEmbed" src="" type="application/pdf" width="100%" height="100%">';
         }
 
         function checkSolution() {
