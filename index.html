@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9-Piece Puzzle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-template-rows: repeat(3, 150px);
+            gap: 5px;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .puzzle-piece {
+            width: 150px;
+            height: 150px;
+            background-size: 450px 450px;
+            cursor: pointer;
+            border: 2px solid white;
+            border-radius: 5px;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .puzzle-piece:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .puzzle-piece.selected {
+            border: 3px solid #ffd700;
+            transform: scale(0.95);
+            box-shadow: 0 0 20px rgba(255,215,0,0.6);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .success {
+            color: #4ade80;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 9-Piece Puzzle Game</h1>
+        <div class="puzzle-grid" id="puzzleGrid"></div>
+        <div class="controls">
+            <button onclick="shufflePuzzle()">Shuffle</button>
+            <button onclick="checkSolution()">Check Solution</button>
+        </div>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('puzzleGrid');
+        const message = document.getElementById('message');
+        let pieces = [];
+        let selectedPiece = null;
+        const IMAGE_PATH = 'bitcoin.png';
+
+        function initPuzzle() {
+            pieces = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+            renderPuzzle();
+        }
+
+        function renderPuzzle() {
+            grid.innerHTML = '';
+            pieces.forEach((pieceIndex, position) => {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                piece.dataset.position = position;
+                piece.dataset.piece = pieceIndex;
+                
+                const row = Math.floor(pieceIndex / 3);
+                const col = pieceIndex % 3;
+                piece.style.backgroundImage = `url('${IMAGE_PATH}')`;
+                piece.style.backgroundPosition = `-${col * 150}px -${row * 150}px`;
+                
+                piece.addEventListener('click', () => selectPiece(position));
+                grid.appendChild(piece);
+            });
+        }
+
+        function selectPiece(position) {
+            if (selectedPiece === null) {
+                selectedPiece = position;
+                grid.children[position].classList.add('selected');
+            } else if (selectedPiece === position) {
+                grid.children[position].classList.remove('selected');
+                selectedPiece = null;
+            } else {
+                grid.children[selectedPiece].classList.remove('selected');
+                [pieces[selectedPiece], pieces[position]] = [pieces[position], pieces[selectedPiece]];
+                selectedPiece = null;
+                renderPuzzle();
+                message.textContent = '';
+            }
+        }
+
+        function shufflePuzzle() {
+            for (let i = pieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+            }
+            renderPuzzle();
+            message.textContent = '';
+            selectedPiece = null;
+        }
+
+        function checkSolution() {
+            const isSolved = pieces.every((piece, index) => piece === index);
+            if (isSolved) {
+                message.textContent = '🎉 Congratulations! Puzzle solved!';
+                message.className = 'message success';
+            } else {
+                message.textContent = 'Not quite right. Keep trying!';
+                message.className = 'message';
+            }
+        }
+
+        initPuzzle();
+        shufflePuzzle();
+    </script>
+</body>
+</html>
