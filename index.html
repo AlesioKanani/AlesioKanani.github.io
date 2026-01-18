@@ -277,36 +277,36 @@
             }
 
             .puzzle-grid.grid-3x3 {
-                grid-template-columns: repeat(3, 100px);
-                grid-template-rows: repeat(3, 100px);
+                grid-template-columns: repeat(3, 110px);
+                grid-template-rows: repeat(3, 110px);
             }
 
             .puzzle-grid.grid-4x4 {
-                grid-template-columns: repeat(4, 75px);
-                grid-template-rows: repeat(4, 75px);
+                grid-template-columns: repeat(4, 82.5px);
+                grid-template-rows: repeat(4, 82.5px);
             }
 
             .puzzle-grid.grid-5x5 {
-                grid-template-columns: repeat(5, 60px);
-                grid-template-rows: repeat(5, 60px);
+                grid-template-columns: repeat(5, 66px);
+                grid-template-rows: repeat(5, 66px);
             }
 
             .grid-3x3 .puzzle-piece {
-                width: 100px;
-                height: 100px;
-                background-size: 300px 300px;
+                width: 110px;
+                height: 110px;
+                background-size: 330px 330px;
             }
 
             .grid-4x4 .puzzle-piece {
-                width: 75px;
-                height: 75px;
-                background-size: 300px 300px;
+                width: 82.5px;
+                height: 82.5px;
+                background-size: 330px 330px;
             }
 
             .grid-5x5 .puzzle-piece {
-                width: 60px;
-                height: 60px;
-                background-size: 300px 300px;
+                width: 66px;
+                height: 66px;
+                background-size: 330px 330px;
             }
 
             h1 {
@@ -379,9 +379,9 @@
             const isMobile = window.innerWidth <= 768;
             
             if (isMobile) {
-                if (gridSize === 3) pieceSize = 100;
-                else if (gridSize === 4) pieceSize = 75;
-                else pieceSize = 60;
+                if (gridSize === 3) pieceSize = 110;
+                else if (gridSize === 4) pieceSize = 82.5;
+                else pieceSize = 66;
             } else {
                 if (gridSize === 3) pieceSize = 150;
                 else if (gridSize === 4) pieceSize = 112.5;
