@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alesio's Puzzle Game</title>
+    <title>9-Piece Puzzle Game</title>
     <style>
         * {
             margin: 0;
@@ -80,6 +80,11 @@
             grid-template-rows: repeat(4, 112.5px);
         }
 
+        .puzzle-grid.grid-5x5 {
+            grid-template-columns: repeat(5, 90px);
+            grid-template-rows: repeat(5, 90px);
+        }
+
         .puzzle-piece {
             background-size: 450px 450px;
             cursor: pointer;
@@ -96,6 +101,11 @@
         .grid-4x4 .puzzle-piece {
             width: 112.5px;
             height: 112.5px;
+        }
+
+        .grid-5x5 .puzzle-piece {
+            width: 90px;
+            height: 90px;
         }
 
         .puzzle-piece:hover {
@@ -274,8 +284,9 @@
         <div class="settings">
             <label for="gridSize" style="color: white; margin-right: 10px; font-weight: bold;">Difficulty:</label>
             <select id="gridSize" onchange="changeGridSize()">
-                <option value="3">3x3 (Easy)</option>
-                <option value="4">4x4 (Hard)</option>
+                <option value="3">Easy (3x3)</option>
+                <option value="4">Normal (4x4)</option>
+                <option value="5">Hard (5x5)</option>
             </select>
         </div>
         <div class="puzzle-grid grid-3x3" id="puzzleGrid"></div>
@@ -312,7 +323,10 @@
 
         function renderPuzzle() {
             grid.innerHTML = '';
-            const pieceSize = gridSize === 3 ? 150 : 112.5;
+            let pieceSize;
+            if (gridSize === 3) pieceSize = 150;
+            else if (gridSize === 4) pieceSize = 112.5;
+            else pieceSize = 90;
             
             pieces.forEach((pieceIndex, position) => {
                 const piece = document.createElement('div');
