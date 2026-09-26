@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alesio Kanani · Orbital Puzzle</title>
+    <meta name="description" content="Alesio Kanani's personal site — reassemble the Bitcoin signal drifting through deep space.">
+    <meta name="theme-color" content="#04030d">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #04030d;
+            --deep: #0a0820;
+            --panel: rgba(14, 12, 40, 0.55);
+            --line: rgba(140, 180, 255, 0.18);
+            --text: #e8ecff;
+            --muted: #8a92c4;
+            --cyan: #5ef2ff;
+            --violet: #a77bff;
+            --magenta: #ff5ed8;
+            --btc: #f7931a;
+            --win: #6dffb3;
+            --board: min(78vw, 460px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--void);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---------- Cosmos layers ---------- */
+        #stars {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .nebula {
+            position: fixed;
+            inset: -20%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(40% 35% at 18% 22%, rgba(167, 123, 255, 0.22), transparent 70%),
+                radial-gradient(35% 30% at 85% 75%, rgba(94, 242, 255, 0.14), transparent 70%),
+                radial-gradient(30% 25% at 70% 15%, rgba(255, 94, 216, 0.12), transparent 70%),
+                radial-gradient(50% 40% at 30% 90%, rgba(40, 60, 200, 0.18), transparent 70%);
+            filter: blur(20px);
+            animation: drift 60s ease-in-out infinite alternate;
+        }
+
+        @keyframes drift {
+            from { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+            to   { transform: translate3d(-3%, 2%, 0) rotate(6deg) scale(1.08); }
+        }
+
+        .planet {
+            position: fixed;
+            right: -12vmin;
+            bottom: -18vmin;
+            width: 48vmin;
+            height: 48vmin;
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 30% 28%, #6b4dff 0%, #2a1a7a 35%, #0c0830 70%, #04030d 100%);
+            box-shadow:
+                inset -6vmin -4vmin 10vmin rgba(0, 0, 0, 0.85),
+                0 0 8vmin rgba(120, 90, 255, 0.35);
+            opacity: 0.85;
+        }
+        .planet::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 175%;
+            height: 30%;
+            border-radius: 50%;
+            border: 1.2vmin solid transparent;
+            border-top-color: rgba(94, 242, 255, 0.35);
+            border-left-color: rgba(167, 123, 255, 0.25);
+            transform: translate(-50%, -50%) rotate(-18deg);
+        }
+
+        .scanlines {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0.018) 0 1px,
+                transparent 1px 3px
+            );
+            mix-blend-mode: overlay;
+        }
+
+        /* ---------- Layout ---------- */
+        .shell {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 28px 16px 40px;
+        }
+
+        header.top {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 4vh;
+        }
+        .callsign { display: flex; align-items: center; gap: 10px; }
+        .callsign .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--win);
+            box-shadow: 0 0 10px var(--win);
+            animation: blink 2s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        .hero { text-align: center; margin-bottom: 26px; }
+
+        .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.35em;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: clamp(34px, 7vw, 76px);
+            line-height: 0.95;
+            letter-spacing: 0.04em;
+            background: linear-gradient(100deg, #fff 0%, var(--cyan) 35%, var(--violet) 65%, var(--magenta) 100%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+                    background-clip: text;
+            color: transparent;
+            animation: shimmer 8s linear infinite;
+            filter: drop-shadow(0 0 24px rgba(120, 140, 255, 0.35));
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+
+        .subtitle {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: clamp(14px, 2vw, 17px);
+            max-width: 520px;
+            margin-inline: auto;
+        }
+        .subtitle b { color: var(--btc); font-weight: 600; }
+
+        /* ---------- HUD ---------- */
+        .hud {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .seg {
+            display: inline-flex;
+            padding: 4px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+        }
+        .seg button {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            background: none;
+            border: 0;
+            padding: 8px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color .25s, background .25s, box-shadow .25s;
+        }
+        .seg button:hover { color: var(--text); }
+        .seg button[aria-pressed="true"] {
+            color: var(--void);
+            background: linear-gradient(90deg, var(--cyan), var(--violet));
+            box-shadow: 0 0 18px rgba(94, 242, 255, 0.45);
+            font-weight: 600;
+        }
+
+        .stat {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+            padding: 9px 14px;
+            border-radius: 999px;
+            min-width: 108px;
+            text-align: center;
+        }
+        .stat strong { color: var(--text); font-weight: 600; margin-left: 6px; }
+
+        /* ---------- Board ---------- */
+        .frame {
+            position: relative;
+            padding: 14px;
+            border-radius: 20px;
+            background: linear-gradient(160deg, rgba(94,242,255,0.10), rgba(167,123,255,0.06) 50%, rgba(255,94,216,0.08));
+            border: 1px solid var(--line);
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.02) inset,
+                0 30px 80px -20px rgba(80, 60, 255, 0.45),
+                0 0 60px rgba(94, 242, 255, 0.10);
+            backdrop-filter: blur(6px);
+        }
+
+        /* corner brackets */
+        .frame i {
+            position: absolute;
+            width: 22px; height: 22px;
+            border: 2px solid var(--cyan);
+            filter: drop-shadow(0 0 6px var(--cyan));
+        }
+        .frame i:nth-of-type(1) { top: -6px; left: -6px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+        .frame i:nth-of-type(2) { top: -6px; right: -6px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+        .frame i:nth-of-type(3) { bottom: -6px; left: -6px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+        .frame i:nth-of-type(4) { bottom: -6px; right: -6px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+
+        /* radar sweep over the board */
+        .frame::after {
+            content: '';
+            position: absolute;
+            inset: 14px;
+            border-radius: 12px;
+            pointer-events: none;
+            background: linear-gradient(to bottom, transparent 0%, rgba(94,242,255,0.14) 50%, transparent 52%);
+            background-size: 100% 220%;
+            animation: sweep 4.5s linear infinite;
+            mix-blend-mode: screen;
+        }
+        @keyframes sweep { from { background-position: 0 120%; } to { background-position: 0 -120%; } }
+
+        .puzzle-grid {
+            --n: 3;
+            width: var(--board);
+            height: var(--board);
+            display: grid;
+            grid-template-columns: repeat(var(--n), 1fr);
+            grid-template-rows: repeat(var(--n), 1fr);
+            gap: 4px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(4, 3, 13, 0.8);
+        }
+
+        .puzzle-piece {
+            appearance: none;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+            background-color: #0b0a1f;
+            background-image: url('bitcoin.png');
+            background-repeat: no-repeat;
+            background-size: calc(var(--n) * 100%) calc(var(--n) * 100%);
+            border-radius: 6px;
+            outline: 1px solid rgba(140, 180, 255, 0.14);
+            outline-offset: -1px;
+            transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, filter .18s;
+        }
+        .puzzle-piece::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(255,255,255,0.10), transparent 45%);
+            pointer-events: none;
+        }
+        .puzzle-piece:hover,
+        .puzzle-piece:focus-visible {
+            transform: scale(1.04);
+            z-index: 2;
+            box-shadow: 0 0 0 1px var(--cyan), 0 0 22px rgba(94, 242, 255, 0.5);
+            outline: none;
+        }
+        .puzzle-piece.selected {
+            z-index: 3;
+            transform: scale(0.92);
+            box-shadow: 0 0 0 2px var(--btc), 0 0 28px rgba(247, 147, 26, 0.75);
+            filter: brightness(1.15) saturate(1.2);
+            animation: hover-float 1.2s ease-in-out infinite;
+        }
+        @keyframes hover-float {
+            50% { transform: scale(0.92) translateY(-3px); }
+        }
+        .puzzle-piece.locked {
+            box-shadow: inset 0 0 0 1px rgba(109, 255, 179, 0.35);
+        }
+        .puzzle-piece.swap { animation: warp-in .35s cubic-bezier(.2,.9,.3,1.3); }
+        @keyframes warp-in {
+            from { transform: scale(0.6) rotate(-6deg); filter: blur(4px) brightness(2); }
+            to   { transform: scale(1) rotate(0); filter: none; }
+        }
+
+        .puzzle-grid.solved { gap: 0; transition: gap .6s ease; }
+        .puzzle-grid.solved .puzzle-piece { outline-color: transparent; border-radius: 0; box-shadow: none; }
+        .puzzle-grid.solved .puzzle-piece::after { opacity: 0; }
+        .frame.solved { animation: celebrate 1.2s ease-out; }
+        @keyframes celebrate {
+            0%   { box-shadow: 0 0 0 0 rgba(109,255,179,0.9), 0 30px 80px -20px rgba(80,60,255,.45); }
+            100% { box-shadow: 0 0 0 40px rgba(109,255,179,0), 0 30px 80px -20px rgba(80,60,255,.45); }
+        }
+
+        /* ---------- Controls ---------- */
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 26px;
+        }
+
+        .btn {
+            position: relative;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text);
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform .2s, box-shadow .25s, border-color .25s;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+            transform: translateX(-120%);
+            transition: transform .6s;
+        }
+        .btn:hover::before { transform: translateX(120%); }
+        .btn:hover { transform: translateY(-2px); border-color: rgba(94,242,255,0.6); box-shadow: 0 0 24px rgba(94,242,255,0.3); }
+        .btn:active { transform: translateY(0); }
+        .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+        .btn.primary {
+            color: var(--void);
+            border-color: transparent;
+            background: linear-gradient(90deg, var(--cyan), var(--violet));
+            box-shadow: 0 0 24px rgba(94,242,255,0.35);
+        }
+        .btn.primary:hover { box-shadow: 0 0 36px rgba(167,123,255,0.6); }
+
+        .btn.btc { border-color: rgba(247,147,26,0.45); color: #ffd199; }
+        .btn.btc:hover { border-color: var(--btc); box-shadow: 0 0 24px rgba(247,147,26,0.45); }
+
+        .message {
+            margin-top: 22px;
+            min-height: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            text-align: center;
+        }
+        .message.success {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(16px, 3vw, 22px);
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            color: var(--win);
+            text-shadow: 0 0 18px rgba(109,255,179,0.7);
+            animation: pop .6s cubic-bezier(.2,.9,.3,1.4);
+        }
+        @keyframes pop { from { transform: scale(0.6); opacity: 0; } }
+
+        .hint {
+            margin-top: 6px;
+            font-size: 12px;
+            color: rgba(138,146,196,0.7);
+            text-align: center;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: rgba(138,146,196,0.55);
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* ---------- Warp flash ---------- */
+        .flash {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.9), rgba(94,242,255,0.3) 30%, transparent 70%);
+            opacity: 0;
+        }
+        .flash.go { animation: flash .9s ease-out; }
+        @keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* ---------- PDF transmission viewer ---------- */
+        .pdf-viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            background: rgba(4, 3, 13, 0.92);
+            backdrop-filter: blur(14px);
+        }
+        .pdf-viewer.active { display: flex; animation: open-tx .4s cubic-bezier(.2,.8,.2,1); }
+        @keyframes open-tx { from { opacity: 0; transform: scaleY(0.02); } 60% { opacity: 1; transform: scaleY(1.02); } }
+
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--line);
+            flex-shrink: 0;
+        }
+        .pdf-header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+        .pdf-header h2 span { color: var(--btc); }
+        .pdf-container { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
+        .pdf-container embed { width: 100%; height: 100%; display: block; }
+        .mobile-pdf {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+        .mobile-pdf a { text-decoration: none; }
+
+        @media (max-width: 560px) {
+            header.top .coords { display: none; }
+            .btn { padding: 12px 18px; font-size: 12px; }
+            .frame { padding: 10px; }
+            .frame::after { inset: 10px; }
+            :root { --board: calc(100vw - 52px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars" aria-hidden="true"></canvas>
+    <div class="nebula" aria-hidden="true"></div>
+    <div class="planet" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+
+    <div class="shell">
+        <header class="top">
+            <div class="callsign"><span class="dot"></span>Alesio Kanani · Station AK-01</div>
+            <div class="coords" id="coords">RA 00h 00m · DEC +00°</div>
+        </header>
+
+        <section class="hero">
+            <div class="eyebrow">// Incoming transmission</div>
+            <h1>Signal<br>Recovery</h1>
+            <p class="subtitle">A fragmented <b>₿itcoin</b> signal is drifting through deep space. Swap the shards to reassemble it.</p>
+        </section>
+
+        <div class="hud">
+            <div class="seg" role="group" aria-label="Difficulty">
+                <button type="button" data-size="3" aria-pressed="true">3×3</button>
+                <button type="button" data-size="4" aria-pressed="false">4×4</button>
+                <button type="button" data-size="5" aria-pressed="false">5×5</button>
+            </div>
+            <div class="stat">MOVES<strong id="moves">0</strong></div>
+            <div class="stat">T+<strong id="timer">00:00</strong></div>
+            <div class="stat">LOCK<strong id="lock">0%</strong></div>
+        </div>
+
+        <div class="frame" id="frame">
+            <i></i><i></i><i></i><i></i>
+            <div class="puzzle-grid" id="puzzleGrid" role="grid" aria-label="Puzzle board"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn primary" type="button" onclick="shufflePuzzle()">⟳ Scramble</button>
+            <button class="btn btc" type="button" onclick="openPDF()">₿ 2008 White Paper</button>
+        </div>
+
+        <div class="message" id="message" aria-live="polite"></div>
+        <div class="hint">Tap one shard, then another, to swap them.</div>
+
+        <footer>AlesioKanani.github.io · Transmitting from Earth</footer>
+    </div>
+
+    <div class="pdf-viewer" id="pdfViewer" role="dialog" aria-modal="true" aria-label="Bitcoin white paper">
+        <div class="pdf-header">
+            <h2><span>₿</span> Archive · Satoshi, 2008</h2>
+            <button class="btn" type="button" onclick="closePDF()">✕ Close</button>
+        </div>
+        <div class="pdf-container" id="pdfContainer"></div>
+    </div>
+
+    <script>
+        /* ================= Starfield ================= */
+        (() => {
+            const canvas = document.getElementById('stars');
+            const ctx = canvas.getContext('2d');
+            const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let w, h, dpr, stars = [], shooters = [];
+            let mx = 0, my = 0, tx = 0, ty = 0;
+            let warp = 0;
+
+            function resize() {
+                dpr = Math.min(window.devicePixelRatio || 1, 2);
+                w = canvas.width = innerWidth * dpr;
+                h = canvas.height = innerHeight * dpr;
+                const count = Math.floor((innerWidth * innerHeight) / 2600);
+                stars = Array.from({ length: count }, () => ({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    z: Math.random() * 0.9 + 0.1,
+                    tw: Math.random() * Math.PI * 2,
+                    hue: Math.random() < 0.15 ? (Math.random() < 0.5 ? 190 : 280) : 0
+                }));
+            }
+
+            addEventListener('resize', resize);
+            addEventListener('pointermove', e => {
+                tx = (e.clientX / innerWidth - 0.5) * 30 * dpr;
+                ty = (e.clientY / innerHeight - 0.5) * 30 * dpr;
+            });
+
+            window.triggerWarp = () => { warp = 1; };
+
+            function frame(t) {
+                mx += (tx - mx) * 0.05;
+                my += (ty - my) * 0.05;
+                ctx.fillStyle = warp > 0.02 ? 'rgba(4,3,13,0.25)' : '#04030d';
+                ctx.fillRect(0, 0, w, h);
+
+                const cx = w / 2, cy = h / 2;
+                for (const s of stars) {
+                    if (warp > 0.02) {
+                        s.x += (s.x - cx) * 0.04 * warp * s.z;
+                        s.y += (s.y - cy) * 0.04 * warp * s.z;
+                        if (s.x < 0 || s.x > w || s.y < 0 || s.y > h) {
+                            s.x = cx + (Math.random() - 0.5) * w * 0.2;
+                            s.y = cy + (Math.random() - 0.5) * h * 0.2;
+                        }
+                    } else if (!reduced) {
+                        s.y += 0.04 * s.z * dpr;
+                        if (s.y > h) s.y = 0;
+                    }
+                    const px = s.x + mx * s.z, py = s.y + my * s.z;
+                    const a = 0.35 + 0.65 * Math.abs(Math.sin(t * 0.0012 * s.z + s.tw));
+                    const r = s.z * 1.4 * dpr;
+                    ctx.fillStyle = s.hue ? `hsla(${s.hue},100%,75%,${a})` : `rgba(255,255,255,${a * s.z + 0.1})`;
+                    ctx.beginPath();
+                    ctx.arc(px, py, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (s.z > 0.85) {
+                        ctx.fillStyle = `rgba(160,200,255,${a * 0.12})`;
+                        ctx.beginPath();
+                        ctx.arc(px, py, r * 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                if (!reduced && Math.random() < 0.006) {
+                    shooters.push({ x: Math.random() * w, y: Math.random() * h * 0.5, vx: (6 + Math.random() * 6) * dpr, vy: (2 + Math.random() * 3) * dpr, life: 1 });
+                }
+                shooters = shooters.filter(s => s.life > 0);
+                for (const s of shooters) {
+                    const g = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 14, s.y - s.vy * 14);
+                    g.addColorStop(0, `rgba(255,255,255,${s.life})`);
+                    g.addColorStop(1, 'rgba(94,242,255,0)');
+                    ctx.strokeStyle = g;
+                    ctx.lineWidth = 1.6 * dpr;
+                    ctx.beginPath();
+                    ctx.moveTo(s.x, s.y);
+                    ctx.lineTo(s.x - s.vx * 14, s.y - s.vy * 14);
+                    ctx.stroke();
+                    s.x += s.vx; s.y += s.vy; s.life -= 0.015;
+                }
+
+                warp *= 0.965;
+                requestAnimationFrame(frame);
+            }
+
+            resize();
+            requestAnimationFrame(frame);
+        })();
+
+        /* ================= Live coordinates ================= */
+        (() => {
+            const el = document.getElementById('coords');
+            let ra = Math.random() * 24 * 60, dec = Math.random() * 180 - 90;
+            setInterval(() => {
+                ra = (ra + 0.3) % (24 * 60);
+                dec += (Math.random() - 0.5) * 0.4;
+                const h = String(Math.floor(ra / 60)).padStart(2, '0');
+                const m = String(Math.floor(ra % 60)).padStart(2, '0');
+                const d = (dec >= 0 ? '+' : '−') + Math.abs(dec).toFixed(1);
+                el.textContent = `RA ${h}h ${m}m · DEC ${d}°`;
+            }, 1000);
+        })();
+
+        /* ================= Puzzle ================= */
+        const grid = document.getElementById('puzzleGrid');
+        const frameEl = document.getElementById('frame');
+        const message = document.getElementById('message');
+        const movesEl = document.getElementById('moves');
+        const timerEl = document.getElementById('timer');
+        const lockEl = document.getElementById('lock');
+
+        let gridSize = 3;
+        let pieces = [];
+        let selectedPiece = null;
+        let moves = 0;
+        let startTime = null;
+        let timerId = null;
+        let solved = false;
+
+        function renderPuzzle(changed = []) {
+            grid.style.setProperty('--n', gridSize);
+            grid.innerHTML = '';
+            const n = gridSize;
+            pieces.forEach((pieceIndex, position) => {
+                const piece = document.createElement('button');
+                piece.type = 'button';
+                piece.className = 'puzzle-piece';
+                if (pieceIndex === position) piece.classList.add('locked');
+                if (changed.includes(position)) piece.classList.add('swap');
+                if (position === selectedPiece) piece.classList.add('selected');
+                const row = Math.floor(pieceIndex / n);
+                const col = pieceIndex % n;
+                piece.style.backgroundPosition = `${(col / (n - 1)) * 100}% ${(row / (n - 1)) * 100}%`;
+                piece.setAttribute('aria-label', `Shard ${position + 1}`);
+                piece.addEventListener('click', () => selectPiece(position));
+                grid.appendChild(piece);
+            });
+            updateLock();
+        }
+
+        function updateLock() {
+            const correct = pieces.filter((p, i) => p === i).length;
+            lockEl.textContent = Math.round((correct / pieces.length) * 100) + '%';
+        }
+
+        function selectPiece(position) {
+            if (solved) return;
+            if (selectedPiece === null) {
+                selectedPiece = position;
+                grid.children[position].classList.add('selected');
+                return;
+            }
+            if (selectedPiece === position) {
+                grid.children[position].classList.remove('selected');
+                selectedPiece = null;
+                return;
+            }
+            const a = selectedPiece;
+            [pieces[a], pieces[position]] = [pieces[position], pieces[a]];
+            selectedPiece = null;
+            moves++;
+            movesEl.textContent = moves;
+            if (!startTime) startTimer();
+            renderPuzzle([a, position]);
+            grid.children[position].focus({ preventScroll: true });
+            message.textContent = '';
+            message.className = 'message';
+            checkSolution();
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            clearInterval(timerId);
+            timerId = setInterval(() => {
+                const s = Math.floor((Date.now() - startTime) / 1000);
+                timerEl.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+            }, 250);
+        }
+
+        function resetStats() {
+            clearInterval(timerId);
+            startTime = null;
+            moves = 0;
+            movesEl.textContent = '0';
+            timerEl.textContent = '00:00';
+        }
+
+        function shufflePuzzle() {
+            pieces = Array.from({ length: gridSize * gridSize }, (_, i) => i);
+            do {
+                for (let i = pieces.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+                }
+            } while (pieces.every((p, i) => p === i));
+            selectedPiece = null;
+            solved = false;
+            grid.classList.remove('solved');
+            resetStats();
+            renderPuzzle(pieces.map((_, i) => i));
+            message.className = 'message';
+            message.textContent = '> Signal scrambled. Awaiting reconstruction…';
+        }
+
+        function setDifficulty(size) {
+            gridSize = size;
+            document.querySelectorAll('.seg button').forEach(b =>
+                b.setAttribute('aria-pressed', String(+b.dataset.size === size)));
+            shufflePuzzle();
+        }
+        document.querySelectorAll('.seg button').forEach(b =>
+            b.addEventListener('click', () => setDifficulty(+b.dataset.size)));
+
+        function checkSolution() {
+            if (pieces.every((p, i) => p === i)) celebrateSolution();
+        }
+
+        function celebrateSolution() {
+            solved = true;
+            clearInterval(timerId);
+            grid.classList.add('solved');
+            frameEl.classList.remove('solved');
+            void frameEl.offsetWidth;
+            frameEl.classList.add('solved');
+            const flash = document.getElementById('flash');
+            flash.classList.remove('go');
+            void flash.offsetWidth;
+            flash.classList.add('go');
+            window.triggerWarp && window.triggerWarp();
+            message.className = 'message success';
+            message.textContent = `SIGNAL RESTORED · ${moves} MOVE${moves === 1 ? '' : 'S'} · ${timerEl.textContent}`;
+        }
+
+        /* ================= PDF viewer ================= */
+        function openPDF() {
+            const viewer = document.getElementById('pdfViewer');
+            const container = document.getElementById('pdfContainer');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                container.innerHTML = `
+                    <div class="mobile-pdf">
+                        <p>For the best experience on mobile, the paper opens in your device's PDF viewer.</p>
+                        <a class="btn btc" href="bitcoin.pdf" target="_blank" rel="noopener">₿ Open PDF</a>
+                    </div>`;
+            } else {
+                container.innerHTML = '<embed src="bitcoin.pdf" type="application/pdf">';
+            }
+            viewer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePDF() {
+            document.getElementById('pdfViewer').classList.remove('active');
+            document.getElementById('pdfContainer').innerHTML = '';
+            document.body.style.overflow = '';
+        }
+
+        addEventListener('keydown', e => {
+            if (e.key === 'Escape') closePDF();
+        });
+
+        shufflePuzzle();
+    </script>
+</body>
+</html>
