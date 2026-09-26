@@ -6,6 +6,18 @@
 <title>DRIFT</title>
 <meta name="description" content="Click start and your cursor becomes a starship. Steer through deep space, clear asteroids and chase the signal through wormholes.">
 <meta name="theme-color" content="#030210">
+<meta property="og:type" content="website">
+<meta property="og:title" content="DRIFT: your cursor is a starship">
+<meta property="og:description" content="Press start and your cursor becomes a starship. Steer through deep space, clear asteroids and chase the signal through wormholes.">
+<meta property="og:url" content="https://alesiokanani.github.io/">
+<meta property="og:image" content="https://alesiokanani.github.io/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DRIFT: your cursor is a starship">
+<meta name="twitter:description" content="Press start and your cursor becomes a starship.">
+<meta name="twitter:image" content="https://alesiokanani.github.io/og.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23030210'/%3E%3Cpath d='M32 8 L44 44 L32 38 L20 44 Z' fill='%23e8ecff'/%3E%3Cpath d='M32 8 L32 38' stroke='%235ef2ff' stroke-width='3'/%3E%3Cpath d='M26 46 Q32 60 38 46 Z' fill='%235ef2ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -42,6 +54,7 @@
     position: fixed; inset: 0;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 24px 16px;
+    background: radial-gradient(ellipse 52% 46% at 50% 50%, rgba(3, 2, 16, 0.72) 0%, rgba(3, 2, 16, 0.35) 55%, transparent 100%);
     transition: opacity 0.9s ease, transform 1.2s cubic-bezier(.6,0,.2,1), filter 0.9s ease;
   }
   #intro.gone { opacity: 0; transform: scale(1.6); filter: blur(8px); pointer-events: none; }
@@ -59,7 +72,7 @@
   }
   .lede {
     max-width: 30em; margin: 22px auto 36px; font-size: clamp(15px, 2.2vw, 18px);
-    line-height: 1.6; color: #c3c9ee;
+    line-height: 1.6; color: #c3c9ee; text-wrap: balance;
   }
   #start {
     position: relative; font: 700 15px 'Orbitron', sans-serif; letter-spacing: 0.3em;
@@ -95,8 +108,8 @@
   body.playing footer { opacity: 0; pointer-events: none; }
 
   /* ---------- HUD ---------- */
-  #hud { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1s ease 0.6s; }
-  body.playing #hud { opacity: 1; }
+  #hud { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease; }
+  body.playing #hud { opacity: 1; transition: opacity 1s ease 0.6s; }
   .panel {
     position: absolute; top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
     line-height: 1.5; color: var(--text); text-shadow: 0 0 10px rgba(0,0,0,0.8);
@@ -108,6 +121,16 @@
   #h-score { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent); }
   .bar { width: 120px; height: 5px; margin: 5px 0 0 auto; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 0.2s ease; }
+  .bar.warp i { background: #ffffff; box-shadow: 0 0 10px rgba(255,255,255,0.7); }
+  .bar.low i { background: #ff5e7a; box-shadow: 0 0 10px #ff5e7a; }
+  #h-combo { font-family: 'Orbitron', sans-serif; font-size: 12px; color: #fff; height: 16px; opacity: 0; transition: opacity 0.2s ease; }
+  #h-combo.on { opacity: 1; }
+  #stats {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
+    letter-spacing: 0.08em; margin-top: 20px; min-height: 1.5em;
+  }
+  #stats b { color: var(--text); font-weight: 600; }
+  noscript { position: fixed; bottom: 60px; left: 0; right: 0; text-align: center; color: var(--muted); font: 13px 'JetBrains Mono', monospace; }
   .dock {
     position: absolute; right: 16px; bottom: 16px; display: flex; gap: 8px; pointer-events: auto;
   }
@@ -154,6 +177,7 @@
     <h1>DRIFT</h1>
     <p class="lede">Press start and your cursor becomes a starship. Somewhere out there, a signal is waiting.</p>
     <button id="start" type="button">START</button>
+    <p id="stats"></p>
     <ul class="controls">
       <li><b>Move</b>steer</li>
       <li><b>Click</b>fire</li>
@@ -165,12 +189,14 @@
   <div id="hud">
     <div class="panel l">
       <div class="k">SECTOR</div><div id="h-sector">01 · Cygnus Drift</div>
-      <div class="k">POSITION</div><div id="h-coord">0.0 · 0.0</div>
+      <div class="k">DISTANCE</div><div id="h-dist">0.00 ly</div>
       <div class="k">VELOCITY</div><div id="h-vel">0 km/s</div>
     </div>
     <div class="panel r">
       <div class="k">SCORE</div><div id="h-score">0</div>
-      <div class="k">SHIELD</div><div class="bar"><i id="h-shield"></i></div>
+      <div id="h-combo"></div>
+      <div class="k">SHIELD</div><div class="bar" id="b-shield"><i id="h-shield"></i></div>
+      <div class="k">WARP</div><div class="bar warp" id="b-warp"><i id="h-warp"></i></div>
     </div>
     <div class="dock">
       <button id="warpBtn" type="button">WARP</button>
@@ -178,7 +204,8 @@
       <button id="exitBtn" type="button">LAND</button>
     </div>
   </div>
-  <div id="hint">steer toward the edge to fly · click to fire · hold space to warp · follow the signal</div>
+  <div id="hint">push toward the edge to fly · click to fire · hold space to warp through anything · follow the signal</div>
+  <noscript>DRIFT needs JavaScript to fly.</noscript>
   <div id="banner"><div class="t1"></div><div class="t2"></div></div>
 
   <footer>made by <a href="https://github.com/AlesioKanani">Alesio Kanani</a> · <a href="puzzle.html">orbital puzzle</a></footer>
@@ -193,6 +220,16 @@
   const $ = id => document.getElementById(id);
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let W, H, DPR, CX, CY, DIAG;
+  // nebula is soft, so it is painted into a quarter-resolution buffer and scaled up
+  const NEB_S = 0.25;
+  const nebC = document.createElement('canvas');
+  const nctx = nebC.getContext('2d');
+
+  // per-browser progress (best score, sectors, mute); storage may be unavailable, so never rely on it
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('drift.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('drift.' + k, JSON.stringify(v)); } catch (e) {} },
+  };
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = arr => arr[(Math.random() * arr.length) | 0];
@@ -208,6 +245,7 @@
     cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     CX = W / 2; CY = H / 2; DIAG = Math.hypot(W, H);
+    nebC.width = Math.ceil(W * NEB_S); nebC.height = Math.ceil(H * NEB_S);
   }
   resize();
   addEventListener('resize', resize);
@@ -241,6 +279,12 @@
   let asteroids = [], lasers = [], particles = [], orbs = [], planets = [];
   let wormhole = null, wormholeTimer = 12;
   let jump = null;
+  let warpEnergy = 1, warpLock = false, combo = 0, comboTimer = 0, distance = 0, started = false;
+  let popups = [], comets = [], cometTimer = rand(3, 8);
+  const keys = new Set();
+  const TOUCH_OFFSET = 70; // keep the ship visible above a finger
+  let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best;
+  let soundOn = store.get('sound', true);
 
   // ---------- nebula ----------
   const NEB_P = 4200, NEB_D = 0.06;
@@ -256,21 +300,24 @@
     return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
   }
   function drawNebula() {
-    ctx.globalCompositeOperation = 'lighter';
+    nctx.setTransform(1, 0, 0, 1, 0, 0);
+    nctx.clearRect(0, 0, nebC.width, nebC.height);
+    nctx.setTransform(NEB_S, 0, 0, NEB_S, 0, 0);
+    nctx.globalCompositeOperation = 'lighter';
     for (const b of nebula) {
       const bx = mod(b.x - cam.x * NEB_D, NEB_P), by = mod(b.y - cam.y * NEB_D, NEB_P);
       for (let ox = -NEB_P; ox <= NEB_P; ox += NEB_P) for (let oy = -NEB_P; oy <= NEB_P; oy += NEB_P) {
         const x = bx + ox - NEB_P / 2 + CX, y = by + oy - NEB_P / 2 + CY;
         if (x + b.r < 0 || x - b.r > W || y + b.r < 0 || y - b.r > H) continue;
-        const g = ctx.createRadialGradient(x, y, 0, x, y, b.r);
+        const g = nctx.createRadialGradient(x, y, 0, x, y, b.r);
         g.addColorStop(0, hexA(b.c, b.a));
         g.addColorStop(0.5, hexA(b.c, b.a * 0.4));
         g.addColorStop(1, hexA(b.c, 0));
-        ctx.fillStyle = g;
-        ctx.fillRect(x - b.r, y - b.r, b.r * 2, b.r * 2);
+        nctx.fillStyle = g;
+        nctx.fillRect(x - b.r, y - b.r, b.r * 2, b.r * 2);
       }
     }
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(nebC, 0, 0, W, H);
   }
 
   // ---------- stars ----------
@@ -434,12 +481,60 @@
   }
 
   // ---------- audio ----------
-  let AC = null, master, hum, humGain, humFilter, noiseBuf, soundOn = true;
+  let AC = null, master, hum, humGain, humFilter, noiseBuf, echo, padBus, padVoices = [], chordStep = 0;
+  // ambient pad: four slow chords, transposed per sector
+  const CHORDS = [[0, 7, 12, 15], [-4, 3, 8, 12], [-2, 5, 10, 14], [-5, 2, 7, 10]];
+  const SECTOR_KEY = [0, -2, 3, -5, 5];
+  const PENTA = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24];
+  const noteHz = semi => 110 * Math.pow(2, (semi + SECTOR_KEY[sectorIndex % SECTOR_KEY.length]) / 12);
+  function applyVolume() {
+    if (!AC) return;
+    master.gain.setTargetAtTime(soundOn ? 0.55 : 0, AC.currentTime, 0.08);
+    padBus.gain.setTargetAtTime(playing ? 0.07 : 0.04, AC.currentTime, 1.5);
+  }
+  function nextChord() {
+    if (!AC || AC.state !== 'running') return;
+    const ch = CHORDS[chordStep++ % CHORDS.length], t = AC.currentTime;
+    padVoices.forEach((o, i) => o.frequency.setTargetAtTime(noteHz(ch[i]) * (i === 0 ? 0.5 : 1), t, 0.8));
+    // a couple of distant "pings" per chord
+    for (let k = 0; k < 2; k++) {
+      if (Math.random() < 0.65) setTimeout(() => ping(noteHz(pick(PENTA) + 12)), rand(300, 6500));
+    }
+  }
+  function ping(f) {
+    if (!AC || !soundOn) return;
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.035, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+    o.connect(g); g.connect(master); g.connect(echo); o.start(t); o.stop(t + 2.3);
+  }
   function initAudio() {
-    if (AC) { AC.resume(); return; }
+    if (AC) { AC.resume(); applyVolume(); return; }
     try {
       AC = new (window.AudioContext || window.webkitAudioContext)();
-      master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
+      master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination);
+      // feedback echo for pings and pickups
+      echo = AC.createDelay(1.5); echo.delayTime.value = 0.42;
+      const fb = AC.createGain(); fb.gain.value = 0.38;
+      const echoOut = AC.createGain(); echoOut.gain.value = 0.5;
+      echo.connect(fb); fb.connect(echo); echo.connect(echoOut); echoOut.connect(master);
+      // pad
+      padBus = AC.createGain(); padBus.gain.value = 0;
+      const padFilter = AC.createBiquadFilter(); padFilter.type = 'lowpass'; padFilter.frequency.value = 700; padFilter.Q.value = 0.7;
+      const lfo = AC.createOscillator(), lfoGain = AC.createGain();
+      lfo.frequency.value = 0.06; lfoGain.gain.value = 350; lfo.connect(lfoGain); lfoGain.connect(padFilter.frequency); lfo.start();
+      padFilter.connect(padBus); padBus.connect(master);
+      padVoices = CHORDS[0].map((s, i) => {
+        const o = AC.createOscillator(), g = AC.createGain();
+        o.type = i === 0 ? 'sine' : 'triangle';
+        o.frequency.value = noteHz(s) * (i === 0 ? 0.5 : 1);
+        o.detune.value = rand(-6, 6);
+        g.gain.value = i === 0 ? 0.5 : 0.22;
+        o.connect(g); g.connect(padFilter); o.start();
+        return o;
+      });
+      nextChord();
+      setInterval(nextChord, 8000);
       humFilter = AC.createBiquadFilter(); humFilter.type = 'lowpass'; humFilter.frequency.value = 300;
       humGain = AC.createGain(); humGain.gain.value = 0;
       hum = [AC.createOscillator(), AC.createOscillator()];
@@ -450,14 +545,15 @@
       noiseBuf = AC.createBuffer(1, AC.sampleRate * 1.5, AC.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      applyVolume();
     } catch (e) { AC = null; }
   }
-  function tone(type, f0, f1, dur, vol) {
+  function tone(type, f0, f1, dur, vol, wet) {
     if (!AC || !soundOn) return;
     const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
     o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.02);
+    o.connect(g); g.connect(master); if (wet) g.connect(echo); o.start(t); o.stop(t + dur + 0.02);
   }
   function noise(dur, vol, f0, f1) {
     if (!AC || !soundOn) return;
@@ -470,7 +566,10 @@
   const sfx = {
     laser: () => tone('square', 1100, 180, 0.11, 0.05),
     boom: s => noise(0.35 + s / 80, 0.35, 1200, 60),
-    orb: () => { tone('sine', 660, 700, 0.12, 0.12); setTimeout(() => tone('sine', 990, 1050, 0.2, 0.1), 70); },
+    orb: () => { tone('sine', 660, 700, 0.12, 0.12, true); setTimeout(() => tone('sine', 990, 1050, 0.2, 0.1, true), 70); },
+    combo: n => tone('triangle', 440 * Math.pow(2, Math.min(n, 8) / 12 * 2), 880 * Math.pow(2, Math.min(n, 8) / 12 * 2), 0.12, 0.05, true),
+    ram: () => { noise(0.25, 0.3, 3000, 200); tone('sine', 300, 1200, 0.15, 0.05); },
+    empty: () => tone('square', 220, 110, 0.15, 0.04),
     hit: () => { noise(0.4, 0.4, 600, 40); tone('sawtooth', 160, 40, 0.35, 0.12); },
     warp: () => { tone('sawtooth', 60, 1400, 1.3, 0.09); noise(1.4, 0.2, 200, 4000); },
     signal: () => { tone('sine', 440, 440, 0.15, 0.08); setTimeout(() => tone('sine', 587, 587, 0.25, 0.08), 160); },
@@ -486,59 +585,113 @@
     bannerTimer = secs;
   }
 
+  function saveProgress() {
+    if (score > best) best = score;
+    bestSectors = Math.max(bestSectors, sectorIndex + 1);
+    if (best !== savedBest) { store.set('best', best); savedBest = best; }
+    store.set('sectors', bestSectors);
+  }
+  function renderStats() {
+    const el = $('stats');
+    if (started) {
+      el.innerHTML = `This flight <b>${score.toLocaleString()}</b> pts · <b>${(distance / 9000).toFixed(2)}</b> ly · best <b>${best.toLocaleString()}</b>`;
+    } else if (best > 0) {
+      el.innerHTML = `Best <b>${best.toLocaleString()}</b> · <b>${bestSectors}</b> sector${bestSectors === 1 ? '' : 's'} charted`;
+    } else el.textContent = '';
+  }
+
   function start() {
     initAudio();
     playing = true;
     document.body.classList.add('playing');
     intro.classList.add('gone');
+    $('start').blur();
     ship.visible = true;
     ship.inv = 1.5;
     launch = 1;
     sfx.warp();
-    setTimeout(() => { if (playing) showBanner('ENTERING SECTOR', sectorLabel(), 3.2); }, 700);
-    hint.classList.add('show');
-    setTimeout(() => hint.classList.remove('show'), 9000);
+    applyVolume();
+    const resumed = started;
+    setTimeout(() => { if (playing) showBanner(resumed ? 'RESUMING FLIGHT' : 'ENTERING SECTOR', sectorLabel(), 3.2); }, 700);
+    if (!started) {
+      hint.classList.add('show');
+      setTimeout(() => hint.classList.remove('show'), 10000);
+    }
+    started = true;
   }
   function land() {
-    playing = false; firing = false; warpHeld = false;
+    playing = false; firing = false; warpHeld = false; keys.clear();
     document.body.classList.remove('playing');
     intro.classList.remove('gone');
     ship.visible = false;
     $('warpBtn').classList.remove('on');
+    saveProgress();
+    renderStats();
+    $('start').textContent = 'RESUME';
+    applyVolume();
     $('start').focus({ preventScroll: true });
   }
 
-  $('start').addEventListener('click', e => { e.stopPropagation(); ship.sx = ship.tx = e.clientX || CX; ship.sy = ship.ty = e.clientY || CY; start(); });
+  const touchY = e => e.clientY - (e.pointerType === 'touch' ? TOUCH_OFFSET : 0);
+  $('start').addEventListener('click', e => {
+    e.stopPropagation();
+    ship.sx = ship.tx = e.clientX || CX;
+    ship.sy = ship.ty = e.clientX ? touchY(e) : CY;
+    start();
+  });
   $('exitBtn').addEventListener('click', e => { e.stopPropagation(); land(); });
-  $('soundBtn').addEventListener('click', e => {
+  const sb = $('soundBtn');
+  sb.classList.toggle('on', soundOn);
+  sb.addEventListener('click', e => {
     e.stopPropagation(); soundOn = !soundOn;
-    $('soundBtn').classList.toggle('on', soundOn);
-    if (humGain) humGain.gain.value = 0;
+    sb.classList.toggle('on', soundOn);
+    store.set('sound', soundOn);
+    applyVolume();
   });
   const wb = $('warpBtn');
   wb.addEventListener('pointerdown', e => { e.stopPropagation(); warpHeld = true; wb.classList.add('on'); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => wb.addEventListener(ev, () => { warpHeld = false; wb.classList.remove('on'); }));
   document.querySelectorAll('.dock button').forEach(b => b.addEventListener('pointerdown', e => e.stopPropagation()));
 
-  addEventListener('pointermove', e => { ship.tx = e.clientX; ship.ty = e.clientY; });
+  addEventListener('pointermove', e => { ship.tx = e.clientX; ship.ty = touchY(e); });
   addEventListener('pointerdown', e => {
-    ship.tx = e.clientX; ship.ty = e.clientY;
+    ship.tx = e.clientX; ship.ty = touchY(e);
     if (playing && !e.target.closest('button, a')) firing = true;
   });
   addEventListener('pointerup', () => { firing = false; });
   addEventListener('pointercancel', () => { firing = false; });
+  const STEER_KEYS = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd' };
   addEventListener('keydown', e => {
-    if (e.code === 'Space') { if (playing) { warpHeld = true; e.preventDefault(); } }
-    else if (e.key === 'Escape' && playing) land();
-    else if ((e.key === 'm' || e.key === 'M') && playing) $('soundBtn').click();
+    if (!playing) return;
+    // a focused HUD button would otherwise be "clicked" by Space/Enter
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    if (e.code === 'Space') { warpHeld = true; e.preventDefault(); }
+    else if (STEER_KEYS[e.code]) { keys.add(STEER_KEYS[e.code]); e.preventDefault(); }
+    else if (e.code === 'KeyF' || e.code === 'Enter') { firing = true; e.preventDefault(); }
+    else if (e.key === 'Escape') land();
+    else if (e.code === 'KeyM') sb.click();
   });
-  addEventListener('keyup', e => { if (e.code === 'Space') warpHeld = false; });
-  addEventListener('blur', () => { firing = false; warpHeld = false; });
+  addEventListener('keyup', e => {
+    if (e.code === 'Space') { warpHeld = false; e.preventDefault(); }
+    else if (STEER_KEYS[e.code]) keys.delete(STEER_KEYS[e.code]);
+    else if (e.code === 'KeyF' || e.code === 'Enter') firing = false;
+  });
+  addEventListener('blur', () => { firing = false; warpHeld = false; keys.clear(); });
+  addEventListener('pagehide', saveProgress);
+  renderStats();
   document.addEventListener('visibilitychange', () => { if (AC) document.hidden ? AC.suspend() : AC.resume(); });
 
   // ---------- update ----------
   function update(dt, sec) {
     time += sec;
+
+    // keyboard steering nudges the cursor target
+    if (keys.size) {
+      const kx = (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0);
+      const ky = (keys.has('d') ? 1 : 0) - (keys.has('u') ? 1 : 0);
+      ship.tx = clamp(ship.tx + kx * 9 * dt, 24, W - 24);
+      ship.ty = clamp(ship.ty + ky * 9 * dt, 24, H - 24);
+    }
 
     // ship follows cursor
     ship.psx = ship.sx; ship.psy = ship.sy;
@@ -547,7 +700,18 @@
     const svx = (ship.sx - ship.psx) / dt, svy = (ship.sy - ship.psy) / dt;
 
     // warp
-    const wantWarp = (playing && warpHeld) || launch > 0 || (jump && jump.t < 1.1) ? 1 : 0;
+    // warp: player warp spends energy; once empty it must recharge a bit before re-engaging
+    const playerWarp = playing && warpHeld && !warpLock && !jump;
+    if (playing && warpHeld && warpLock && warpEnergy < 0.25 && !ship.emptyBuzz) { sfx.empty(); ship.emptyBuzz = true; }
+    if (!warpHeld) ship.emptyBuzz = false;
+    if (playerWarp) {
+      warpEnergy = Math.max(0, warpEnergy - sec / 3.5);
+      if (warpEnergy === 0) warpLock = true;
+    } else {
+      warpEnergy = Math.min(1, warpEnergy + sec / 7);
+      if (warpLock && warpEnergy > 0.25) warpLock = false;
+    }
+    const wantWarp = playerWarp || launch > 0 || (jump && jump.t < 1.1) ? 1 : 0;
     warp = lerp(warp, wantWarp, 1 - Math.pow(1 - (wantWarp ? 0.06 : 0.04), dt));
     launch = Math.max(0, launch - sec * 1.1);
 
@@ -568,6 +732,15 @@
     const ce = 1 - Math.pow(1 - 0.045, dt);
     cam.vx = lerp(cam.vx, tvx, ce); cam.vy = lerp(cam.vy, tvy, ce);
     cam.x += cam.vx * dt; cam.y += cam.vy * dt;
+    if (playing) distance += Math.hypot(cam.vx, cam.vy) * dt;
+    // wormhole gravity drags the ship in once it gets close
+    if (playing && wormhole && !jump) {
+      const s0 = shipWorld(), gx = wormhole.x - s0.x, gy = wormhole.y - s0.y, gd = Math.hypot(gx, gy);
+      if (gd < 460 && gd > 1) {
+        const pull = 3.4 * Math.pow(1 - gd / 460, 1.5);
+        cam.x += gx / gd * pull * dt; cam.y += gy / gd * pull * dt;
+      }
+    }
 
     // ship heading and bank
     const hx = cam.vx + svx * 0.6, hy = cam.vy + svy * 0.6;
@@ -629,10 +802,19 @@
       a.x += a.vx * dt; a.y += a.vy * dt; a.rot += a.rv * dt; a.hit = Math.max(0, a.hit - sec * 6);
       const dc = Math.hypot(a.x - cam.x, a.y - cam.y);
       if (dc > DIAG * 0.9 + a.size) { asteroids.splice(i, 1); continue; }
-      if (playing && !jump && ship.inv <= 0 && Math.hypot(a.x - sw.x, a.y - sw.y) < a.size * 0.8 + 11) {
+      const touching = playing && !jump && Math.hypot(a.x - sw.x, a.y - sw.y) < a.size * 0.8 + 11;
+      if (touching && warp > 0.45) { // warp field: smash straight through
+        shake = reduceMotion ? 0 : 5;
+        sfx.ram();
+        destroyAsteroid(i, true);
+        continue;
+      }
+      if (touching && ship.inv <= 0) {
         ship.shield -= 14 + a.size * 0.6;
         shake = reduceMotion ? 0 : 14; flash = Math.max(flash, 0.25);
         sfx.hit();
+        if (combo >= 3) popup(sw.x, sw.y - 30, 'COMBO LOST', '#ff5e7a');
+        combo = 0; comboTimer = 0;
         destroyAsteroid(i, false);
         ship.inv = 0.6;
         if (ship.shield <= 0) {
@@ -649,8 +831,16 @@
       const o = orbs[i];
       o.ph += sec * 3;
       if (Math.hypot(o.x - cam.x, o.y - cam.y) > DIAG * 0.9) { orbs.splice(i, 1); continue; }
-      if (playing && Math.hypot(o.x - sw.x, o.y - sw.y) < 30) {
-        score += 50; sfx.orb();
+      const od = Math.hypot(o.x - sw.x, o.y - sw.y);
+      if (playing && od < 110 && od > 1) { // light magnetism so pickups feel generous
+        const pull = (1 - od / 110) * 4;
+        o.x += (sw.x - o.x) / od * pull * dt; o.y += (sw.y - o.y) / od * pull * dt;
+      }
+      if (playing && od < 30) {
+        const pts = 50 * comboMult();
+        score += pts; sfx.orb();
+        if (comboTimer > 0) comboTimer = 2.4;
+        popup(o.x, o.y, '+' + pts, sector.accent);
         burst(o.x, o.y, 24, sector.accent, 4, 30, 2.4);
         orbs.splice(i, 1);
       }
@@ -668,7 +858,8 @@
         wormholeTimer -= sec;
         if (wormholeTimer <= 0) {
           const a = rand(0, 6.28), dist = Math.max(DIAG * 0.9, 1400);
-          wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0 };
+          wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0,
+            dust: Array.from({ length: 56 }, () => ({ a: rand(0, 6.28), r: rand(40, 200), s: rand(0.7, 1.5) })) };
           showBanner('SIGNAL DETECTED', 'FOLLOW THE BEACON', 3);
           sfx.signal();
         }
@@ -678,6 +869,31 @@
         if (d < wormhole.r * 0.55) beginJump();
       }
     }
+    if (wormhole) for (const p of wormhole.dust) { // matter spiralling in
+      p.a += (0.012 + 1.6 / p.r) * p.s * dt;
+      p.r -= (0.25 + 40 / p.r) * p.s * dt;
+      if (p.r < 22) { p.r = rand(150, 220); p.a = rand(0, 6.28); }
+    }
+
+    // combo window, popups, comets
+    if (comboTimer > 0) { comboTimer -= sec; if (comboTimer <= 0) combo = 0; }
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const p = popups[i]; p.life += sec; p.y -= 0.6 * dt;
+      if (p.life > 1.1) popups.splice(i, 1);
+    }
+    cometTimer -= sec;
+    if (cometTimer <= 0) {
+      cometTimer = rand(6, 16);
+      const fromLeft = Math.random() < 0.5, sp = rand(9, 15);
+      const ang = (fromLeft ? 0 : Math.PI) + rand(-0.5, 0.5);
+      comets.push({ x: fromLeft ? -80 : W + 80, y: rand(0, H), vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+        len: rand(90, 200), hue: pick(['#ffffff', '#bff6ff', sector.accent]) });
+    }
+    for (let i = comets.length - 1; i >= 0; i--) {
+      const c = comets[i];
+      c.x += (c.vx - cam.vx * 0.4) * dt; c.y += (c.vy - cam.vy * 0.4) * dt;
+      if (c.x < -400 || c.x > W + 400 || c.y < -400 || c.y > H + 400) comets.splice(i, 1);
+    }
     if (jump) {
       jump.t += sec;
       if (jump.t > 0.75 && !jump.swapped) {
@@ -685,6 +901,9 @@
         setSector(sectorIndex + 1);
         asteroids = []; orbs = []; planets = []; lasers = [];
         wormhole = null; wormholeTimer = rand(28, 40);
+        comets = []; warpEnergy = 1; warpLock = false;
+        saveProgress();
+        chordStep = 0; nextChord(); // music shifts key with the sector
       }
       flash = jump.t < 0.75 ? Math.max(flash, jump.t / 0.75) : flash;
       if (jump.t > 1.8) {
@@ -709,13 +928,22 @@
     if (bannerTimer > 0) { bannerTimer -= sec; if (bannerTimer <= 0) banner.classList.remove('show'); }
   }
 
-  function destroyAsteroid(i, byLaser) {
+  function comboMult() { return Math.min(5, 1 + Math.floor(combo / 3)); }
+  function popup(x, y, text, color) { popups.push({ x, y, text, color, life: 0 }); }
+
+  function destroyAsteroid(i, scored) {
     const a = asteroids[i];
     asteroids.splice(i, 1);
     burst(a.x, a.y, Math.round(a.size * 0.9), '#ffcf9e', 4.5, 40, 2.4);
     burst(a.x, a.y, 10, sector.accent, 3, 25, 2);
     sfx.boom(a.size);
-    if (byLaser) score += Math.round(a.size / 4) * 5;
+    if (!scored) return;
+    const prevMult = comboMult();
+    combo++; comboTimer = 2.4;
+    const pts = Math.round(a.size / 4) * 5 * comboMult();
+    score += pts;
+    popup(a.x, a.y, '+' + pts, '#ffffff');
+    if (comboMult() > prevMult) { sfx.combo(comboMult()); popup(a.x, a.y - 22, 'COMBO ×' + comboMult(), sector.accent); }
     if (a.size > 26) {
       for (let k = 0; k < 2; k++) {
         const ang = rand(0, 6.28);
@@ -727,6 +955,8 @@
   function beginJump() {
     jump = { t: 0, swapped: false };
     score += 250;
+    const s = shipWorld();
+    popup(s.x, s.y - 30, '+250 JUMP', '#ffffff');
     sfx.warp();
     shake = reduceMotion ? 0 : 10;
   }
@@ -793,17 +1023,46 @@
     const halo = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.6);
     halo.addColorStop(0, hexA(acc, 0.35)); halo.addColorStop(1, hexA(acc, 0));
     ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 0, r * 2.6, 0, 7); ctx.fill();
+    ctx.save();
     for (let i = 0; i < 5; i++) {
       ctx.rotate(time * (0.6 + i * 0.25));
       ctx.strokeStyle = hexA(i % 2 ? '#ffffff' : acc, 0.5 - i * 0.07);
       ctx.lineWidth = 2.2 - i * 0.3;
       ctx.beginPath(); ctx.ellipse(0, 0, r * (1 - i * 0.13), r * (0.9 - i * 0.12), 0, 0, Math.PI * 1.4); ctx.stroke();
     }
+    ctx.restore();
+    for (const p of w.dust) {
+      const k = clamp((230 - p.r) / 110, 0, 1) * clamp((p.r - 22) / 25, 0, 1);
+      if (k <= 0) continue;
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.s > 1.2 ? '#ffffff' : acc;
+      const x = Math.cos(p.a) * p.r, y = Math.sin(p.a) * p.r * 0.85;
+      ctx.fillRect(x - 1.2, y - 1.2, 2.4, 2.4);
+    }
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     const core = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.55);
     core.addColorStop(0, '#000'); core.addColorStop(0.8, '#02010a'); core.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = core; ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, 7); ctx.fill();
     ctx.restore();
+  }
+
+  function drawComets() {
+    if (!comets.length) return;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (const c of comets) {
+      const m = Math.hypot(c.vx, c.vy) || 1;
+      const tx = c.x - c.vx / m * c.len, ty = c.y - c.vy / m * c.len;
+      const g = ctx.createLinearGradient(c.x, c.y, tx, ty);
+      g.addColorStop(0, hexA(c.hue, 0.85)); g.addColorStop(1, hexA(c.hue, 0));
+      ctx.strokeStyle = g; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(tx, ty); ctx.stroke();
+      const h = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, 9);
+      h.addColorStop(0, 'rgba(255,255,255,0.95)'); h.addColorStop(1, hexA(c.hue, 0));
+      ctx.fillStyle = h; ctx.beginPath(); ctx.arc(c.x, c.y, 9, 0, 7); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   function drawBeacon(sx, sy, dist) {
@@ -834,6 +1093,7 @@
     ctx.translate(shx * 0.5, shy * 0.5);
     drawNebula();
     drawStars();
+    drawComets();
 
     // planets (far to near)
     const sw = shipWorld();
@@ -913,17 +1173,33 @@
     ctx.globalAlpha = 1;
 
     // lasers
-    ctx.strokeStyle = sector.accent; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-    ctx.shadowColor = sector.accent; ctx.shadowBlur = 10;
-    for (const L of lasers) {
-      const m = Math.hypot(L.vx, L.vy) || 1;
-      const x = L.x + ox, y = L.y + oy;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - L.vx / m * 14, y - L.vy / m * 14); ctx.stroke();
+    // lasers: a wide soft pass then a bright core (cheaper than shadowBlur)
+    ctx.lineCap = 'round';
+    for (const [w, col] of [[7, hexA(sector.accent, 0.25)], [2.2, sector.accent], [0.9, '#ffffff']]) {
+      ctx.strokeStyle = col; ctx.lineWidth = w;
+      ctx.beginPath();
+      for (const L of lasers) {
+        const m = Math.hypot(L.vx, L.vy) || 1;
+        const x = L.x + ox, y = L.y + oy;
+        ctx.moveTo(x, y); ctx.lineTo(x - L.vx / m * 16, y - L.vy / m * 16);
+      }
+      ctx.stroke();
     }
-    ctx.shadowBlur = 0;
     ctx.globalCompositeOperation = 'source-over';
 
     if (ship.visible) drawShip(ship.sx, ship.sy);
+
+    // score popups
+    if (popups.length) {
+      ctx.textAlign = 'center';
+      ctx.font = '700 13px Orbitron, sans-serif';
+      for (const p of popups) {
+        ctx.globalAlpha = clamp(1.4 - p.life / 0.8, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.text, p.x + ox, p.y + oy);
+      }
+      ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    }
     ctx.restore();
 
     if (playing && wormhole && !jump) drawBeacon(wormhole.x + ox, wormhole.y + oy, Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y));
@@ -941,18 +1217,26 @@
   }
 
   // ---------- HUD + audio tick ----------
-  let hudT = 0;
+  let hudT = 0, saveTimer = 3;
   function tickHud(sec) {
     hudT -= sec;
     if (hudT > 0) return;
     hudT = 0.1;
-    $('h-coord').textContent = (cam.x / 100).toFixed(1) + ' · ' + (-cam.y / 100).toFixed(1);
+    $('h-dist').textContent = (distance / 9000).toFixed(2) + ' ly';
+    $('h-warp').style.width = (warpEnergy * 100) + '%';
+    $('b-warp').classList.toggle('low', warpLock);
+    $('b-shield').classList.toggle('low', ship.shield < 35);
+    const hc = $('h-combo');
+    hc.classList.toggle('on', comboMult() > 1);
+    if (comboMult() > 1) hc.textContent = 'COMBO ×' + comboMult();
+    saveTimer -= 0.1;
+    if (saveTimer <= 0 && playing) { saveTimer = 3; saveProgress(); }
     $('h-vel').textContent = Math.round((ship.speed || 0) * 1370).toLocaleString() + ' km/s';
     $('h-score').textContent = score.toLocaleString();
     $('h-shield').style.width = Math.max(0, ship.shield) + '%';
     if (AC && humGain) {
       const s = ship.speed || 0, t = AC.currentTime;
-      const on = playing && soundOn;
+      const on = playing;
       humGain.gain.setTargetAtTime(on ? 0.035 + Math.min(s, 40) * 0.003 : 0, t, 0.2);
       humFilter.frequency.setTargetAtTime(180 + Math.min(s, 40) * 60, t, 0.2);
       hum[0].frequency.setTargetAtTime(40 + Math.min(s, 40) * 1.6, t, 0.2);
