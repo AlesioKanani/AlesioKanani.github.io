@@ -1,1 +1,14 @@
-SEE_FILE_/home/workdir/artifacts/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DRIFT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+fetch('https://raw.githubusercontent.com/AlesioKanani/AlesioKanani.github.io/9ed2ed6597048aee4b17df118997c398ea351080/index.html')
+  .then(function(r){ return r.text(); })
+  .then(function(html){ document.open(); document.write(html); document.close(); });
+</script>
+</head>
+<body style="background:#030210;color:#8a92c4;font-family:sans-serif;padding:48px">Loading DRIFT…</body>
+</html>
