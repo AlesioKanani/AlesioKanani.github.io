@@ -155,6 +155,17 @@
     opacity: 0; transition: opacity 0.6s ease; padding: 0 16px;
   }
   #banner.show { opacity: 1; }
+  #banner.danger .t1 { color: #ff8a8a; }
+  #banner.danger .t2 { color: #ffe0e0; text-shadow: 0 0 24px #ff3b3b; }
+  #bossbar {
+    position: fixed; left: 50%; top: 18px; transform: translateX(-50%); width: min(420px, 56vw);
+    text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.4s ease;
+  }
+  body.boss-on #bossbar { opacity: 1; }
+  #bossbar .bn { font: 700 12px 'Orbitron', sans-serif; letter-spacing: 0.3em; color: #ffd0d0; text-shadow: 0 0 12px rgba(255,70,70,0.8); margin-bottom: 7px; }
+  #bossbar .bb { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,90,90,0.45); overflow: hidden; }
+  #bossbar .bb i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff3b3b, #ff8a4a); box-shadow: 0 0 12px #ff4a4a; transition: width 0.15s ease; }
+  @media (max-width: 560px) { #bossbar { top: auto; bottom: 78px; width: 72vw; } }
   #banner .t1 { font: 500 11px 'JetBrains Mono', monospace; letter-spacing: 0.4em; color: var(--muted); }
   #banner .t2 {
     font: 700 clamp(22px, 5vw, 40px) 'Orbitron', sans-serif; letter-spacing: 0.14em; margin-top: 8px;
@@ -214,6 +225,7 @@
   <div id="hint">push toward the edge to fly · click to fire · hold space to warp through anything · follow the signal</div>
   <noscript>DRIFT needs JavaScript to fly.</noscript>
   <div id="banner"><div class="t1"></div><div class="t2"></div></div>
+  <div id="bossbar" aria-live="polite"><div class="bn" id="boss-name">GUARDIAN</div><div class="bb"><i id="boss-hp"></i></div></div>
 
   <footer>made by <a href="https://github.com/AlesioKanani">Alesio Kanani</a></footer>
 
@@ -301,6 +313,7 @@
   let warpEnergy = 1, warpLock = false, combo = 0, comboTimer = 0, distance = 0, started = false;
   let popups = [], comets = [], cometTimer = rand(3, 8);
   let sigWaves = [], sigPingT = 0, sigPrevD = null, sigTrend = 0;   // signal sonar pulses + HUD trend
+  let boss = null, bossBolts = [];
   const keys = new Set();
   const TOUCH_OFFSET = 70; // keep the ship visible above a finger
   let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best;
@@ -834,6 +847,13 @@
     hit: () => { noise(0.4, 0.4, 600, 40); tone('sawtooth', 160, 40, 0.35, 0.12); },
     warp: () => { tone('sawtooth', 60, 1400, 1.3, 0.09); noise(1.4, 0.2, 200, 4000); },
     signal: () => { tone('sine', 440, 440, 0.15, 0.08); setTimeout(() => tone('sine', 587, 587, 0.25, 0.08), 160); },
+    siren: () => { for (let i = 0; i < 3; i++) setTimeout(() => tone('sawtooth', 560, 380, 0.3, 0.05), i * 340); },
+    bossFire: () => tone('square', 320, 90, 0.16, 0.03),
+    charge: () => tone('sawtooth', 90, 760, 0.8, 0.04),
+    bossRing: () => { tone('sawtooth', 700, 120, 0.4, 0.05); noise(0.3, 0.15, 2000, 300); },
+    bossHit: () => tone('triangle', 900, 520, 0.05, 0.025),
+    bossDown: () => { noise(1.7, 0.45, 1500, 40); tone('sawtooth', 200, 30, 1.5, 0.09); },
+    unseal: () => { tone('sine', 523, 523, 0.2, 0.08, true); setTimeout(() => tone('sine', 659, 659, 0.2, 0.08, true), 150); setTimeout(() => tone('sine', 784, 784, 0.45, 0.09, true), 300); },
     sonar: (pan, near) => {
       if (!AC || !soundOn) return;
       const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(), f = 520 + near * 420;
@@ -850,7 +870,8 @@
   // ---------- UI ----------
   const intro = $('intro'), banner = $('banner'), hint = $('hint');
   let bannerTimer = 0;
-  function showBanner(t1, t2, secs = 3) {
+  function showBanner(t1, t2, secs = 3, danger = false) {
+    banner.classList.toggle('danger', danger);
     banner.querySelector('.t1').textContent = t1;
     banner.querySelector('.t2').textContent = t2;
     banner.classList.add('show');
@@ -1006,7 +1027,7 @@
     cam.x += cam.vx * dt; cam.y += cam.vy * dt;
     if (playing) distance += Math.hypot(cam.vx, cam.vy) * dt;
     // wormhole gravity drags the ship in once it gets close
-    if (playing && wormhole && !jump) {
+    if (playing && wormhole && !wormhole.sealed && !jump) {
       const s0 = shipWorld(), gx = wormhole.x - s0.x, gy = wormhole.y - s0.y, gd = Math.hypot(gx, gy);
       if (gd < 460 && gd > 1) {
         const pull = 3.4 * Math.pow(1 - gd / 460, 1.5);
@@ -1060,6 +1081,16 @@
       const L = lasers[i];
       L.x += L.vx * dt; L.y += L.vy * dt; L.life += sec;
       let dead = L.life > 1.1;
+      if (boss && !boss.dying && Math.hypot(boss.x - L.x, boss.y - L.y) < BOSS_R) {
+        dead = true;
+        sparks(L.x, L.y, 7, '#ffe8c0', 5, 14, boss.vx, boss.vy);
+        addP({ k: 'g', x: L.x, y: L.y, vx: boss.vx, vy: boss.vy, max: 8, size: 16, col: sector.accent, drag: 1 });
+        damageBoss(1);
+      }
+      for (let j = bossBolts.length - 1; j >= 0 && !dead; j--) {
+        const bl = bossBolts[j];
+        if (Math.hypot(bl.x - L.x, bl.y - L.y) < 12) { dead = true; sparks(bl.x, bl.y, 6, '#ffb0a0', 4, 12); bossBolts.splice(j, 1); score += 2; }
+      }
       for (let j = asteroids.length - 1; j >= 0 && !dead; j--) {
         const a = asteroids[j];
         if (Math.hypot(a.x - L.x, a.y - L.y) < a.size * 0.9) {
@@ -1086,19 +1117,8 @@
         continue;
       }
       if (touching && ship.inv <= 0) {
-        ship.shield -= 14 + a.size * 0.6;
-        shake = reduceMotion ? 0 : 14; flash = Math.max(flash, 0.25);
-        sfx.hit();
-        if (combo >= 3) popup(sw.x, sw.y - 30, 'COMBO LOST', '#ff5e7a');
-        combo = 0; comboTimer = 0;
         destroyAsteroid(i, false);
-        ship.inv = 0.6; ship.hitT = 0.5;
-        if (ship.shield <= 0) {
-          explode(sw.x, sw.y, 70);
-          ring(sw.x, sw.y, 20, 4, sector.accent, 30);
-          ship.shield = 100; ship.inv = 2.5;
-          showBanner('HULL BREACH', 'SHIELDS REBOOTED', 2.4);
-        }
+        hurtShip(14 + a.size * 0.6);
       }
     }
 
@@ -1135,7 +1155,7 @@
         wormholeTimer -= sec;
         if (wormholeTimer <= 0) {
           const a = rand(0, 6.28), dist = Math.max(DIAG * 0.9, 1400);
-          wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0,
+          wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0, sealed: true, bossDone: false,
             dust: Array.from({ length: 56 }, () => ({ a: rand(0, 6.28), r: rand(40, 200), s: rand(0.7, 1.5) })) };
           showBanner('SIGNAL DETECTED', 'FOLLOW THE ARROW', 3.2);
           sfx.signal();
@@ -1152,9 +1172,17 @@
           sfx.sonar(clamp(Math.cos(ang) * 0.85, -1, 1), near);
           sigWaves.push({ t: 0, a: ang });
         }
-        if (d < wormhole.r * 0.55) beginJump();
+        if (!boss && wormhole.sealed && !wormhole.bossDone && d < 950) spawnBoss();
+        if (wormhole.sealed && d < wormhole.r * 1.25 && d > 0.1) {       // the seal bounces you off
+          const push = wormhole.r * 1.25 - d;
+          cam.x -= (wormhole.x - sw.x) / d * push; cam.y -= (wormhole.y - sw.y) / d * push;
+          if (!wormhole.sealMsg || time - wormhole.sealMsg > 1.5) { wormhole.sealMsg = time; popup(sw.x, sw.y - 34, 'SEALED', HOSTILE); sfx.empty(); }
+        }
+        if (!wormhole.sealed && d < wormhole.r * 0.55) beginJump();
       }
     }
+    if (boss) updateBoss(dt, sec, sw);
+    updateBolts(dt, sec, sw);
     if (wormhole) for (const p of wormhole.dust) { // matter spiralling in
       p.a += (0.012 + 1.6 / p.r) * p.s * dt;
       p.r -= (0.25 + 40 / p.r) * p.s * dt;
@@ -1188,7 +1216,7 @@
         setSector(sectorIndex + 1);
         asteroids = []; orbs = []; planets = []; lasers = [];
         wormhole = null; wormholeTimer = rand(12, 16);   // next signal comes about as quickly as the first one
-        comets = []; warpEnergy = 1; warpLock = false; sigWaves = [];
+        comets = []; warpEnergy = 1; warpLock = false; sigWaves = []; boss = null; bossBolts = [];
         saveProgress();
         chordStep = 0; nextChord(); // music shifts key with the sector
       }
@@ -1217,6 +1245,22 @@
     shake = Math.max(0, shake - dt * 0.9);
     if (!jump || jump.t > 0.75) flash = Math.max(0, flash - sec * 1.4);
     if (bannerTimer > 0) { bannerTimer -= sec; if (bannerTimer <= 0) banner.classList.remove('show'); }
+  }
+
+  function hurtShip(amount) {
+    const sw = shipWorld();
+    ship.shield -= amount;
+    shake = reduceMotion ? 0 : Math.max(shake, 10 + amount * 0.2); flash = Math.max(flash, 0.22);
+    sfx.hit();
+    if (combo >= 3) popup(sw.x, sw.y - 30, 'COMBO LOST', '#ff5e7a');
+    combo = 0; comboTimer = 0;
+    ship.inv = 0.6; ship.hitT = 0.5;
+    if (ship.shield <= 0) {
+      explode(sw.x, sw.y, 70);
+      ring(sw.x, sw.y, 20, 4, sector.accent, 30);
+      ship.shield = 100; ship.inv = 2.5;
+      showBanner('HULL BREACH', 'SHIELDS REBOOTED', 2.4);
+    }
   }
 
   function comboMult() { return Math.min(5, 1 + Math.floor(combo / 3)); }
@@ -1318,7 +1362,19 @@
       quad(v(19, 3.4 * s, -0.4), v(19, 4.4 * s, -0.4), v(5, 4.4 * s, -0.4), v(5, 3.4 * s, -0.4), 'panel', up);
     }
 
-    // outward normals, fixed once in model space
+    meshNormals(V, F);
+    return { V, F, nozzles: [[-18.6, -6.8, -0.4], [-18.6, 6.8, -0.4]], lights: [[-10.5, -24.6, -0.9], [-10.5, 24.6, -0.9]], strobe: [-19, 0, 1] };
+  })();
+  const SHIP_COL = {
+    hull: [0.86, 0.88, 0.92], hullDark: [0.42, 0.46, 0.55], wing: [0.66, 0.7, 0.78], panel: [0.24, 0.27, 0.33],
+    pod: [0.38, 0.41, 0.48], intake: [0.05, 0.06, 0.08], fin: [0.74, 0.77, 0.84], glass: [0.05, 0.09, 0.17],
+  };
+  const SHIP_L = (() => { const l = [LIGHT2D.x, LIGHT2D.y, 0.75], m = Math.hypot(...l); return l.map(x => x / m); })();
+  const SHIP_H = (() => { const h = [SHIP_L[0], SHIP_L[1], SHIP_L[2] + 1], m = Math.hypot(...h); return h.map(x => x / m); })();
+  const SHIP_BOX = 120;             // css px of the offscreen canvas the model is drawn into
+
+  // outward normals, fixed once in model space (hint says roughly which way "out" is)
+  function meshNormals(V, F) {
     for (const face of F) {
       const [a, b, c] = face.idx.map(i => V[i]);
       const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
@@ -1331,59 +1387,51 @@
       if (n[0] * dir[0] + n[1] * dir[1] + n[2] * dir[2] < 0) n = n.map(x => -x);
       face.n = n;
     }
-    return { V, F, nozzles: [[-18.6, -6.8, -0.4], [-18.6, 6.8, -0.4]], lights: [[-10.5, -24.6, -0.9], [-10.5, 24.6, -0.9]], strobe: [-19, 0, 1] };
-  })();
-  const SHIP_COL = {
-    hull: [0.86, 0.88, 0.92], hullDark: [0.42, 0.46, 0.55], wing: [0.66, 0.7, 0.78], panel: [0.24, 0.27, 0.33],
-    pod: [0.38, 0.41, 0.48], intake: [0.05, 0.06, 0.08], fin: [0.74, 0.77, 0.84], glass: [0.05, 0.09, 0.17],
-  };
-  const SHIP_L = (() => { const l = [LIGHT2D.x, LIGHT2D.y, 0.75], m = Math.hypot(...l); return l.map(x => x / m); })();
-  const SHIP_H = (() => { const h = [SHIP_L[0], SHIP_L[1], SHIP_L[2] + 1], m = Math.hypot(...h); return h.map(x => x / m); })();
-  const SHIP_BOX = 120;             // css px of the offscreen canvas the model is drawn into
-  let shipCanvas = null, shipCtx = null, shipDpr = 0;
-  const tv = SHIP.V.map(() => [0, 0, 0]);  // transformed vertices, reused every frame
-  const shipOrder = SHIP.F.map((_, i) => i);
+  }
+  function makeMeshView(M, box) { return { M, box, canvas: null, g: null, dpr: 0, tv: M.V.map(() => [0, 0, 0]), order: M.F.map((_, i) => i) }; }
 
   // roll about the nose axis, then yaw into the heading; tiny perspective lifts parts nearer the camera
-  function shipXform(p, roll, ang, out) {
+  function meshXform(p, roll, ang, scale, out) {
     const cr = Math.cos(roll), sr = Math.sin(roll), ca = Math.cos(ang), sa = Math.sin(ang);
     const x = p[0], y = p[1] * cr - p[2] * sr, z = p[1] * sr + p[2] * cr;
-    const k = SHIP_SCALE * (1 + z * 0.012);
+    const k = scale * (1 + z * 0.012);
     out[0] = (x * ca - y * sa) * k; out[1] = (x * sa + y * ca) * k; out[2] = z;
     return out;
   }
+  function shipXform(p, roll, ang, out) { return meshXform(p, roll, ang, SHIP_SCALE, out); }
   function shipPoint(p, roll) { return shipXform(p, roll, ship.ang, [0, 0, 0]); }
   const rgb = (c, k) => `rgb(${Math.min(255, c[0] * k * 255) | 0},${Math.min(255, c[1] * k * 255) | 0},${Math.min(255, c[2] * k * 255) | 0})`;
 
-  function renderShipModel(roll) {
-    if (!shipCanvas || shipDpr !== DPR) {
-      shipDpr = DPR; shipCanvas = makeCanvas(Math.ceil(SHIP_BOX * DPR)); shipCtx = shipCanvas.getContext('2d');
-    }
-    const g = shipCtx;
+  // flat-shaded painter's-algorithm render of a mesh into its own offscreen canvas
+  // pal: color key -> [r,g,b] (lit) or { emit: [r,g,b] } (glows, unlit); 'acc' uses acc, 'nozzle' glows in acc
+  function renderMesh(view, ang, roll, scale, pal, acc) {
+    const M = view.M, box = view.box;
+    if (!view.canvas || view.dpr !== DPR) { view.dpr = DPR; view.canvas = makeCanvas(Math.ceil(box * DPR)); view.g = view.canvas.getContext('2d'); }
+    const g = view.g, tv = view.tv, order = view.order;
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, shipCanvas.width, shipCanvas.height);
-    g.setTransform(DPR, 0, 0, DPR, SHIP_BOX / 2 * DPR, SHIP_BOX / 2 * DPR);
-    const cr = Math.cos(roll), sr = Math.sin(roll), ca = Math.cos(ship.ang), sa = Math.sin(ship.ang);
-    SHIP.V.forEach((p, i) => shipXform(p, roll, ship.ang, tv[i]));
-    const depth = SHIP.F.map(fc => tv[fc.idx[0]][2] + tv[fc.idx[1]][2] + tv[fc.idx[2]][2]);
-    shipOrder.sort((a, b) => depth[a] - depth[b]);
-    const acc = hexRGB(sector.accent);
+    g.clearRect(0, 0, view.canvas.width, view.canvas.height);
+    g.setTransform(DPR, 0, 0, DPR, box / 2 * DPR, box / 2 * DPR);
+    const cr = Math.cos(roll), sr = Math.sin(roll), ca = Math.cos(ang), sa = Math.sin(ang);
+    M.V.forEach((p, i) => meshXform(p, roll, ang, scale, tv[i]));
+    const depth = M.F.map(fc => tv[fc.idx[0]][2] + tv[fc.idx[1]][2] + tv[fc.idx[2]][2]);
+    order.sort((a, b) => depth[a] - depth[b]);
     g.lineJoin = 'round';
-    for (const i of shipOrder) {
-      const fc = SHIP.F[i], n = fc.n;
-      // rotate the normal the same way (no perspective)
+    for (const i of order) {
+      const fc = M.F[i], n = fc.n;
       const ny0 = n[1] * cr - n[2] * sr, nz = n[1] * sr + n[2] * cr;
       const nx = n[0] * ca - ny0 * sa, ny = n[0] * sa + ny0 * ca;
       if (nz < -0.02) continue;                                   // facing away from the camera
       const ndl = Math.max(0, nx * SHIP_L[0] + ny * SHIP_L[1] + nz * SHIP_L[2]);
       const spec = Math.pow(Math.max(0, nx * SHIP_H[0] + ny * SHIP_H[1] + nz * SHIP_H[2]), fc.col === 'glass' ? 40 : 22);
-      let fill;
-      if (fc.col === 'nozzle') fill = rgb(acc.map(c => Math.min(1, c * 0.7 + 0.35)), 1);
+      const pc = pal[fc.col];
+      let fill, emissive = false;
+      if (fc.col === 'nozzle') { fill = rgb(acc.map(c => Math.min(1, c * 0.7 + 0.35)), 1); emissive = true; }
+      else if (pc && pc.emit) { fill = rgb(pc.emit, 1); emissive = true; }
       else {
-        const base = fc.col === 'acc' ? acc : SHIP_COL[fc.col];
+        const base = fc.col === 'acc' ? acc : pc;
         const k = fc.col === 'acc' ? 0.5 + 0.7 * ndl : 0.27 + 0.9 * ndl;
-        const s = fc.col === 'glass' ? 0.95 : fc.col === 'intake' ? 0 : 0.28;
-        let c = base.map(x => x * k + spec * s);
+        const sp = fc.col === 'glass' ? 0.95 : fc.col === 'intake' ? 0 : 0.28;
+        let c = base.map(x => x * k + spec * sp);
         if (fc.col === 'glass') c = c.map((x, j) => x + acc[j] * 0.22 * (1 - nz * 0.5));
         fill = rgb(c, 1);
       }
@@ -1391,12 +1439,14 @@
       g.fillStyle = fill; g.strokeStyle = fill; g.lineWidth = 0.5;
       g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(d[0], d[1]); g.closePath();
       g.fill(); g.stroke();                                        // same-color stroke closes hairline seams
-      if (fc.col !== 'glass' && fc.col !== 'nozzle') {
+      if (!emissive && fc.col !== 'glass') {
         g.strokeStyle = `rgba(255,255,255,${0.05 + ndl * 0.1})`; g.lineWidth = 0.35; g.stroke();   // faint facet edges
       }
     }
-    return shipCanvas;
+    return view.canvas;
   }
+  const shipView = makeMeshView(SHIP, SHIP_BOX);
+  function renderShipModel(roll) { return renderMesh(shipView, ship.ang, roll, SHIP_SCALE, SHIP_COL, hexRGB(sector.accent)); }
 
   function drawShip(x, y) {
     const acc = sector.accent;
@@ -1409,21 +1459,7 @@
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = blinkOut ? 0.45 : 1;
-    for (const nz of SHIP.nozzles) {
-      const p = shipPoint(nz, roll);
-      ctx.save(); ctx.translate(x + p[0], y + p[1]); ctx.rotate(ship.ang);
-      const B = 11 + fl * 0.3;
-      ctx.globalAlpha *= 0.55; ctx.drawImage(glowSprite(acc), -B, -B, B * 2, B * 2); ctx.globalAlpha /= 0.55;
-      const fg = ctx.createLinearGradient(0, 0, -fl, 0);
-      fg.addColorStop(0, hexA(acc, 0.95)); fg.addColorStop(0.4, hexA(acc, 0.45)); fg.addColorStop(1, hexA(acc, 0));
-      ctx.fillStyle = fg;
-      ctx.beginPath(); ctx.moveTo(0.5, -3); ctx.quadraticCurveTo(-fl * 0.5, -2.6, -fl, 0); ctx.quadraticCurveTo(-fl * 0.5, 2.6, 0.5, 3); ctx.closePath(); ctx.fill();
-      const cf = fl * 0.45, cg = ctx.createLinearGradient(0, 0, -cf, 0);
-      cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = cg;
-      ctx.beginPath(); ctx.moveTo(0.5, -1.4); ctx.quadraticCurveTo(-cf * 0.5, -1.2, -cf, 0); ctx.quadraticCurveTo(-cf * 0.5, 1.2, 0.5, 1.4); ctx.closePath(); ctx.fill();
-      ctx.restore();
-    }
+    for (const nz of SHIP.nozzles) { const p = shipPoint(nz, roll); drawPlume(x + p[0], y + p[1], ship.ang, fl, acc, 1); }
     ctx.restore();
 
     // the model itself (drawn offscreen so the damage blink fades it as one piece)
@@ -1459,6 +1495,315 @@
       ctx.beginPath(); ctx.arc(x, y, 32 + (1 - k) * 8, 0, 7); ctx.stroke();
       ctx.restore();
     }
+  }
+
+  // ---------- guardian boss ----------
+  // Warps in when you approach a signal; the wormhole stays sealed until it's destroyed.
+  // Tuned to be beatable: slow dodgeable bolts, modest damage, shots can be blocked or shot down.
+  const HOSTILE = '#ff4a4a';
+  const BOSS_SCALE = 2.2, BOSS_BOX = 200, BOSS_R = 54;
+  const BOSS = (() => {
+    const V = [], F = [];
+    const v = (x, y, z) => (V.push([x, y, z]), V.length - 1);
+    const f = (idx, col, hint) => F.push({ idx, col, hint });
+    // faceted arrowhead hull: raised spine, a ring of armour plates, glowing red chevron at the nose
+    const top = v(-1, 0, 7), bot = v(-1, 0, -4);
+    const rim = [v(20, 0, 1), v(12, 8, 1.6), v(6, 15, 1.2), v(-10, 14, 1.2), v(-18, 7, 1.4), v(-20, 0, 1.6), v(-18, -7, 1.4), v(-10, -14, 1.2), v(6, -15, 1.2), v(12, -8, 1.6)];
+    const inner = rim.map(i => { const p = V[i], t = V[top]; return v(t[0] + (p[0] - t[0]) * 0.5, t[1] + (p[1] - t[1]) * 0.5, (t[2] + p[2]) * 0.5 + 1.3); });
+    const hc = { center: [-1, 0, 1.5] };
+    const outerCols = ['trim', 'armor', 'hull', 'armor', 'hull', 'hull', 'hull', 'armor', 'hull', 'armor'];
+    const outerCols2 = ['hull', 'hull', 'armor', 'hull', 'armor', 'armor', 'armor', 'hull', 'armor', 'trim'];
+    rim.forEach((a, i) => {
+      const j = (i + 1) % rim.length, b = rim[j], ia = inner[i], ib = inner[j];
+      f([top, ia, ib], i % 2 ? 'armor' : 'hull', hc);
+      f([ia, a, b], outerCols[i], hc); f([ia, b, ib], outerCols2[i], hc);
+      f([bot, b, a], 'dark', hc);
+    });
+    for (const s of [-1, 1]) {
+      // mandible cannons
+      const B1 = v(4, 9 * s, 3), B2 = v(4, 16 * s, 0.8), B3 = v(4, 9 * s, -1.5), T = v(29, 11 * s, 0.9);
+      const ax = { axis: [11 * s, 0.8] };
+      f([B1, B2, T], 'armor', ax); f([B2, B3, T], 'dark', ax); f([B3, B1, T], 'hull', ax); f([B1, B3, B2], 'dark', [-1, 0, 0]);
+      // engine pods
+      const py = 10 * s, pz = 0, pax = { axis: [py, pz] };
+      const hex = (x, r) => Array.from({ length: 6 }, (_, k) => { const t = k * Math.PI / 3 + Math.PI / 6; return v(x, py + Math.cos(t) * r, pz + Math.sin(t) * r); });
+      const h1 = hex(-8, 2.6), h2 = hex(-12, 3.4), h3 = hex(-24, 3);
+      for (let k = 0; k < 6; k++) {
+        const k2 = (k + 1) % 6;
+        f([h1[k], h1[k2], h2[k2]], 'pod', pax); f([h1[k], h2[k2], h2[k]], 'pod', pax);
+        f([h2[k], h2[k2], h3[k2]], 'pod', pax); f([h2[k], h3[k2], h3[k]], 'pod', pax);
+      }
+      const rc = v(-24.4, py, pz);
+      for (let k = 0; k < 6; k++) f([rc, h3[k], h3[(k + 1) % 6]], 'enozzle', [-1, 0, 0]);
+    }
+    // reactor core on the spine: the glowing weak point
+    const cT = v(-2, 0, 12), cF = v(2, 0, 8), cB = v(-6, 0, 8), cL = v(-2, -4, 8), cR = v(-2, 4, 8);
+    const cc = { center: [-2, 0, 9] };
+    f([cT, cF, cR], 'core', cc); f([cT, cR, cB], 'core', cc); f([cT, cB, cL], 'core', cc); f([cT, cL, cF], 'core', cc);
+    meshNormals(V, F);
+    return { V, F, muzzles: [[30, -11, 0.9], [30, 11, 0.9]], nozzles: [[-24.8, -10, 0], [-24.8, 10, 0]], core: [-2, 0, 10] };
+  })();
+  const BOSS_COL = { hull: [0.3, 0.32, 0.38], armor: [0.48, 0.5, 0.57], dark: [0.12, 0.13, 0.16], pod: [0.3, 0.32, 0.38] };
+  const bossView = makeMeshView(BOSS, BOSS_BOX);
+  const BOSS_NAMES = ['SENTINEL', 'WARDEN', 'GATEKEEPER', 'OBELISK', 'HARBINGER', 'REVENANT', 'LEVIATHAN'];
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  const bossPt = (p, b) => meshXform(p, b.roll, b.ang, BOSS_SCALE, [0, 0, 0]);
+
+  function spawnBoss() {
+    const sw = shipWorld();
+    const dx = sw.x - wormhole.x, dy = sw.y - wormhole.y, d = Math.hypot(dx, dy) || 1;
+    const x = wormhole.x + dx / d * 260, y = wormhole.y + dy / d * 260;
+    const hp = 50 + 10 * Math.min(sectorIndex, 8);
+    boss = { x, y, vx: 0, vy: 0, ang: Math.atan2(sw.y - y, sw.x - x), roll: 0, hp, max: hp, hit: 0, t: 0,
+      fireT: 2.4, burst: 0, burstT: 0, side: 0, ringT: 6.5, strafe: Math.random() < 0.5 ? -1 : 1,
+      orbit: Math.atan2(y - sw.y, x - sw.x), dying: 0, boomT: 0, rammed: 0, lastHitSfx: 0,
+      name: pick(BOSS_NAMES) + ' MK-' + ROMAN[Math.min(sectorIndex, 8)] };
+    ring(x, y, 20, 7, HOSTILE, 34);
+    burst(x, y, 26, '#ff6a5a', 6, 40, 3);
+    addP({ k: 'g', x, y, vx: 0, vy: 0, max: 14, size: 150, col: '#ffffff', drag: 1 });
+    showBanner('WARNING', 'GUARDIAN INBOUND', 3, true);
+    $('boss-name').textContent = boss.name;
+    sfx.siren();
+  }
+
+  function damageBoss(n) {
+    const b = boss;
+    if (!b || b.dying) return;
+    b.hp -= n; b.hit = 1; score += 5 * n;
+    if (time - b.lastHitSfx > 0.07) { b.lastHitSfx = time; sfx.bossHit(); }
+    if (b.hp <= 0) {
+      b.hp = 0; b.dying = 1.5;
+      for (const bl of bossBolts) sparks(bl.x, bl.y, 4, '#ffb0a0', 3, 12);
+      bossBolts = [];
+      sfx.bossDown();
+    }
+  }
+
+  function finishBoss() {
+    const b = boss;
+    explode(b.x, b.y, 120, b.vx, b.vy);
+    ring(b.x, b.y, 30, 9, '#ffd9a0', 40);
+    ring(b.x, b.y, 20, 6, HOSTILE, 34);
+    flash = Math.max(flash, 0.55); shake = reduceMotion ? 0 : 16;
+    const pts = 1000 + 250 * Math.min(sectorIndex, 8);
+    score += pts;
+    popup(b.x, b.y - 40, '+' + pts, '#ffffff');
+    boss = null;
+    if (wormhole) {
+      wormhole.sealed = false; wormhole.bossDone = true;
+      ring(wormhole.x, wormhole.y, 50, 6, sector.accent, 36);
+      burst(wormhole.x, wormhole.y, 30, sector.accent, 5, 40, 3);
+    }
+    showBanner('GUARDIAN DESTROYED', 'THE WAY IS OPEN', 3.2);
+    setTimeout(sfx.unseal, 500);
+  }
+
+  function bossShot(from, ang, speed) {
+    bossBolts.push({ x: from.x, y: from.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 0 });
+  }
+
+  function updateBoss(dt, sec, sw) {
+    const b = boss;
+    b.t += sec; b.hit = Math.max(0, b.hit - sec * 5); b.rammed = Math.max(0, b.rammed - sec);
+    if (b.dying > 0) {                                         // chain explosions, then the big one
+      b.dying -= sec;
+      b.vx *= Math.pow(0.95, dt); b.vy *= Math.pow(0.95, dt);
+      b.x += b.vx * dt; b.y += b.vy * dt; b.ang += 0.02 * dt; b.roll += 0.03 * dt;
+      b.boomT -= sec;
+      if (b.boomT <= 0) {
+        b.boomT = 0.11;
+        explode(b.x + rand(-48, 48), b.y + rand(-48, 48), rand(20, 36), b.vx, b.vy);
+        sfx.boom(28); shake = reduceMotion ? 0 : Math.max(shake, 5);
+      }
+      if (b.dying <= 0) finishBoss();
+      return;
+    }
+    // hold a ring ~300px around the player and strafe, but stay near the wormhole it guards
+    b.orbit += b.strafe * 0.35 * sec;
+    const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
+    b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.98, dt));
+    let tx = sw.x + Math.cos(b.orbit) * 300, ty = sw.y + Math.sin(b.orbit) * 300;
+    const lx = tx - wormhole.x, ly = ty - wormhole.y, ld = Math.hypot(lx, ly);
+    if (ld > 620) { tx = wormhole.x + lx / ld * 620; ty = wormhole.y + ly / ld * 620; }
+    const ke = 1 - Math.pow(0.95, dt);
+    b.vx = lerp(b.vx, clamp((tx - b.x) * 0.025, -5, 5), ke);
+    b.vy = lerp(b.vy, clamp((ty - b.y) * 0.025, -5, 5), ke);
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (Math.random() < 0.004 * dt) b.strafe *= -1;
+    const want = Math.atan2(sw.y - b.y, sw.x - b.x), da = angDiff(b.ang, want);
+    b.ang += da * (1 - Math.pow(0.94, dt));
+    b.roll = lerp(b.roll, clamp(-da * 1.5 - b.strafe * 0.15, -0.5, 0.5), ke);
+
+    if (!playing || jump) return;
+    const phase2 = b.hp < b.max * 0.5;
+    // aimed three-shot bursts from alternating mandibles
+    b.fireT -= sec;
+    if (b.fireT <= 0 && !b.burst) { b.burst = 3; b.burstT = 0; b.fireT = phase2 ? 1.9 : 2.5; }
+    if (b.burst) {
+      b.burstT -= sec;
+      if (b.burstT <= 0) {
+        b.burstT = 0.15; b.burst--; b.side ^= 1;
+        const m = bossPt(BOSS.muzzles[b.side], b), from = { x: b.x + m[0], y: b.y + m[1] };
+        bossShot(from, Math.atan2(sw.y - from.y, sw.x - from.x), 4.2);
+        addP({ k: 'g', x: from.x, y: from.y, vx: b.vx, vy: b.vy, max: 7, size: 18, col: '#ff7a5a', drag: 1 });
+        sfx.bossFire();
+      }
+    }
+    // telegraphed ring of slow bolts from the core
+    b.ringT -= sec;
+    if (b.ringT <= 0.8 && !b.charging) { b.charging = true; sfx.charge(); }
+    if (b.ringT <= 0) {
+      b.charging = false; b.ringT = phase2 ? 5 : 7;
+      const c = bossPt(BOSS.core, b), n = phase2 ? 14 : 12, off = rand(0, 6.28);
+      for (let i = 0; i < n; i++) bossShot({ x: b.x + c[0], y: b.y + c[1] }, off + i / n * Math.PI * 2, 2.7);
+      ring(b.x + c[0], b.y + c[1], 10, 5, HOSTILE, 18);
+      sfx.bossRing();
+    }
+    // bumping into the hull pushes you off; warping into it does damage instead
+    const dsh = Math.hypot(sw.x - b.x, sw.y - b.y);
+    if (dsh < BOSS_R + 12 && dsh > 0.1) {
+      const nx = (sw.x - b.x) / dsh, ny = (sw.y - b.y) / dsh, push = BOSS_R + 12 - dsh;
+      cam.x += nx * push; cam.y += ny * push; cam.vx += nx * 3; cam.vy += ny * 3;
+      if (warp > 0.45) { if (!b.rammed) { b.rammed = 0.35; damageBoss(3); sfx.ram(); shake = reduceMotion ? 0 : 6; } }
+      else if (ship.inv <= 0) hurtShip(10);
+    }
+  }
+
+  function updateBolts(dt, sec, sw) {
+    for (let i = bossBolts.length - 1; i >= 0; i--) {
+      const bl = bossBolts[i];
+      bl.x += bl.vx * dt; bl.y += bl.vy * dt; bl.life += sec;
+      let dead = bl.life > 7;
+      for (const a of asteroids) {                               // rocks soak up shots
+        if (!dead && Math.hypot(a.x - bl.x, a.y - bl.y) < a.size * 0.8) { dead = true; sparks(bl.x, bl.y, 5, '#ffb0a0', 3, 12, a.vx, a.vy); a.hit = 0.6; }
+      }
+      if (!dead && playing && !jump && Math.hypot(sw.x - bl.x, sw.y - bl.y) < 15) {
+        dead = true;
+        sparks(bl.x, bl.y, 8, '#ffb0a0', 4, 14);
+        if (warp < 0.45 && ship.inv <= 0) hurtShip(12);
+      }
+      if (dead) bossBolts.splice(i, 1);
+    }
+  }
+
+  function drawPlume(x, y, ang, fl, col, w) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    const B = (11 + fl * 0.3) * w;
+    ctx.globalAlpha *= 0.55; ctx.drawImage(glowSprite(col), -B, -B, B * 2, B * 2); ctx.globalAlpha /= 0.55;
+    const fg = ctx.createLinearGradient(0, 0, -fl, 0);
+    fg.addColorStop(0, hexA(col, 0.95)); fg.addColorStop(0.4, hexA(col, 0.45)); fg.addColorStop(1, hexA(col, 0));
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.moveTo(0.5, -3 * w); ctx.quadraticCurveTo(-fl * 0.5, -2.6 * w, -fl, 0); ctx.quadraticCurveTo(-fl * 0.5, 2.6 * w, 0.5, 3 * w); ctx.closePath(); ctx.fill();
+    const cf = fl * 0.45, cg = ctx.createLinearGradient(0, 0, -cf, 0);
+    cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.moveTo(0.5, -1.4 * w); ctx.quadraticCurveTo(-cf * 0.5, -1.2 * w, -cf, 0); ctx.quadraticCurveTo(-cf * 0.5, 1.2 * w, 0.5, 1.4 * w); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBoss(ox, oy) {
+    const b = boss, x = b.x + ox, y = b.y + oy;
+    if (x < -160 || x > W + 160 || y < -160 || y > H + 160) return;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 6);
+    const charge = b.charging ? clamp(1 - b.ringT / 0.8, 0, 1) : 0;
+    const speed = Math.hypot(b.vx, b.vy);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const nz of BOSS.nozzles) { const p = bossPt(nz, b); drawPlume(x + p[0], y + p[1], b.ang, 14 + speed * 4, '#ff5a3a', 1.7); }
+    ctx.restore();
+    const pal = Object.assign({}, BOSS_COL, {
+      trim: { emit: [1, 0.22 + 0.18 * pulse, 0.2] },
+      core: { emit: [1, 0.35 + 0.2 * pulse + charge * 0.5, 0.2 + charge * 0.7] },
+      enozzle: { emit: [1, 0.5, 0.35] },
+    });
+    const img = renderMesh(bossView, b.ang, b.roll, BOSS_SCALE, pal, [1, 0.3, 0.3]);
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,60,60,0.45)'; ctx.shadowBlur = 16;
+    ctx.drawImage(img, x - BOSS_BOX / 2, y - BOSS_BOX / 2, BOSS_BOX, BOSS_BOX);
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    if (b.hit > 0) { ctx.globalAlpha = b.hit * 0.55; ctx.drawImage(img, x - BOSS_BOX / 2, y - BOSS_BOX / 2, BOSS_BOX, BOSS_BOX); }
+    const c = bossPt(BOSS.core, b), cs = 26 + pulse * 6 + charge * 46;
+    ctx.globalAlpha = 0.7 + charge * 0.3;
+    ctx.drawImage(glowSprite(charge > 0.5 ? '#ffd0b0' : '#ff5a3a'), x + c[0] - cs, y + c[1] - cs, cs * 2, cs * 2);
+    if (charge > 0) {                                            // telegraph: a ring closing in before the volley
+      ctx.globalAlpha = charge;
+      ctx.strokeStyle = HOSTILE; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x + c[0], y + c[1], 120 - charge * 90, 0, 7); ctx.stroke();
+    }
+    if (b.burst) for (const mz of BOSS.muzzles) { const p = bossPt(mz, b); ctx.globalAlpha = 0.8; ctx.drawImage(glowSprite('#ff7a5a'), x + p[0] - 10, y + p[1] - 10, 20, 20); }
+    ctx.restore();
+  }
+
+  function drawBolts(ox, oy) {
+    if (!bossBolts.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const gr = glowSprite('#ff4a3a'), gw = glowSprite('#ffffff');
+    ctx.strokeStyle = 'rgba(255,90,70,0.5)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (const bl of bossBolts) {
+      const x = bl.x + ox, y = bl.y + oy;
+      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - bl.vx * 4, y - bl.vy * 4); ctx.stroke();
+      const s = 13 + Math.sin(time * 20 + bl.life * 9) * 2;
+      ctx.drawImage(gr, x - s, y - s, s * 2, s * 2);
+      ctx.drawImage(gw, x - 4, y - 4, 8, 8);
+    }
+    ctx.restore();
+  }
+
+  // red marker on the screen edge when the guardian is out of view
+  function drawBossPointer(sx, sy) {
+    const m = 60;
+    if (sx > -20 && sx < W + 20 && sy > -20 && sy < H + 20) return;
+    const dx = sx - CX, dy = sy - CY, a = Math.atan2(dy, dx);
+    if (wormhole) {   // same direction as the (off-screen) signal beacon? that beacon already says GUARDIAN
+      const wx = wormhole.x + CX - cam.x, wy = wormhole.y + CY - cam.y;
+      const wOff = wx < 50 || wx > W - 50 || wy < 50 || wy > H - 50;
+      if (wOff && Math.abs(angDiff(a, Math.atan2(wy - CY, wx - CX))) < 0.45) return;
+    }
+    const k = Math.min((CX - m) / Math.abs(dx || 1e-6), (CY - m) / Math.abs(dy || 1e-6));
+    const hudW = Math.min(230, W * 0.38);
+    let ex = CX + dx * k, ey = CY + dy * k;
+    if (Math.abs(ey - m) < 1) ex = clamp(ex, hudW, W - hudW); else if (Math.abs(ey - (H - m)) >= 1) ey = clamp(ey, 190, Math.max(190, H - 100));
+    const pulse = 0.5 + 0.5 * Math.sin(time * 7);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.5 + 0.3 * pulse; ctx.drawImage(glowSprite(HOSTILE), ex - 30, ey - 30, 60, 60);
+    ctx.restore();
+    ctx.save();
+    chevron(ex, ey, a, 13, HOSTILE, 'rgba(3,2,16,0.75)');
+    pill(ex - Math.cos(a) * 70, ey - Math.sin(a) * 36, 'GUARDIAN', HOSTILE);
+    ctx.restore();
+  }
+
+  // hex-lattice force field over a sealed wormhole
+  function drawSeal(sx, sy) {
+    const r = wormhole.r * 0.98, p = 0.5 + 0.5 * Math.sin(time * 3);
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.fillStyle = 'rgba(40,6,12,0.5)';
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.clip();
+    ctx.strokeStyle = hexA('#ff6a5a', 0.16 + 0.12 * p); ctx.lineWidth = 1;
+    for (const a of [0, Math.PI / 3, -Math.PI / 3]) {
+      ctx.save(); ctx.rotate(a + time * 0.05);
+      ctx.beginPath();
+      for (let k = -r; k <= r; k += 14) { ctx.moveTo(-r, k); ctx.lineTo(r, k); }
+      ctx.stroke(); ctx.restore();
+    }
+    ctx.restore();
+    ctx.strokeStyle = hexA(HOSTILE, 0.6 + 0.3 * p); ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+    ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const a0 = time * 0.9 + i * Math.PI * 2 / 3;
+      ctx.beginPath(); ctx.arc(0, 0, r + 9, a0, a0 + 0.9); ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawWormhole(sx, sy) {
@@ -1620,25 +1965,29 @@
       ctx.shadowColor = acc; ctx.shadowBlur = 12;
       chevron(ex + Math.cos(a) * 3, ey + Math.sin(a) * 3, a, 15, '#ffffff');
       ctx.shadowBlur = 0;
-      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, 'SIGNAL ' + fmtDist(dist), acc);
+      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, (boss ? 'GUARDIAN ' : 'SIGNAL ') + fmtDist(dist), boss ? HOSTILE : acc);
       ctx.restore();
     } else {
       // target brackets around the wormhole once it's in view
       const R = wormhole.r * 1.45 + pulse * 6;
       ctx.save();
       ctx.translate(sx, sy); ctx.rotate(time * 0.5);
-      ctx.strokeStyle = hexA(acc, 0.95); ctx.lineWidth = 2.6; ctx.lineCap = 'round';
-      ctx.shadowColor = acc; ctx.shadowBlur = 10;
+      const bcol = wormhole.sealed ? HOSTILE : acc;
+      ctx.strokeStyle = hexA(bcol, 0.95); ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ctx.shadowColor = bcol; ctx.shadowBlur = 10;
       for (let i = 0; i < 4; i++) {
         ctx.rotate(Math.PI / 2);
         ctx.beginPath(); ctx.moveTo(R - 18, R); ctx.lineTo(R, R); ctx.lineTo(R, R - 18); ctx.stroke();
       }
       ctx.restore();
-      pill(sx, sy - R - 26, dist < 420 ? 'ENTER' : 'SIGNAL ' + fmtDist(dist), acc);
+      let py = sy - R - 26;
+      if (py < 180 && (sx < 330 || sx > W - 330)) py = sy + R + 26;     // keep clear of the corner HUD
+      pill(sx, py, wormhole.sealed ? (boss ? 'SEALED · DESTROY THE GUARDIAN' : 'SEALED') : dist < 420 ? 'ENTER' : 'SIGNAL ' + fmtDist(dist), wormhole.sealed ? HOSTILE : acc);
     }
 
     // compass arrow orbiting the ship: always right where you're looking
-    if (!(onScreen && dist < 320)) {
+    const bossInView = boss && boss.x + CX - cam.x > 0 && boss.x + CX - cam.x < W && boss.y + CY - cam.y > 0 && boss.y + CY - cam.y < H;
+    if (!(onScreen && dist < 320) && !bossInView) {
       const R0 = 60;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -1706,6 +2055,7 @@
     if (wormhole) {
       const wx = wormhole.x + ox, wy = wormhole.y + oy;
       if (!(GFX && GFX.lensOk && drawWormholeLens(wx, wy, shx, shy))) drawWormhole(wx, wy);
+      if (wormhole.sealed) drawSeal(wx, wy);
     }
 
     // orbs: energy core, halo and a tilted orbiting ring
@@ -1756,6 +2106,8 @@
       ctx.beginPath(); ctx.arc(-a.size * 0.3, a.size * 0.3, a.size * 0.12, 0, 7); ctx.fill();
       ctx.restore();
     }
+
+    if (boss) drawBoss(ox, oy);
 
     // particles: dust and rock chunks first (normal blending), then light (additive)
     const smoke = smokeSprite();
@@ -1809,6 +2161,7 @@
     const lg = glowSprite(sector.accent);
     for (const L of lasers) ctx.drawImage(lg, L.x + ox - 8, L.y + oy - 8, 16, 16);
     ctx.globalCompositeOperation = 'source-over';
+    drawBolts(ox, oy);
 
     if (ship.visible) drawShip(ship.sx, ship.sy);
 
@@ -1830,6 +2183,7 @@
     drawFlare();
 
     if (playing && wormhole && !jump) drawSignalGuide(wormhole.x + ox, wormhole.y + oy, Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y));
+    if (playing && boss && !boss.dying && !jump) drawBossPointer(boss.x + ox, boss.y + oy);
 
     // warp tunnel tint
     if (warp > 0.02) {
@@ -1860,7 +2214,11 @@
       $('h-sig-arrow').style.transform = `rotate(${Math.atan2(wormhole.y - s0.y, wormhole.x - s0.x)}rad)`;
       if (sigPrevD !== null) sigTrend = lerp(sigTrend, sigPrevD - d, 0.35);
       sigPrevD = d;
-      $('h-sig').textContent = fmtDist(d) + (sigTrend > 4 ? ' · closing' : sigTrend < -4 ? ' · drifting' : '');
+      $('h-sig').textContent = fmtDist(d) + (boss ? ' · guarded' : wormhole.sealed ? ' · sealed' : sigTrend > 4 ? ' · closing' : sigTrend < -4 ? ' · drifting' : '');
+    }
+    document.body.classList.toggle('boss-on', !!(boss && playing));
+    if (boss) {
+      $('boss-hp').style.width = (boss.hp / boss.max * 100) + '%';
     }
     const hc = $('h-combo');
     hc.classList.toggle('on', comboMult() > 1);
