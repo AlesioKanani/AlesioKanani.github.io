@@ -10,6 +10,8 @@
 | M | sound on/off |
 | Esc | land (your best score is saved in your browser) |
 
+The home screen has a **Skip to level** row: pick any of the seven sectors to start there. The ✓ Game completed badge is only awarded for a run that starts at level 1.
+
 When a **signal** is detected, an arrow orbits your ship pointing toward it, the screen edge on that side glows, a beacon shows the distance, and sonar pings come from its direction (faster and higher as you close in). The HUD shows its bearing, distance and whether you're closing. Get close and a **Guardian** warps in: the wormhole stays sealed until you destroy it. Each sector has its own: the spiked **Thornlord**, the staring **Oculus** eye, the spider-like **Widow** that lunges, the swooping scythe-winged **Reaper**, and the **Leviathan** serpent whose armoured body soaks up shots (hit the head for full damage). It circles you firing slow red bolts (dodge them, hide behind asteroids or shoot them down) and every few seconds charges a ring volley, telegraphed by its glowing core. Beat it, then fly into the wormhole to jump to the next sector.
 
 **Sector 6, The Maw**: a blood-red sky with an eclipsed sun, lightning and a heartbeat. Here **every Guardian comes out at once** (the Convergence): each one is weaker and fires less often, but they surround you.

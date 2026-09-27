@@ -89,9 +89,33 @@
   #start:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
   @keyframes ping { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35); } }
 
+  /* level select */
+  .levels { margin-top: 26px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .lv-k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
+  .lv-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .lv-row button {
+    position: relative; width: 38px; height: 38px; border-radius: 10px; cursor: pointer;
+    font: 700 14px 'Orbitron', sans-serif; color: var(--text);
+    background: rgba(8, 10, 30, 0.55); border: 1px solid var(--line);
+    transition: transform 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lv-row button::after {                                  /* the sector's color */
+    content: ''; position: absolute; left: 11px; right: 11px; bottom: 5px; height: 2px; border-radius: 2px;
+    background: var(--c); opacity: 0.75;
+  }
+  .lv-row button:hover, .lv-row button:focus-visible {
+    transform: translateY(-2px); border-color: var(--c); color: var(--c);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--c) 45%, transparent); outline: none;
+  }
+  .lv-row button.cur { border-color: var(--c); }
+  .lv-row button.boss { border-color: rgba(255, 90, 80, 0.4); }
+  .lv-row button.final { border-color: rgba(220, 228, 245, 0.5); background: linear-gradient(160deg, rgba(90, 96, 110, 0.45), rgba(8, 10, 30, 0.6)); }
+  .lv-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); min-height: 1.4em; }
+  .lv-name b { color: var(--text); font-weight: 600; }
+
   .controls {
     list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px;
-    margin-top: 44px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
+    margin-top: 30px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
   }
   .controls b {
     display: inline-block; color: var(--text); font-weight: 600; border: 1px solid var(--line);
@@ -202,7 +226,14 @@
   }
   body.playing #hint.show { opacity: 1; }
 
+  @media (max-height: 700px) {
+    .lede { margin: 16px auto 26px; }
+    .levels { margin-top: 18px; gap: 8px; }
+    .controls { margin-top: 20px; }
+  }
   @media (max-width: 560px) {
+    .lv-row { gap: 6px; }
+    .lv-row button { width: 36px; height: 36px; }
     .panel { font-size: 11px; }
     #h-score { font-size: 18px; }
     .bar { width: 90px; }
@@ -220,6 +251,11 @@
     <p class="lede">Press start and your cursor becomes a starship. Somewhere out there, a signal is waiting.</p>
     <button id="start" type="button">START</button>
     <p id="stats"></p>
+    <div class="levels" role="group" aria-labelledby="lv-k">
+      <div class="lv-k" id="lv-k">Skip to level</div>
+      <div class="lv-row" id="levels"></div>
+      <div class="lv-name" id="lv-name" aria-hidden="true"></div>
+    </div>
     <ul class="controls">
       <li><b>Move</b>steer</li>
       <li><b>Click</b>fire</li>
@@ -253,7 +289,7 @@
   <section id="ending" aria-live="polite">
     <p class="eyebrow">Journey complete</p>
     <h2 class="end-title">THE END</h2>
-    <p class="lede">The Sovereign has fallen and the Silver Dimension is silent. You crossed seven sectors and broke every Guardian in your way.</p>
+    <p class="lede" id="end-lede">The Sovereign has fallen and the Silver Dimension is silent. You crossed seven sectors and broke every Guardian in your way.</p>
     <div class="end-stats" id="end-stats"></div>
     <div class="end-actions"><button id="againBtn" type="button">PLAY AGAIN</button><button id="homeBtn" type="button" class="ghost">HOME</button></div>
     <p class="end-credit">made by Alesio Kanani</p>
@@ -360,6 +396,7 @@
   let lightning = [], lightT = 3, lightFlash = 0, hbT = 0, hbAt = -9, sheenT = 3, ripples = [];
   const keys = new Set();
   const TOUCH_OFFSET = 70; // keep the ship visible above a finger
+  let startSector = 0;                    // where this flight began (the level picker can skip ahead)
   let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best, completed = store.get('completed', false);
   let soundOn = store.get('sound', true);
 
@@ -951,7 +988,7 @@
 
   function saveProgress() {
     if (score > best) best = score;
-    bestSectors = Math.max(bestSectors, sectorIndex + 1);
+    bestSectors = Math.max(bestSectors, sectorIndex + 1 - startSector);
     if (best !== savedBest) { store.set('best', best); savedBest = best; }
     store.set('sectors', bestSectors);
   }
@@ -992,7 +1029,7 @@
     ship.visible = false;
     $('warpBtn').classList.remove('on');
     saveProgress();
-    renderStats();
+    renderStats(); markLevel();
     $('start').textContent = 'RESUME';
     applyVolume();
     $('start').focus({ preventScroll: true });
@@ -3194,7 +3231,11 @@
     ship.visible = false;
     document.body.classList.remove('playing', 'boss-on', 'has-signal');
     document.body.classList.add('ended');
-    saveProgress(); store.set('completed', true); completed = true;
+    saveProgress();
+    if (startSector === 0) { store.set('completed', true); completed = true; }     // the badge is for the whole journey
+    $('end-lede').textContent = startSector === 0
+      ? 'The Sovereign has fallen and the Silver Dimension is silent. You crossed seven sectors and broke every Guardian in your way.'
+      : `The Sovereign has fallen and the Silver Dimension is silent. You jumped in at level ${startSector + 1}; start from level 1 to cross all seven sectors.`;
     const m = Math.floor(playTime / 60), s = Math.floor(playTime % 60);
     $('end-stats').innerHTML = [['Score', score.toLocaleString()], ['Distance', (distance / 9000).toFixed(2) + ' ly'],
       ['Flight time', m + ':' + String(s).padStart(2, '0')], ['Guardians', guardiansDefeated]]
@@ -3202,21 +3243,54 @@
     applyVolume(); sfx.victory();
     setTimeout(() => $('againBtn').focus({ preventScroll: true }), 600);
   }
-  function newGame() {
+  function newGame(si = 0) {
     score = 0; distance = 0; combo = 0; comboTimer = 0; playTime = 0; guardiansDefeated = 0;
     bosses = []; bossBolts = []; bossWave = null; wormhole = null; wormholeTimer = 12; jump = null; launch = 0;
     asteroids = []; orbs = []; planets = []; lasers = []; particles = []; popups = []; comets = []; sigWaves = []; ripples = []; lightning = [];
     ship.shield = 100; ship.inv = 0; warpEnergy = 1; warpLock = false; endT = 0; gameOver = false; flash = 0;
     started = false;
-    setSector(0); populate(true);
+    setSector(si); startSector = si; populate(true);
     chordStep = 0; nextChord();
     $('start').textContent = 'START';
   }
   $('againBtn').addEventListener('click', e => { e.stopPropagation(); document.body.classList.remove('ended'); newGame(); start(); });
   $('homeBtn').addEventListener('click', e => {
     e.stopPropagation(); document.body.classList.remove('ended'); newGame();
-    intro.classList.remove('gone'); renderStats(); $('start').focus({ preventScroll: true });
+    intro.classList.remove('gone'); renderStats(); markLevel(); $('start').focus({ preventScroll: true });
   });
+
+  // ---------- level select ----------
+  const lvRow = $('levels'), lvName = $('lv-name');
+  const lvInfo = i => `<b>${String(i + 1).padStart(2, '0')} · ${SECTORS[i].name}</b>` +
+    (SECTORS[i].final ? ' · the final boss' : SECTORS[i].rush ? ' · every Guardian at once' : '');
+  const lvIdle = () => { lvName.innerHTML = started && playing === false && !gameOver ? 'starting a level ends this flight' : ''; };
+  SECTORS.forEach((sec, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = i + 1;
+    b.style.setProperty('--c', sec.accent);
+    if (sec.final) b.classList.add('final'); else if (sec.rush) b.classList.add('boss');
+    b.setAttribute('aria-label', `Start at level ${i + 1}: ${sec.name}`);
+    b.title = sec.name;
+    const show = () => { lvName.innerHTML = lvInfo(i); };
+    b.addEventListener('pointerenter', show); b.addEventListener('focus', show);
+    b.addEventListener('pointerleave', lvIdle); b.addEventListener('blur', lvIdle);
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      if (started) saveProgress();
+      newGame(i);
+      ship.sx = ship.tx = e.clientX || CX;
+      ship.sy = ship.ty = e.clientX ? touchY(e) : CY;
+      start();
+      b.blur();
+      if (sector.silver) { flash = 1.2; for (let k = 0; k < 4; k++) ripples.push({ t: -k * 0.35 }); sfx.crossing(); }
+      if (sector.rush) sfx.roar();
+    });
+    lvRow.appendChild(b);
+  });
+  function markLevel() {                         // outline the sector you'd resume in
+    [...lvRow.children].forEach((b, i) => b.classList.toggle('cur', started && i === sectorIndex % SECTORS.length));
+    lvIdle();
+  }
 
   // ---------- HUD + audio tick ----------
   let hudT = 0, saveTimer = 3;
