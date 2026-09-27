@@ -10,5 +10,5 @@
 | M | sound on/off |
 | Esc | land (your best score is saved in your browser) |
 
-Everything is one self-contained `index.html` (canvas + Web Audio, no build step). `og.jpg` is the link-preview image.
+No build step. `index.html` holds the game (canvas + Web Audio). `gfx.js` renders the realistic graphics with WebGL shaders: a tileable noise nebula with dark dust lanes, lit 3D planets (gas giants with storms and shadowed rings, ocean worlds with clouds and city lights, cratered moons, ice, desert and lava worlds), ray-marched tumbling asteroids, and gravitational lensing around the wormhole. If WebGL isn't available, the game falls back to simpler canvas drawing. `og.jpg` is the link-preview image.
 The previous site lives at [`puzzle.html`](https://alesiokanani.github.io/puzzle.html).
