@@ -118,6 +118,12 @@
   .panel.r { right: 16px; text-align: right; }
   .k { font-size: 10px; letter-spacing: 0.25em; color: var(--muted); margin-top: 8px; }
   .k:first-child { margin-top: 0; }
+  .sig { display: none; }
+  body.has-signal .sig { display: block; animation: sigIn 0.5s ease; }
+  #h-sig-line { color: var(--accent); font-weight: 600; white-space: nowrap; }
+  .sig-arrow { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; }
+  .sig-arrow svg { display: block; }
+  @keyframes sigIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
   #h-score { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent); }
   .bar { width: 120px; height: 5px; margin: 5px 0 0 auto; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 0.2s ease; }
@@ -189,6 +195,7 @@
   <div id="hud">
     <div class="panel l">
       <div class="k">SECTOR</div><div id="h-sector">01 · Cygnus Drift</div>
+      <div class="sig"><div class="k">SIGNAL</div><div id="h-sig-line"><span class="sig-arrow" id="h-sig-arrow"><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M1 1.5 L11.5 6 L1 10.5 L3.8 6 Z" fill="currentColor"/></svg></span><span id="h-sig">—</span></div></div>
       <div class="k">DISTANCE</div><div id="h-dist">0.00 ly</div>
       <div class="k">VELOCITY</div><div id="h-vel">0 km/s</div>
     </div>
@@ -293,6 +300,7 @@
   let jump = null;
   let warpEnergy = 1, warpLock = false, combo = 0, comboTimer = 0, distance = 0, started = false;
   let popups = [], comets = [], cometTimer = rand(3, 8);
+  let sigWaves = [], sigPingT = 0, sigPrevD = null, sigTrend = 0;   // signal sonar pulses + HUD trend
   const keys = new Set();
   const TOUCH_OFFSET = 70; // keep the ship visible above a finger
   let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best;
@@ -826,6 +834,17 @@
     hit: () => { noise(0.4, 0.4, 600, 40); tone('sawtooth', 160, 40, 0.35, 0.12); },
     warp: () => { tone('sawtooth', 60, 1400, 1.3, 0.09); noise(1.4, 0.2, 200, 4000); },
     signal: () => { tone('sine', 440, 440, 0.15, 0.08); setTimeout(() => tone('sine', 587, 587, 0.25, 0.08), 160); },
+    sonar: (pan, near) => {
+      if (!AC || !soundOn) return;
+      const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(), f = 520 + near * 420;
+      o.type = 'sine'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.985, t + 0.5);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o.connect(g);
+      let out = g;
+      if (AC.createStereoPanner) { const p = AC.createStereoPanner(); p.pan.value = pan; g.connect(p); out = p; }
+      out.connect(master); out.connect(echo);
+      o.start(t); o.stop(t + 0.75);
+    },
   };
 
   // ---------- UI ----------
@@ -1118,12 +1137,21 @@
           const a = rand(0, 6.28), dist = Math.max(DIAG * 0.9, 1400);
           wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0,
             dust: Array.from({ length: 56 }, () => ({ a: rand(0, 6.28), r: rand(40, 200), s: rand(0.7, 1.5) })) };
-          showBanner('SIGNAL DETECTED', 'FOLLOW THE BEACON', 3);
+          showBanner('SIGNAL DETECTED', 'FOLLOW THE ARROW', 3.2);
           sfx.signal();
+          sigPingT = 1.1; sigPrevD = null; sigTrend = 0;
         }
       } else {
         wormhole.t += sec;
         const d = Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y);
+        // sonar: pings come from the signal's side and speed up / rise in pitch as you close in
+        sigPingT -= sec;
+        if (sigPingT <= 0) {
+          const near = clamp(1 - d / 3000, 0, 1), ang = Math.atan2(wormhole.y - sw.y, wormhole.x - sw.x);
+          sigPingT = 2.6 - near * 1.8;
+          sfx.sonar(clamp(Math.cos(ang) * 0.85, -1, 1), near);
+          sigWaves.push({ t: 0, a: ang });
+        }
         if (d < wormhole.r * 0.55) beginJump();
       }
     }
@@ -1133,8 +1161,9 @@
       if (p.r < 22) { p.r = rand(150, 220); p.a = rand(0, 6.28); }
     }
 
-    // combo window, popups, comets
+    // combo window, popups, comets, sonar waves
     if (comboTimer > 0) { comboTimer -= sec; if (comboTimer <= 0) combo = 0; }
+    for (let i = sigWaves.length - 1; i >= 0; i--) { sigWaves[i].t += sec; if (sigWaves[i].t > 1.2) sigWaves.splice(i, 1); }
     for (let i = popups.length - 1; i >= 0; i--) {
       const p = popups[i]; p.life += sec; p.y -= 0.6 * dt;
       if (p.life > 1.1) popups.splice(i, 1);
@@ -1159,7 +1188,7 @@
         setSector(sectorIndex + 1);
         asteroids = []; orbs = []; planets = []; lasers = [];
         wormhole = null; wormholeTimer = rand(28, 40);
-        comets = []; warpEnergy = 1; warpLock = false;
+        comets = []; warpEnergy = 1; warpLock = false; sigWaves = [];
         saveProgress();
         chordStep = 0; nextChord(); // music shifts key with the sector
       }
@@ -1508,24 +1537,123 @@
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  function drawBeacon(sx, sy, dist) {
-    const m = 34;
-    if (sx > m && sx < W - m && sy > m && sy < H - m) return;
-    const dx = sx - CX, dy = sy - CY;
-    const t = Math.min((CX - m) / Math.abs(dx || 1e-6), (CY - m) / Math.abs(dy || 1e-6));
-    const ex = CX + dx * t, ey = CY + dy * t, a = Math.atan2(dy, dx);
-    const pulse = 0.6 + 0.4 * Math.sin(time * 5);
-    ctx.save();
-    ctx.translate(ex, ey); ctx.rotate(a);
-    ctx.fillStyle = hexA(sector.accent, pulse);
-    ctx.shadowColor = sector.accent; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-6, -8); ctx.lineTo(-2, 0); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill();
+  // ---------- signal guidance ----------
+  const fmtDist = d => (d >= 1000 ? (d / 1000).toFixed(1) + 'k' : Math.round(d) + '');
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function chevron(x, y, a, size, fill, outline) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(-size * 0.65, -size * 0.85); ctx.lineTo(-size * 0.2, 0); ctx.lineTo(-size * 0.65, size * 0.85); ctx.closePath();
+    if (outline) { ctx.strokeStyle = outline; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke(); }
+    ctx.fillStyle = fill; ctx.fill();
     ctx.restore();
-    ctx.font = '600 10px "JetBrains Mono", monospace';
-    ctx.fillStyle = hexA(sector.accent, 0.9);
-    ctx.textAlign = 'center';
-    ctx.fillText('SIGNAL ' + (dist / 1000).toFixed(1) + 'k', ex - Math.cos(a) * 26, ey - Math.sin(a) * 26 + 3);
-    ctx.textAlign = 'left';
+  }
+  function pill(x, y, text, acc) {
+    ctx.font = '700 12px "JetBrains Mono", monospace';
+    const w = ctx.measureText(text).width + 22;
+    ctx.fillStyle = 'rgba(3,2,16,0.75)'; roundRect(x - w / 2, y - 12, w, 24, 12); ctx.fill();
+    ctx.strokeStyle = hexA(acc, 0.85); ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y + 1);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  // sx, sy: wormhole on screen · dist: from the ship
+  function drawSignalGuide(sx, sy, dist) {
+    const acc = sector.accent;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 5);
+    const fresh = clamp(1 - wormhole.t / 3, 0, 1);          // extra flare right after detection
+    const m = 50;
+    const onScreen = sx > m && sx < W - m && sy > m && sy < H - m;
+    const bearing = Math.atan2(sy - ship.sy, sx - ship.sx);
+    const bc = Math.cos(bearing), bs = Math.sin(bearing);
+
+    // sonar wavefronts leaving the ship toward the signal (one per ping)
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.strokeStyle = acc;
+    for (const w of sigWaves) {
+      const k = w.t / 1.2, r = 36 + k * 280;
+      ctx.globalAlpha = (1 - k) * 0.9; ctx.lineWidth = 3.2 * (1 - k) + 0.6;
+      ctx.beginPath(); ctx.arc(ship.sx, ship.sy, r, w.a - 0.4, w.a + 0.4); ctx.stroke();
+      ctx.globalAlpha *= 0.5;
+      ctx.beginPath(); ctx.arc(ship.sx, ship.sy, r * 0.8, w.a - 0.28, w.a + 0.28); ctx.stroke();
+    }
+    ctx.restore();
+
+    if (!onScreen) {
+      const dx = sx - CX, dy = sy - CY, a = Math.atan2(dy, dx);
+      const k = Math.min((CX - m) / Math.abs(dx || 1e-6), (CY - m) / Math.abs(dy || 1e-6));
+      let ex = CX + dx * k, ey = CY + dy * k;
+      // slide the beacon along its edge so it never sits under the HUD corners or the button dock
+      const hudW = Math.min(230, W * 0.38), dockW = Math.min(300, W * 0.6);
+      if (Math.abs(ey - m) < 1) ex = clamp(ex, hudW, W - hudW);
+      else if (Math.abs(ey - (H - m)) < 1) ex = clamp(ex, m + 10, Math.max(m + 10, W - dockW));
+      else ey = clamp(ey, 190, Math.max(190, H - 100));
+      const k0 = Math.min(CX / Math.abs(dx || 1e-6), CY / Math.abs(dy || 1e-6));
+      const gx = CX + dx * k0, gy = CY + dy * k0;
+      // the screen edge on that side glows (flares when the signal first appears)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const R = 360 + fresh * 260;
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, R);
+      g.addColorStop(0, hexA(acc, Math.min(0.9, 0.45 + 0.2 * pulse + fresh * 0.35))); g.addColorStop(0.4, hexA(acc, 0.14 + 0.06 * pulse + fresh * 0.12)); g.addColorStop(1, hexA(acc, 0));
+      ctx.fillStyle = g; ctx.fillRect(gx - R, gy - R, R * 2, R * 2);
+      ctx.restore();
+
+      // beacon: dark backing disc for contrast, pulsing ring, bold arrow, chevrons streaming outward
+      ctx.save();
+      ctx.fillStyle = 'rgba(3,2,16,0.62)'; ctx.beginPath(); ctx.arc(ex, ey, 28, 0, 7); ctx.fill();
+      ctx.strokeStyle = hexA(acc, 0.65 + 0.35 * pulse); ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(ex, ey, 28 + pulse * 4, 0, 7); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.55 + 0.25 * pulse; ctx.drawImage(glowSprite(acc), ex - 46, ey - 46, 92, 92);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      for (let i = 0; i < 3; i++) {                              // chevrons flowing from screen center toward the edge
+        const ph = (time * 1.4 + i / 3) % 1;
+        ctx.globalAlpha = Math.sin(ph * Math.PI) * 0.85;
+        chevron(ex - Math.cos(a) * (70 - ph * 44), ey - Math.sin(a) * (70 - ph * 44), a, 8, acc, 'rgba(3,2,16,0.7)');
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowColor = acc; ctx.shadowBlur = 12;
+      chevron(ex + Math.cos(a) * 3, ey + Math.sin(a) * 3, a, 15, '#ffffff');
+      ctx.shadowBlur = 0;
+      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, 'SIGNAL ' + fmtDist(dist), acc);
+      ctx.restore();
+    } else {
+      // target brackets around the wormhole once it's in view
+      const R = wormhole.r * 1.45 + pulse * 6;
+      ctx.save();
+      ctx.translate(sx, sy); ctx.rotate(time * 0.5);
+      ctx.strokeStyle = hexA(acc, 0.95); ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ctx.shadowColor = acc; ctx.shadowBlur = 10;
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath(); ctx.moveTo(R - 18, R); ctx.lineTo(R, R); ctx.lineTo(R, R - 18); ctx.stroke();
+      }
+      ctx.restore();
+      pill(sx, sy - R - 26, dist < 420 ? 'ENTER' : 'SIGNAL ' + fmtDist(dist), acc);
+    }
+
+    // compass arrow orbiting the ship: always right where you're looking
+    if (!(onScreen && dist < 320)) {
+      const R0 = 60;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.5; ctx.drawImage(glowSprite(acc), ship.sx + bc * R0 - 18, ship.sy + bs * R0 - 18, 36, 36);
+      ctx.restore();
+      ctx.save();
+      for (let i = 0; i < 2; i++) {
+        const ph = (time * 1.6 + i / 2) % 1;
+        ctx.globalAlpha = (1 - ph) * 0.8;
+        chevron(ship.sx + bc * (R0 + 12 + ph * 22), ship.sy + bs * (R0 + 12 + ph * 22), bearing, 6, acc, 'rgba(3,2,16,0.6)');
+      }
+      ctx.globalAlpha = 1;
+      chevron(ship.sx + bc * R0, ship.sy + bs * R0, bearing, 10, '#ffffff', hexA(acc, 0.9));
+      ctx.restore();
+    }
   }
 
   function draw() {
@@ -1701,7 +1829,7 @@
     drawStarLayer(dustLayer);
     drawFlare();
 
-    if (playing && wormhole && !jump) drawBeacon(wormhole.x + ox, wormhole.y + oy, Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y));
+    if (playing && wormhole && !jump) drawSignalGuide(wormhole.x + ox, wormhole.y + oy, Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y));
 
     // warp tunnel tint
     if (warp > 0.02) {
@@ -1725,6 +1853,15 @@
     $('h-warp').style.width = (warpEnergy * 100) + '%';
     $('b-warp').classList.toggle('low', warpLock);
     $('b-shield').classList.toggle('low', ship.shield < 35);
+    const hasSig = playing && wormhole && !jump;
+    document.body.classList.toggle('has-signal', !!hasSig);
+    if (hasSig) {
+      const s0 = shipWorld(), d = Math.hypot(wormhole.x - s0.x, wormhole.y - s0.y);
+      $('h-sig-arrow').style.transform = `rotate(${Math.atan2(wormhole.y - s0.y, wormhole.x - s0.x)}rad)`;
+      if (sigPrevD !== null) sigTrend = lerp(sigTrend, sigPrevD - d, 0.35);
+      sigPrevD = d;
+      $('h-sig').textContent = fmtDist(d) + (sigTrend > 4 ? ' · closing' : sigTrend < -4 ? ' · drifting' : '');
+    }
     const hc = $('h-combo');
     hc.classList.toggle('on', comboMult() > 1);
     if (comboMult() > 1) hc.textContent = 'COMBO ×' + comboMult();
