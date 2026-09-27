@@ -1187,7 +1187,7 @@
         jump.swapped = true;
         setSector(sectorIndex + 1);
         asteroids = []; orbs = []; planets = []; lasers = [];
-        wormhole = null; wormholeTimer = rand(28, 40);
+        wormhole = null; wormholeTimer = rand(12, 16);   // next signal comes about as quickly as the first one
         comets = []; warpEnergy = 1; warpLock = false; sigWaves = [];
         saveProgress();
         chordStep = 0; nextChord(); // music shifts key with the sector
