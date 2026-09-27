@@ -1015,9 +1015,10 @@
     if (ship.visible) {
       const n = Math.min(4, 0.8 + speed * 0.2) * dt;
       const pw = ship.lastWorld || sw;
+      const side = 9.5 * Math.cos(ship.bank * 0.95);   // nacelle offset, foreshortened when banking
       for (let i = 0; i < n; i++) {
-        const back = rand(2, 4), u = Math.random();   // spread along this frame's path so fast flight leaves a continuous trail
-        addP({ k: 'g', x: lerp(pw.x, sw.x, u) - hcos * 18 + rand(-1.5, 1.5), y: lerp(pw.y, sw.y, u) - hsin * 18 + rand(-1.5, 1.5),
+        const back = rand(2, 4), u = Math.random(), e = Math.random() < 0.5 ? -side : side;   // alternate engines; spread along this frame's path
+        addP({ k: 'g', x: lerp(pw.x, sw.x, u) - hcos * 27 - hsin * e + rand(-1, 1), y: lerp(pw.y, sw.y, u) - hsin * 27 + hcos * e + rand(-1, 1),
           vx: -hcos * back + rand(-0.35, 0.35), vy: -hsin * back + rand(-0.35, 0.35),
           max: rand(12, 22) * (1 + warp * 0.6), size: rand(3, 5.5), col: Math.random() < 0.7 ? sector.accent : '#ffffff', drag: 0.94 });
       }
@@ -1029,8 +1030,8 @@
     if (playing && firing && fireCooldown <= 0 && !jump) {
       fireCooldown = 0.13;
       for (const side of [-1, 1]) {
-        const ox = -hsin * 7 * side, oy = hcos * 7 * side;
-        lasers.push({ x: sw.x + hcos * 14 + ox, y: sw.y + hsin * 14 + oy, vx: hcos * 17 + cam.vx, vy: hsin * 17 + cam.vy, life: 0 });
+        const ox = -hsin * 5.5 * side, oy = hcos * 5.5 * side;   // from the cannon muzzles beside the nose
+        lasers.push({ x: sw.x + hcos * 27 + ox, y: sw.y + hsin * 27 + oy, vx: hcos * 17 + cam.vx, vy: hsin * 17 + cam.vy, life: 0 });
       }
       sfx.laser();
     }
@@ -1222,95 +1223,199 @@
   }
 
   // ---------- draw ----------
+  // ---------- ship: a small low-poly 3D model, flat-shaded by the sector's star ----------
+  // Model space: x = forward, y = starboard, z = up (toward the camera). Units are ~px before SHIP_SCALE.
+  const SHIP_SCALE = 1.4;
+  const SHIP = (() => {
+    const V = [], F = [];
+    const v = (x, y, z) => (V.push([x, y, z]), V.length - 1);
+    // hint: a vector the outward normal should roughly agree with, or { axis: [y, z] } for round parts
+    const f = (idx, col, hint) => F.push({ idx, col, hint });
+    const quad = (a, b, c, d, col, hint) => { f([a, b, c], col, hint); f([a, c, d], col, hint); };
+
+    // fuselage: nose, three diamond rings, tail point
+    const N = v(26, 0, 0.2);
+    const ring = (x, w, top, bot) => ({ T: v(x, 0, top), R: v(x, w, 0.6), B: v(x, 0, bot), L: v(x, -w, 0.6) });
+    const r1 = ring(11, 3.6, 3.4, -2.2), r2 = ring(-2, 5.2, 4.2, -2.8), r3 = ring(-14, 4.2, 3.2, -2.2);
+    const Tp = v(-18, 0, 0.8);
+    const ax = { axis: [0, 0.6] };
+    f([N, r1.T, r1.R], 'hull', ax); f([N, r1.L, r1.T], 'hull', ax);
+    f([N, r1.R, r1.B], 'hullDark', ax); f([N, r1.B, r1.L], 'hullDark', ax);
+    for (const [a, b, top] of [[r1, r2, 'hull'], [r2, r3, 'panel']]) {
+      quad(a.T, a.R, b.R, b.T, top, ax); quad(a.L, a.T, b.T, b.L, top, ax);
+      quad(a.R, a.B, b.B, b.R, 'hullDark', ax); quad(a.B, a.L, b.L, b.B, 'hullDark', ax);
+    }
+    f([Tp, r3.T, r3.R], 'panel', ax); f([Tp, r3.L, r3.T], 'panel', ax);
+    f([Tp, r3.R, r3.B], 'hullDark', ax); f([Tp, r3.B, r3.L], 'hullDark', ax);
+
+    // canopy
+    const K1 = v(14, 0, 3.1), K2 = v(4, -2.6, 4.2), K3 = v(4, 2.6, 4.2), Kt = v(5, 0, 6.1), K4 = v(-4, 0, 4.9);
+    const up = [0, 0, 1], down = [0, 0, -1];
+    const kc = { center: [5, 0, 3.4] };
+    f([K1, K2, Kt], 'glass', kc); f([K1, Kt, K3], 'glass', kc); f([K2, K4, Kt], 'glass', kc); f([Kt, K4, K3], 'glass', kc);
+
+    for (const s of [-1, 1]) {
+      // cranked delta wing with a raised spine for facets
+      const A = v(5, 4.4 * s, 0.4), Bk = v(-2, 10.5 * s, 0.1), Ct = v(-8, 24 * s, -0.9), Dt = v(-13, 24.2 * s, -0.9);
+      const Et = v(-13, 8 * s, 0.2), Er = v(-12, 4.6 * s, 0.4), RA = v(-1, 6.5 * s, 1.4), RB = v(-8.5, 15.5 * s, 0.7);
+      f([A, Bk, RA], 'hull', up); f([Bk, RB, RA], 'panel', up); f([Bk, Ct, RB], 'acc', up); f([RB, Ct, Dt], 'hull', up);
+      f([RB, Dt, Et], 'wing', up); f([RA, RB, Et], 'panel', up); f([RA, Et, Er], 'wing', up); f([A, RA, Er], 'wing', up);
+      f([A, Bk, Ct], 'hullDark', down); f([A, Ct, Dt], 'hullDark', down); f([A, Dt, Et], 'hullDark', down); f([A, Et, Er], 'hullDark', down);
+
+      // canard foreplanes
+      const C1 = v(15, 3 * s, 0.9), C2 = v(8.5, 8.8 * s, 0.3), C3 = v(7, 3.6 * s, 0.9);
+      f([C1, C2, C3], 'wing', up); f([C1, C2, C3], 'hullDark', down);
+
+      // engine nacelle: tapered hexagonal prism with a dark intake and a glowing nozzle
+      const py = 6.8 * s, pz = -0.4, pax = { axis: [py, pz] };
+      const hex = (x, r) => Array.from({ length: 6 }, (_, k) => { const t = k * Math.PI / 3 + Math.PI / 6; return v(x, py + Math.cos(t) * r, pz + Math.sin(t) * r); });
+      const h1 = hex(-1, 2.0), h2 = hex(-6, 2.7), h3 = hex(-18, 2.4);
+      for (let k = 0; k < 6; k++) {
+        const k2 = (k + 1) % 6;
+        quad(h1[k], h1[k2], h2[k2], h2[k], 'pod', pax);
+        quad(h2[k], h2[k2], h3[k2], h3[k], 'pod', pax);
+      }
+      const fc = v(-0.4, py, pz), rc = v(-18.4, py, pz);
+      for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; f([fc, h1[k2], h1[k]], 'intake', [1, 0, 0]); f([rc, h3[k], h3[k2]], 'nozzle', [-1, 0, 0]); }
+
+      // canted tail fin (two-sided), tipped in the accent color
+      const F1 = v(-6, 2.2 * s, 3.4), F2 = v(-15, 2.6 * s, 2.8), F3 = v(-20.5, 10.5 * s, 8.6), F4 = v(-14, 9.4 * s, 8.8);
+      const mid = (a, b, t) => v(...V[a].map((c, i) => c + (V[b][i] - c) * t));
+      const F5 = mid(F1, F4, 0.72), F6 = mid(F2, F3, 0.72);
+      for (const hint of [[0, -6 * s, 8], [0, 6 * s, -8]]) {
+        f([F1, F2, F6], 'fin', hint); f([F1, F6, F5], 'fin', hint); f([F5, F6, F3], 'acc', hint); f([F5, F3, F4], 'acc', hint);
+      }
+      // cannon barrel along the fuselage side
+      quad(v(19, 3.4 * s, -0.4), v(19, 4.4 * s, -0.4), v(5, 4.4 * s, -0.4), v(5, 3.4 * s, -0.4), 'panel', up);
+    }
+
+    // outward normals, fixed once in model space
+    for (const face of F) {
+      const [a, b, c] = face.idx.map(i => V[i]);
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      let n = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+      const m = Math.hypot(...n) || 1; n = n.map(x => x / m);
+      const cen = [0, 1, 2].map(i => (a[i] + b[i] + c[i]) / 3);
+      let dir = face.hint;
+      if (dir.axis) dir = [0, cen[1] - dir.axis[0], cen[2] - dir.axis[1]];
+      else if (dir.center) dir = cen.map((x, i) => x - dir.center[i]);
+      if (n[0] * dir[0] + n[1] * dir[1] + n[2] * dir[2] < 0) n = n.map(x => -x);
+      face.n = n;
+    }
+    return { V, F, nozzles: [[-18.6, -6.8, -0.4], [-18.6, 6.8, -0.4]], lights: [[-10.5, -24.6, -0.9], [-10.5, 24.6, -0.9]], strobe: [-19, 0, 1] };
+  })();
+  const SHIP_COL = {
+    hull: [0.86, 0.88, 0.92], hullDark: [0.42, 0.46, 0.55], wing: [0.66, 0.7, 0.78], panel: [0.24, 0.27, 0.33],
+    pod: [0.38, 0.41, 0.48], intake: [0.05, 0.06, 0.08], fin: [0.74, 0.77, 0.84], glass: [0.05, 0.09, 0.17],
+  };
+  const SHIP_L = (() => { const l = [LIGHT2D.x, LIGHT2D.y, 0.75], m = Math.hypot(...l); return l.map(x => x / m); })();
+  const SHIP_H = (() => { const h = [SHIP_L[0], SHIP_L[1], SHIP_L[2] + 1], m = Math.hypot(...h); return h.map(x => x / m); })();
+  const SHIP_BOX = 120;             // css px of the offscreen canvas the model is drawn into
+  let shipCanvas = null, shipCtx = null, shipDpr = 0;
+  const tv = SHIP.V.map(() => [0, 0, 0]);  // transformed vertices, reused every frame
+  const shipOrder = SHIP.F.map((_, i) => i);
+
+  // roll about the nose axis, then yaw into the heading; tiny perspective lifts parts nearer the camera
+  function shipXform(p, roll, ang, out) {
+    const cr = Math.cos(roll), sr = Math.sin(roll), ca = Math.cos(ang), sa = Math.sin(ang);
+    const x = p[0], y = p[1] * cr - p[2] * sr, z = p[1] * sr + p[2] * cr;
+    const k = SHIP_SCALE * (1 + z * 0.012);
+    out[0] = (x * ca - y * sa) * k; out[1] = (x * sa + y * ca) * k; out[2] = z;
+    return out;
+  }
+  function shipPoint(p, roll) { return shipXform(p, roll, ship.ang, [0, 0, 0]); }
+  const rgb = (c, k) => `rgb(${Math.min(255, c[0] * k * 255) | 0},${Math.min(255, c[1] * k * 255) | 0},${Math.min(255, c[2] * k * 255) | 0})`;
+
+  function renderShipModel(roll) {
+    if (!shipCanvas || shipDpr !== DPR) {
+      shipDpr = DPR; shipCanvas = makeCanvas(Math.ceil(SHIP_BOX * DPR)); shipCtx = shipCanvas.getContext('2d');
+    }
+    const g = shipCtx;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, shipCanvas.width, shipCanvas.height);
+    g.setTransform(DPR, 0, 0, DPR, SHIP_BOX / 2 * DPR, SHIP_BOX / 2 * DPR);
+    const cr = Math.cos(roll), sr = Math.sin(roll), ca = Math.cos(ship.ang), sa = Math.sin(ship.ang);
+    SHIP.V.forEach((p, i) => shipXform(p, roll, ship.ang, tv[i]));
+    const depth = SHIP.F.map(fc => tv[fc.idx[0]][2] + tv[fc.idx[1]][2] + tv[fc.idx[2]][2]);
+    shipOrder.sort((a, b) => depth[a] - depth[b]);
+    const acc = hexRGB(sector.accent);
+    g.lineJoin = 'round';
+    for (const i of shipOrder) {
+      const fc = SHIP.F[i], n = fc.n;
+      // rotate the normal the same way (no perspective)
+      const ny0 = n[1] * cr - n[2] * sr, nz = n[1] * sr + n[2] * cr;
+      const nx = n[0] * ca - ny0 * sa, ny = n[0] * sa + ny0 * ca;
+      if (nz < -0.02) continue;                                   // facing away from the camera
+      const ndl = Math.max(0, nx * SHIP_L[0] + ny * SHIP_L[1] + nz * SHIP_L[2]);
+      const spec = Math.pow(Math.max(0, nx * SHIP_H[0] + ny * SHIP_H[1] + nz * SHIP_H[2]), fc.col === 'glass' ? 40 : 22);
+      let fill;
+      if (fc.col === 'nozzle') fill = rgb(acc.map(c => Math.min(1, c * 0.7 + 0.35)), 1);
+      else {
+        const base = fc.col === 'acc' ? acc : SHIP_COL[fc.col];
+        const k = fc.col === 'acc' ? 0.5 + 0.7 * ndl : 0.27 + 0.9 * ndl;
+        const s = fc.col === 'glass' ? 0.95 : fc.col === 'intake' ? 0 : 0.28;
+        let c = base.map(x => x * k + spec * s);
+        if (fc.col === 'glass') c = c.map((x, j) => x + acc[j] * 0.22 * (1 - nz * 0.5));
+        fill = rgb(c, 1);
+      }
+      const [a, b, d] = fc.idx.map(j => tv[j]);
+      g.fillStyle = fill; g.strokeStyle = fill; g.lineWidth = 0.5;
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(d[0], d[1]); g.closePath();
+      g.fill(); g.stroke();                                        // same-color stroke closes hairline seams
+      if (fc.col !== 'glass' && fc.col !== 'nozzle') {
+        g.strokeStyle = `rgba(255,255,255,${0.05 + ndl * 0.1})`; g.lineWidth = 0.35; g.stroke();   // faint facet edges
+      }
+    }
+    return shipCanvas;
+  }
+
   function drawShip(x, y) {
     const acc = sector.accent;
+    const roll = -ship.bank * 0.95 + Math.sin(time * 1.3) * 0.035;   // bank into turns, gentle idle sway
+    const hc = Math.cos(ship.ang), hs = Math.sin(ship.ang);
+    const blinkOut = ship.inv > 0 && Math.floor(time * 14) % 2 === 0 && ship.inv < 2.4;
+
+    // twin engine plumes behind the nacelles
+    const fl = 7 + Math.min(ship.speed, 30) * 1.4 + warp * 24 + Math.random() * 4;
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(ship.ang);
-    ctx.scale(1.35, 1.35 * (1 - Math.abs(ship.bank) * 0.35));
-    if (ship.inv > 0 && Math.floor(time * 14) % 2 === 0 && ship.inv < 2.4) ctx.globalAlpha = 0.45;
-    const baseAlpha = ctx.globalAlpha;
-    // light direction expressed in the ship's rotated frame, so shading stays tied to the star
-    const ca = Math.cos(-ship.ang), sa = Math.sin(-ship.ang);
-    const lx = LIGHT2D.x * ca - LIGHT2D.y * sa, ly = LIGHT2D.x * sa + LIGHT2D.y * ca;
-    const litGrad = (cx, cy, r, stops) => {
-      const g = ctx.createLinearGradient(cx + lx * r, cy + ly * r, cx - lx * r, cy - ly * r);
-      stops.forEach((c, i) => g.addColorStop(i / (stops.length - 1), c));
-      return g;
-    };
-
-    // engine: bloom, outer plume, white-hot core
-    const fl = 8 + Math.min(ship.speed, 30) * 1.6 + warp * 26 + Math.random() * 5;
     ctx.globalCompositeOperation = 'lighter';
-    const B = 14 + fl * 0.35;
-    ctx.globalAlpha = baseAlpha * 0.6;
-    ctx.drawImage(glowSprite(acc), -14 - B, -B, B * 2, B * 2);
-    ctx.globalAlpha = baseAlpha;
-    const fg = ctx.createLinearGradient(-12, 0, -12 - fl, 0);
-    fg.addColorStop(0, hexA(acc, 0.95)); fg.addColorStop(0.4, hexA(acc, 0.5)); fg.addColorStop(1, hexA(acc, 0));
-    ctx.fillStyle = fg;
-    ctx.beginPath(); ctx.moveTo(-11, -4.8);
-    ctx.quadraticCurveTo(-12 - fl * 0.5, -4.2, -12 - fl, 0);
-    ctx.quadraticCurveTo(-12 - fl * 0.5, 4.2, -11, 4.8); ctx.closePath(); ctx.fill();
-    const cf = fl * 0.45;
-    const cgr = ctx.createLinearGradient(-11, 0, -12 - cf, 0);
-    cgr.addColorStop(0, 'rgba(255,255,255,1)'); cgr.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = cgr;
-    ctx.beginPath(); ctx.moveTo(-11, -2.2);
-    ctx.quadraticCurveTo(-12 - cf * 0.5, -1.8, -12 - cf, 0);
-    ctx.quadraticCurveTo(-12 - cf * 0.5, 1.8, -11, 2.2); ctx.closePath(); ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = blinkOut ? 0.45 : 1;
+    for (const nz of SHIP.nozzles) {
+      const p = shipPoint(nz, roll);
+      ctx.save(); ctx.translate(x + p[0], y + p[1]); ctx.rotate(ship.ang);
+      const B = 11 + fl * 0.3;
+      ctx.globalAlpha *= 0.55; ctx.drawImage(glowSprite(acc), -B, -B, B * 2, B * 2); ctx.globalAlpha /= 0.55;
+      const fg = ctx.createLinearGradient(0, 0, -fl, 0);
+      fg.addColorStop(0, hexA(acc, 0.95)); fg.addColorStop(0.4, hexA(acc, 0.45)); fg.addColorStop(1, hexA(acc, 0));
+      ctx.fillStyle = fg;
+      ctx.beginPath(); ctx.moveTo(0.5, -3); ctx.quadraticCurveTo(-fl * 0.5, -2.6, -fl, 0); ctx.quadraticCurveTo(-fl * 0.5, 2.6, 0.5, 3); ctx.closePath(); ctx.fill();
+      const cf = fl * 0.45, cg = ctx.createLinearGradient(0, 0, -cf, 0);
+      cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.moveTo(0.5, -1.4); ctx.quadraticCurveTo(-cf * 0.5, -1.2, -cf, 0); ctx.quadraticCurveTo(-cf * 0.5, 1.2, 0.5, 1.4); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
 
-    // wings: brushed metal lit from the star, with a lit leading edge
-    ctx.fillStyle = litGrad(-4, 0, 20, ['#9aa4cf', '#4b5588', '#1a1f40']);
-    for (const s of [-1, 1]) {
-      ctx.beginPath(); ctx.moveTo(6, 3 * s); ctx.lineTo(-10, 20 * s); ctx.lineTo(-15, 19 * s); ctx.lineTo(-10, 5 * s); ctx.closePath();
-      ctx.fill();
-      // leading-edge normal (pointing forward/outward) vs light
-      const nx = 17, ny = 16 * s;                       // outward normal of edge (-16, 17s)
-      const nl = Math.hypot(nx, ny), facing = Math.max(0, (nx * lx + ny * ly) / nl);
-      ctx.strokeStyle = `rgba(235,242,255,${0.15 + facing * 0.6})`; ctx.lineWidth = 0.9;
-      ctx.beginPath(); ctx.moveTo(6, 3 * s); ctx.lineTo(-10, 20 * s); ctx.stroke();
-      ctx.strokeStyle = hexA(acc, 0.85); ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(-10.5, 19.2 * s); ctx.lineTo(-14.5, 18.8 * s); ctx.stroke();
-    }
-    // hull
-    ctx.fillStyle = litGrad(4, 0, 9, ['#f6f8ff', '#b3bde3', '#5a6394', '#262c52']);
-    ctx.shadowColor = hexA(acc, 0.55); ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(-4, -8.5); ctx.lineTo(-13, -6.5); ctx.lineTo(-10, 0); ctx.lineTo(-13, 6.5); ctx.lineTo(-4, 8.5); ctx.closePath();
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    // panel seams
-    ctx.strokeStyle = 'rgba(20,24,52,0.45)'; ctx.lineWidth = 0.55;
-    ctx.beginPath(); ctx.moveTo(1, -7.1); ctx.lineTo(1, 7.1); ctx.moveTo(-7, -7.6); ctx.lineTo(-7, 7.6); ctx.moveTo(14, -3.6); ctx.lineTo(14, 3.6); ctx.stroke();
-    // specular glint on the lit side of the hull
+    // the model itself (drawn offscreen so the damage blink fades it as one piece)
+    const img = renderShipModel(roll);
+    ctx.save();
+    ctx.globalAlpha = blinkOut ? 0.45 : 1;
+    ctx.shadowColor = hexA(acc, 0.35); ctx.shadowBlur = 8;
+    ctx.drawImage(img, x - SHIP_BOX / 2, y - SHIP_BOX / 2, SHIP_BOX, SHIP_BOX);
+    ctx.restore();
+
+    // nav lights (red port, green starboard) and a white tail strobe
+    ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath(); ctx.ellipse(6 + lx * 2, ly * 4, 8, 1.2, ly < 0 ? 0.29 : -0.29, 0, 7); ctx.fill();   // runs along the lit hull edge
-    ctx.globalCompositeOperation = 'source-over';
-    // accent stripe
-    ctx.strokeStyle = acc; ctx.lineWidth = 1.1;
-    ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-9, 0); ctx.stroke();
-    // nozzle
-    ctx.fillStyle = '#12152a';
-    ctx.fillRect(-13.5, -3.2, 3, 6.4);
-    ctx.fillStyle = hexA(acc, 0.8);
-    ctx.fillRect(-13.5, -2, 1.2, 4);
-    // cockpit glass with a reflection facing the star
-    const cg = ctx.createRadialGradient(7 + lx * 3, ly * 2, 0, 7, 0, 7);
-    cg.addColorStop(0, '#ffffff'); cg.addColorStop(0.25, acc); cg.addColorStop(0.7, '#123066'); cg.addColorStop(1, '#070d24');
-    ctx.fillStyle = cg; ctx.beginPath(); ctx.ellipse(7, 0, 6.5, 3.2, 0, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(10,14,34,0.8)'; ctx.lineWidth = 0.6; ctx.stroke();
-    // nav lights with a little bloom
-    const blink = Math.sin(time * 6) > 0.3;
-    if (blink) {
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.drawImage(glowSprite('#ff4d6d'), -19, -25, 12, 12);
-      ctx.drawImage(glowSprite('#4dff9a'), -19, 13, 12, 12);
-      ctx.globalCompositeOperation = 'source-over';
+    const blink = Math.sin(time * 6) > 0.3, strobe = (time % 1.6) < 0.07;
+    const lights = [[SHIP.lights[0], '#ff4d6d', blink], [SHIP.lights[1], '#4dff9a', blink], [SHIP.strobe, '#ffffff', strobe]];
+    for (const [pt, col, on] of lights) {
+      if (!on) continue;
+      const p = shipPoint(pt, roll);
+      ctx.drawImage(glowSprite(col), x + p[0] - 7, y + p[1] - 7, 14, 14);
+      ctx.drawImage(glowSprite('#ffffff'), x + p[0] - 2, y + p[1] - 2, 4, 4);
     }
-    ctx.fillStyle = blink ? '#ffd0d8' : '#5a1f2a'; ctx.beginPath(); ctx.arc(-13, -19, 1.3, 0, 7); ctx.fill();
-    ctx.fillStyle = blink ? '#d0ffe4' : '#1f5a36'; ctx.beginPath(); ctx.arc(-13, 19, 1.3, 0, 7); ctx.fill();
     ctx.restore();
 
     // shield flare when something hits the hull
@@ -1319,10 +1424,10 @@
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = k * 0.5;
-      ctx.drawImage(glowSprite(acc), x - 44, y - 44, 88, 88);
+      ctx.drawImage(glowSprite(acc), x - 46, y - 46, 92, 92);
       ctx.globalAlpha = k;
       ctx.strokeStyle = hexA(acc, 0.8); ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(x, y, 30 + (1 - k) * 8, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 32 + (1 - k) * 8, 0, 7); ctx.stroke();
       ctx.restore();
     }
   }
