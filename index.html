@@ -166,6 +166,31 @@
   #bossbar .bb { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,90,90,0.45); overflow: hidden; }
   #bossbar .bb i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff3b3b, #ff8a4a); box-shadow: 0 0 12px #ff4a4a; transition: width 0.15s ease; }
   @media (max-width: 560px) { #bossbar { top: auto; bottom: 78px; width: 72vw; } }
+  #ending {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px 16px; opacity: 0; pointer-events: none; transition: opacity 1.6s ease;
+    background: radial-gradient(ellipse 60% 55% at 50% 50%, rgba(8,9,14,0.8) 0%, rgba(8,9,14,0.42) 60%, transparent 100%);
+  }
+  body.ended #ending { opacity: 1; pointer-events: auto; }
+  body.ended footer { opacity: 0; pointer-events: none; }
+  .end-title {
+    font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(52px, 12vw, 128px); letter-spacing: 0.14em; padding-left: 0.14em; line-height: 1;
+    background: linear-gradient(180deg, #ffffff 0%, #dfe6f2 45%, #8f99ad 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 30px rgba(220,230,255,0.35));
+  }
+  .end-stats { display: grid; grid-template-columns: repeat(4, auto); gap: 14px 38px; margin: 6px auto 36px; font-family: 'JetBrains Mono', monospace; }
+  .end-stats span { display: block; font-size: 10px; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+  .end-stats b { font-size: 20px; color: var(--text); font-weight: 600; }
+  .end-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .end-actions button {
+    font: 700 14px 'Orbitron', sans-serif; letter-spacing: 0.28em; padding: 16px 34px 16px 40px; border-radius: 999px; cursor: pointer;
+    border: none; color: var(--void); background: #e8eef8; box-shadow: 0 0 36px rgba(220,232,255,0.4); transition: transform 0.2s ease;
+  }
+  .end-actions button:hover { transform: translateY(-2px); }
+  .end-actions button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); box-shadow: none; }
+  .end-actions button:focus-visible { outline: 2px solid #fff; outline-offset: 5px; }
+  .end-credit { margin-top: 30px; font: 11px 'JetBrains Mono', monospace; color: #7d85a8; letter-spacing: 0.1em; }
+  @media (max-width: 560px) { .end-stats { grid-template-columns: repeat(2, auto); } }
   #banner .t1 { font: 500 11px 'JetBrains Mono', monospace; letter-spacing: 0.4em; color: var(--muted); }
   #banner .t2 {
     font: 700 clamp(22px, 5vw, 40px) 'Orbitron', sans-serif; letter-spacing: 0.14em; margin-top: 8px;
@@ -225,6 +250,14 @@
   <div id="hint">push toward the edge to fly · click to fire · hold space to warp through anything · follow the signal</div>
   <noscript>DRIFT needs JavaScript to fly.</noscript>
   <div id="banner"><div class="t1"></div><div class="t2"></div></div>
+  <section id="ending" aria-live="polite">
+    <p class="eyebrow">Journey complete</p>
+    <h2 class="end-title">THE END</h2>
+    <p class="lede">The Sovereign has fallen and the Silver Dimension is silent. You crossed seven sectors and broke every Guardian in your way.</p>
+    <div class="end-stats" id="end-stats"></div>
+    <div class="end-actions"><button id="againBtn" type="button">PLAY AGAIN</button><button id="homeBtn" type="button" class="ghost">HOME</button></div>
+    <p class="end-credit">made by Alesio Kanani</p>
+  </section>
   <div id="bossbar" aria-live="polite"><div class="bn" id="boss-name">GUARDIAN</div><div class="bb"><i id="boss-hp"></i></div></div>
 
   <footer>made by <a href="https://github.com/AlesioKanani">Alesio Kanani</a></footer>
@@ -278,6 +311,12 @@
     { name: 'Viridian Veil', neb: ['#0d6b4f', '#1a3d8c', '#3f7a14'], nebGL: [[0.04, 0.48, 0.38], [0.1, 0.2, 0.62], [0.85, 0.68, 0.2]], sun: '#fff4d6', gain: 0.62, accent: '#6dffb3' },
     { name: 'Rose Abyss',    neb: ['#8c0d4f', '#3d1a8c', '#a3175e'], nebGL: [[0.72, 0.14, 0.42], [0.32, 0.1, 0.62], [0.95, 0.35, 0.28]], sun: '#ffa08c', gain: 0.7, accent: '#ff7ee0' },
     { name: 'Glacier Void',  neb: ['#0d3d8c', '#16797a', '#4f5e9e'], nebGL: [[0.1, 0.3, 0.8], [0.2, 0.62, 0.8], [0.72, 0.72, 0.96]], sun: '#e6f0ff', gain: 0.85, accent: '#9ed8ff' },
+    // level 6: blood nebula, eclipsed sun, lightning, a heartbeat; every guardian at once
+    { name: 'The Maw', neb: ['#5a0a0a', '#2a0508', '#8a2a0a'], nebGL: [[0.55, 0.03, 0.02], [0.2, 0.0, 0.03], [0.95, 0.26, 0.05]], sun: '#ff3a2a', gain: 1.1, accent: '#ffd9c2',
+      bg: '#070103', eclipse: true, dread: true, rush: true, planets: 'dead' },
+    // level 7: the final boss in a world of liquid silver
+    { name: 'Silver Dimension', neb: ['#8a8f99', '#c8ccd4', '#5a5f6a'], nebGL: [[0.5, 0.52, 0.58], [0.86, 0.88, 0.93], [0.28, 0.3, 0.36]], sun: '#ffffff', gain: 1.45, accent: '#8fd3ff',
+      bg: '#161920', silver: true, final: true, planets: 'chrome' },
   ];
   const GFX = window.DriftGFX && window.DriftGFX.ok ? window.DriftGFX : null;
   // one light for everything: the sector's star sits up and to the left
@@ -299,6 +338,9 @@
     if (!nebTex) buildNebula();
     sun.cx0 = cam.x; sun.cy0 = cam.y;
     sun.ax = rand(-0.36, -0.2); sun.ay = rand(-0.34, -0.2);
+    if (sector.final) { finalT = 7; finalSpawned = false; finalWarned = false; }
+    if (sector.silver && GFX && !rockSheetsSilver.length && !silverPending) silverPending = 3;
+    lightning = []; lightT = 2;
     $('h-sector').textContent = sectorLabel();
   }
 
@@ -313,10 +355,12 @@
   let warpEnergy = 1, warpLock = false, combo = 0, comboTimer = 0, distance = 0, started = false;
   let popups = [], comets = [], cometTimer = rand(3, 8);
   let sigWaves = [], sigPingT = 0, sigPrevD = null, sigTrend = 0;   // signal sonar pulses + HUD trend
-  let boss = null, bossBolts = [];
+  let bosses = [], bossBolts = [], bossWave = null, guardiansDefeated = 0, playTime = 0;
+  let finalT = 0, finalSpawned = false, finalWarned = false, endT = 0, gameOver = false;
+  let lightning = [], lightT = 3, lightFlash = 0, hbT = 0, hbAt = -9, sheenT = 3, ripples = [];
   const keys = new Set();
   const TOUCH_OFFSET = 70; // keep the ship visible above a finger
-  let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best;
+  let best = store.get('best', 0), bestSectors = store.get('sectors', 1), savedBest = best, completed = store.get('completed', false);
   let soundOn = store.get('sound', true);
 
   // ---------- nebula ----------
@@ -515,6 +559,7 @@
   function drawSun() {
     const p = sunPos(), c = sector.sun;
     if (p.x < -500 || p.x > W + 500 || p.y < -500 || p.y > H + 500) return;
+    if (sector.eclipse) return drawEclipse(p);
     ctx.globalCompositeOperation = 'lighter';
     radial(p.x, p.y, 460, c, 0.14);
     radial(p.x, p.y, 140, c, 0.45);
@@ -629,6 +674,16 @@
     { w: 8,  make: () => ({ type: 5, kind: 'LAVA WORLD', c: ['#000000', '#000000', '#000000'], atm: '#ff6a2a', atmK: 0.35 }) },
   ];
   function planetSpec() {
+    if (sector.planets === 'dead') return pick([
+      { type: 5, kind: 'LAVA WORLD', c: ['#000000', '#000000', '#000000'], atm: '#ff3a1a', atmK: 0.45 },
+      { type: 2, kind: 'DEAD WORLD', c: ['#6a3a32', '#3a1e1a', '#fff'], atm: '#aa3322', atmK: 0.2 },
+      { type: 0, kind: 'BLOOD GIANT', c: ['#6a0e0e', '#2a0406', '#b3401a'], atm: '#ff4a2a', atmK: 0.5, ringP: 0.3 },
+    ]);
+    if (sector.planets === 'chrome') return pick([
+      { type: 6, kind: 'MIRROR WORLD', c: ['#f2f5fa', '#8e96a6', '#3a3f4a'], atm: '#dfe8ff', atmK: 0.35, ringP: 0.35 },
+      { type: 6, kind: 'MIRROR WORLD', c: ['#e6ecf5', '#9aa6bb', '#2c3140'], atm: '#cfe0ff', atmK: 0.3, ringP: 0.35 },
+      { type: 3, kind: 'SILVER ICE', c: ['#d8dde6', '#8a93a3', '#fff'], atm: '#e8eeff', atmK: 0.4, ringP: 0.2 },
+    ]);
     let r = Math.random() * PLANET_TYPES.reduce((a, t) => a + t.w, 0);
     for (const t of PLANET_TYPES) { r -= t.w; if (r <= 0) return t.make(); }
     return PLANET_TYPES[0].make();
@@ -679,8 +734,18 @@
   const ROCK_TYPES = ROCK_TINTS.length;
   const rockSheets = [];
   let rockPending = GFX ? ROCK_TYPES : 0;
+  const ROCK_TINTS_SILVER = ['#d6dae2', '#b4bac6', '#eceff4'];
+  const rockSheetsSilver = [];
+  let silverPending = 0;
   function genNextRock() {
-    if (rockPending <= 0) return;
+    if (rockPending <= 0) {
+      if (silverPending > 0) {
+        silverPending--;
+        const s = GFX.rockSheet({ tile: DPR > 1.4 ? 128 : 96, cols: 8, rows: 6, tint: hexRGB(ROCK_TINTS_SILVER[rockSheetsSilver.length % 3]), light: LIGHT });
+        if (s) rockSheetsSilver.push(s); else silverPending = 0;
+      }
+      return;
+    }
     rockPending--;
     const s = GFX.rockSheet({ tile: DPR > 1.4 ? 128 : 96, cols: 8, rows: 6, tint: hexRGB(ROCK_TINTS[rockSheets.length]), light: LIGHT });
     if (s) rockSheets.push(s); else rockPending = 0;
@@ -758,7 +823,7 @@
   let AC = null, master, hum, humGain, humFilter, noiseBuf, echo, padBus, padVoices = [], chordStep = 0;
   // ambient pad: four slow chords, transposed per sector
   const CHORDS = [[0, 7, 12, 15], [-4, 3, 8, 12], [-2, 5, 10, 14], [-5, 2, 7, 10]];
-  const SECTOR_KEY = [0, -2, 3, -5, 5];
+  const SECTOR_KEY = [0, -2, 3, -5, 5, -6, 7];
   const PENTA = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24];
   const noteHz = semi => 110 * Math.pow(2, (semi + SECTOR_KEY[sectorIndex % SECTOR_KEY.length]) / 12);
   function applyVolume() {
@@ -854,6 +919,12 @@
     bossHit: () => tone('triangle', 900, 520, 0.05, 0.025),
     bossDown: () => { noise(1.7, 0.45, 1500, 40); tone('sawtooth', 200, 30, 1.5, 0.09); },
     unseal: () => { tone('sine', 523, 523, 0.2, 0.08, true); setTimeout(() => tone('sine', 659, 659, 0.2, 0.08, true), 150); setTimeout(() => tone('sine', 784, 784, 0.45, 0.09, true), 300); },
+    heartbeat: () => { tone('sine', 72, 38, 0.2, 0.22); setTimeout(() => tone('sine', 64, 34, 0.18, 0.16), 260); },
+    thunder: () => noise(1.6, 0.22, 500, 40),
+    roar: () => { tone('sawtooth', 70, 36, 1.4, 0.11); tone('square', 110, 52, 1.2, 0.045); noise(1.5, 0.28, 900, 60); },
+    shatter: () => { noise(0.8, 0.35, 6000, 800); for (let i = 0; i < 6; i++) setTimeout(() => tone('triangle', rand(1200, 2600), rand(600, 900), 0.3, 0.03, true), i * 60); },
+    crossing: () => { tone('sine', 220, 880, 1.6, 0.08, true); tone('sine', 330, 1320, 1.6, 0.05, true); noise(1.4, 0.12, 8000, 1000); },
+    victory: () => { [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone('triangle', f, f, 0.7, 0.07, true), i * 190)); },
     sonar: (pan, near) => {
       if (!AC || !soundOn) return;
       const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(), f = 520 + near * 420;
@@ -886,14 +957,16 @@
   }
   function renderStats() {
     const el = $('stats');
+    const done = completed ? '<b>✓ Game completed</b> · ' : '';
     if (started) {
-      el.innerHTML = `This flight <b>${score.toLocaleString()}</b> pts · <b>${(distance / 9000).toFixed(2)}</b> ly · best <b>${best.toLocaleString()}</b>`;
-    } else if (best > 0) {
-      el.innerHTML = `Best <b>${best.toLocaleString()}</b> · <b>${bestSectors}</b> sector${bestSectors === 1 ? '' : 's'} charted`;
+      el.innerHTML = done + `This flight <b>${score.toLocaleString()}</b> pts · <b>${(distance / 9000).toFixed(2)}</b> ly · best <b>${best.toLocaleString()}</b>`;
+    } else if (best > 0 || completed) {
+      el.innerHTML = done + `Best <b>${best.toLocaleString()}</b> · <b>${bestSectors}</b> sector${bestSectors === 1 ? '' : 's'} charted`;
     } else el.textContent = '';
   }
 
   function start() {
+    if (gameOver) newGame();
     initAudio();
     playing = true;
     document.body.classList.add('playing');
@@ -1081,14 +1154,15 @@
       const L = lasers[i];
       L.x += L.vx * dt; L.y += L.vy * dt; L.life += sec;
       let dead = L.life > 1.1;
-      const bh = bossLaserHit(L);
+      let bh = null, hb = null;
+      for (const b of bosses) { bh = bossLaserHit(b, L); if (bh) { hb = b; break; } }
       if (bh) {
         dead = true;
-        sparks(L.x, L.y, 7, bh === 'hit' ? '#ffe8c0' : '#a8b8c8', 5, 14, boss.vx, boss.vy);
+        sparks(L.x, L.y, 7, bh === 'hit' ? '#ffe8c0' : '#a8b8c8', 5, 14, hb.vx, hb.vy);
         if (bh === 'hit') {
-          addP({ k: 'g', x: L.x, y: L.y, vx: boss.vx, vy: boss.vy, max: 8, size: 16, col: sector.accent, drag: 1 });
-          damageBoss(1);
-        } else damageBoss(0.35);                                   // armoured body: still chips away, the head takes full damage
+          addP({ k: 'g', x: L.x, y: L.y, vx: hb.vx, vy: hb.vy, max: 8, size: 16, col: sector.accent, drag: 1 });
+          damageBoss(hb, 1);
+        } else damageBoss(hb, 0.35);                               // armoured body: still chips away, the head takes full damage
       }
       for (let j = bossBolts.length - 1; j >= 0 && !dead; j--) {
         const bl = bossBolts[j];
@@ -1155,7 +1229,7 @@
     // wormhole
     if (playing && !jump) {
       if (!wormhole) {
-        wormholeTimer -= sec;
+        if (!sector.final) wormholeTimer -= sec;                       // no signal in the last sector: something else is coming
         if (wormholeTimer <= 0) {
           const a = rand(0, 6.28), dist = Math.max(DIAG * 0.9, 1400);
           wormhole = { x: cam.x + Math.cos(a) * dist, y: cam.y + Math.sin(a) * dist, r: 70, t: 0, sealed: true, bossDone: false,
@@ -1175,7 +1249,7 @@
           sfx.sonar(clamp(Math.cos(ang) * 0.85, -1, 1), near);
           sigWaves.push({ t: 0, a: ang });
         }
-        if (!boss && wormhole.sealed && !wormhole.bossDone && d < 950) spawnBoss();
+        if (!bosses.length && !sector.final && wormhole.sealed && !wormhole.bossDone && d < 950) spawnGuardians();
         if (wormhole.sealed && d < wormhole.r * 1.25 && d > 0.1) {       // the seal bounces you off
           const push = wormhole.r * 1.25 - d;
           cam.x -= (wormhole.x - sw.x) / d * push; cam.y -= (wormhole.y - sw.y) / d * push;
@@ -1184,8 +1258,17 @@
         if (!wormhole.sealed && d < wormhole.r * 0.55) beginJump();
       }
     }
-    if (boss) updateBoss(dt, sec, sw);
+    for (const b of bosses.slice()) updateBoss(b, dt, sec, sw);
     updateBolts(dt, sec, sw);
+    // level 7: the Sovereign rises a few seconds after you arrive
+    if (sector.final && playing && !jump && !finalSpawned && !gameOver) {
+      finalT -= sec;
+      if (!finalWarned && finalT <= 3.4) { finalWarned = true; showBanner('SOMETHING VAST STIRS', 'THE SOVEREIGN AWAKENS', 3.4, true); sfx.roar(); shake = reduceMotion ? 0 : 10; }
+      if (finalT <= 0) spawnFinal();
+    }
+    if (endT > 0) { endT -= sec; if (endT <= 0) completeGame(); }
+    if (playing) playTime += sec;
+    updateSectorFX(dt, sec);
     if (wormhole) for (const p of wormhole.dust) { // matter spiralling in
       p.a += (0.012 + 1.6 / p.r) * p.s * dt;
       p.r -= (0.25 + 40 / p.r) * p.s * dt;
@@ -1219,14 +1302,18 @@
         setSector(sectorIndex + 1);
         asteroids = []; orbs = []; planets = []; lasers = [];
         wormhole = null; wormholeTimer = rand(12, 16);   // next signal comes about as quickly as the first one
-        comets = []; warpEnergy = 1; warpLock = false; sigWaves = []; boss = null; bossBolts = [];
+        comets = []; warpEnergy = 1; warpLock = false; sigWaves = []; bosses = []; bossBolts = []; bossWave = null;
+        if (sector.silver) { flash = 1.9; for (let i = 0; i < 4; i++) ripples.push({ t: -i * 0.35 }); sfx.crossing(); }
+        if (sector.rush) sfx.roar();
         saveProgress();
         chordStep = 0; nextChord(); // music shifts key with the sector
       }
       flash = jump.t < 0.75 ? Math.max(flash, jump.t / 0.75) : flash;
       if (jump.t > 1.8) {
         jump = null;
-        showBanner('ENTERING SECTOR', sectorLabel(), 3.2);
+        if (sector.silver) showBanner('YOU HAVE CROSSED INTO', 'THE SILVER DIMENSION', 4);
+        else if (sector.rush) showBanner('SECTOR 06 · THE MAW', 'EVERY GUARDIAN WAITS HERE', 3.6, true);
+        else showBanner('ENTERING SECTOR', sectorLabel(), 3.2);
       }
     }
 
@@ -1938,6 +2025,141 @@
   }
 
 
+  // --- THE SOVEREIGN: the final boss. A colossal obsidian-and-chrome crowned mask with a third eye,
+  // swept horns, a jaw that opens on a burning maw and two great claws. Like the Thornlord it faces
+  // you, so from where you fly it looks down at you.
+  const SOVEREIGN = {
+    scale: 3.3, box: 480, r: 118,
+    pal: { obsidian: [0.07, 0.07, 0.09], chrome: [0.62, 0.64, 0.7], dchrome: [0.3, 0.31, 0.36], bone: [0.15, 0.15, 0.18] },
+    eye: [-15, 0, 11.2], slits: [[-8, -7.8, 9.6], [-8, 7.8, 9.6]],
+    maw: jaw => [18 + jaw * 9, 0, 0],
+    claws: reach => [[30 + reach * 14, -28 + reach * 6, 0], [30 + reach * 14, 28 - reach * 6, 0]],
+    build(jaw, reach) {
+      const m = meshBuilder(), up = [0, 0, 1];
+      // face plate
+      const half = [[-27, 0], [-24, 9], [-19, 16.5], [-9, 19.5], [1, 18.5], [8, 13.5], [12, 7], [13.5, 0]];
+      const outline = half.concat(half.slice(1, -1).reverse().map(([x, y]) => [x, -y]));
+      const cx = -6, n = outline.length, hint = { center: [cx, 0, -3] };
+      const ringAt = (s, z) => outline.map(([x, y]) => m.v(cx + (x - cx) * s, y * s, z));
+      const R0 = ringAt(1, 0), R1 = ringAt(0.72, 6), R2 = ringAt(0.42, 9.6);
+      const top = m.v(-10, 0, 11.4), under = m.v(cx, 0, -4);
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        m.quad(R0[i], R0[j], R1[j], R1[i], i % 2 ? 'obsidian' : 'dchrome', hint);
+        m.quad(R1[i], R1[j], R2[j], R2[i], i % 3 === 0 ? 'chrome' : i % 3 === 1 ? 'crack' : 'obsidian', hint);
+        m.f([R2[i], R2[j], top], i % 2 ? 'obsidian' : 'bone', hint);
+        m.f([under, R0[j], R0[i]], 'bone', hint);
+      }
+      // burning maw behind the jaw (only seen when it opens)
+      m.quad(m.v(7, -11, -1.8), m.v(7, 11, -1.8), m.v(20 + jaw * 9, 9, -2.2), m.v(20 + jaw * 9, -9, -2.2), 'maw', up);
+      for (const s of [-1, 1]) {
+        m.quad(m.v(-5.5, 3.2 * s, 10.2), m.v(-10.5, 11.5 * s, 8.4), m.v(-9.4, 12.6 * s, 9.2), m.v(-4.6, 3.8 * s, 11), 'glow', up);   // eye slits
+        m.tube([-3.5, 2.6 * s, 11.2], [-12.5, 14 * s, 10], 1.7, 0.7, 4, 'chrome');                                                 // angry brow
+        // horns
+        m.tube([-19, 14 * s, 5], [-28, 24 * s, 7.5], 3.4, 2.7, 6, 'obsidian');
+        m.tube([-28, 24 * s, 7.5], [-41, 29 * s, 5], 2.7, 1.8, 6, 'dchrome');
+        m.tube([-41, 29 * s, 5], [-53, 24 * s, 1.5], 1.8, 0, 6, 'chrome');
+        // claws
+        const S0 = [2, 19 * s, 1], E = [12 + reach * 6, 34 * s, 4], Wr = [26 + reach * 14, (30 - reach * 6) * s, 0.5];
+        m.tube(S0, E, 3.2, 2.6, 6, 'dchrome');
+        m.tube(E, Wr, 2.6, 2, 6, 'obsidian');
+        m.tube(E, [E[0] - 4, E[1] + 6 * s, E[2] + 5], 1.4, 0, 5, 'chrome');
+        for (let k = 0; k < 3; k++) m.tube(Wr, [Wr[0] + 10, Wr[1] - s * (k * 3.6 - 1.5), -0.5], 1.5, 0, 5, k === 1 ? 'chrome' : 'dchrome');
+      }
+      // crown of spikes fanning behind the head
+      for (const y of [-9, -4.5, 0, 4.5, 9]) {
+        const a = [-24, y, 7], tip = [-48 - (y === 0 ? 7 : 0), y * 1.7, 3], mid = v3.lerp(a, tip, 0.55);
+        m.tube(a, mid, 2.5, 1.3, 5, 'obsidian'); m.tube(mid, tip, 1.3, 0, 5, 'chrome');
+      }
+      m.tube([-2, 0, 11.2], [9, 0, 6], 1.5, 0.6, 4, 'dchrome');                                                                  // nose ridge
+      for (const y of [-9, -5.5, -2, 2, 5.5, 9]) m.tube([10, y, 1.6], [15.5, y * 0.9, 0.4], 1.1, 0, 4, 'chrome');               // upper fangs
+      // jaw: slides forward when it opens
+      const J = jaw * 9, jz = -jaw * 1.2;
+      const jo = [[4, -15], [12 + J, -14], [21 + J, -8], [25 + J, 0], [21 + J, 8], [12 + J, 14], [4, 15]].map(([x, y]) => m.v(x, y, 0.4 + jz));
+      const jc = m.v(15 + J, 0, 3.2 + jz), jh = { center: [15 + J, 0, -3] };
+      for (let i = 0; i < jo.length - 1; i++) m.f([jc, jo[i], jo[i + 1]], i % 2 ? 'obsidian' : 'dchrome', jh);
+      m.f([jc, jo[jo.length - 1], jo[0]], 'bone', jh);
+      for (const y of [-7, -3.5, 0, 3.5, 7]) m.tube([13 + J, y, 1.8 + jz], [8.5 + J, y, 2.4 + jz], 1, 0, 4, 'chrome');            // lower fangs
+      return m.done();
+    },
+  };
+
+  // one bloodshot eye (shared by the Sovereign's third eye)
+  function drawEyeball(g, x, y, R, look, blink, charge) {
+    g.save();
+    g.translate(x, y);
+    g.fillStyle = '#050407'; g.beginPath(); g.arc(0, 0, R * 1.22, 0, 7); g.fill();                   // socket
+    g.drawImage(scleraSprite(), -R, -R, R * 2, R * 2);
+    g.beginPath(); g.arc(0, 0, R, 0, 7); g.clip();
+    const lm = Math.min(1, Math.hypot(look[0], look[1])), la = Math.atan2(look[1], look[0]);
+    const off = lm * R * 0.4, sq = Math.sqrt(1 - Math.pow(off / R, 2) * 0.9), ir = R * 0.52;
+    g.save();
+    g.translate(Math.cos(la) * off, Math.sin(la) * off); g.rotate(la); g.scale(sq, 1);
+    addGlow(g, '#ff4a1a', 0, 0, ir * 1.5, 0.35 + charge * 0.6);
+    g.drawImage(irisSprite(), -ir, -ir, ir * 2, ir * 2);
+    g.rotate(-la);
+    g.fillStyle = '#050000';
+    g.beginPath(); g.ellipse(0, 0, ir * (0.2 - charge * 0.12), ir * 0.8, 0, 0, 7); g.fill();
+    g.restore();
+    g.globalCompositeOperation = 'lighter';
+    g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.ellipse(-R * 0.38, -R * 0.42, R * 0.2, R * 0.1, -0.6, 0, 7); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    if (blink > 0) {
+      g.fillStyle = '#0c0a0e';
+      const e = R * 1.05 * blink;
+      g.beginPath(); g.moveTo(-R, -R); g.lineTo(R, -R); g.lineTo(R, -R + e); g.quadraticCurveTo(0, -R + e * 1.35, -R, -R + e); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(-R, R); g.lineTo(R, R); g.lineTo(R, R - e); g.quadraticCurveTo(0, R - e * 1.35, -R, R - e); g.closePath(); g.fill();
+    }
+    g.restore();
+  }
+
+  // two counter-rotating halos of obsidian blades behind the Sovereign
+  function haloBlades(b) {
+    const out = [], rage = b.phase >= 3 ? 1 : b.phase === 2 ? 0.45 : 0;
+    const k = clamp(Math.min(W, H) / 560, 0.72, 1);                               // tighter halo on small screens
+    const rings = [[16, 190, 250, b.t * (0.25 + rage * 0.35), 0.12], [26, 262, 292, -b.t * (0.18 + rage * 0.25), 0.07]];
+    for (const [N, r0, r1, rot, w] of rings) for (let i = 0; i < N; i++) out.push({ a: rot + i / N * Math.PI * 2, r0: r0 * k, r1: r1 * k, w, inner: r0 < 200 });
+    return out;
+  }
+  function drawSovereign(g, b, x, y, pulse, charge) {
+    const S = SOVEREIGN, rage = b.phase >= 3 ? 1 : b.phase === 2 ? 0.45 : 0;
+    const au = g.createRadialGradient(x, y, 60, x, y, 380);                        // a pool of darkness around it
+    au.addColorStop(0, 'rgba(0,0,0,0.62)'); au.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = au; g.fillRect(x - 380, y - 380, 760, 760);
+    if (!b.shattered) {
+      g.save();
+      g.lineJoin = 'round';
+      for (const h of haloBlades(b)) {
+        const ca = Math.cos(h.a), sa = Math.sin(h.a);
+        const lit = 0.5 + 0.5 * (ca * LIGHT2D.x + sa * LIGHT2D.y);
+        const c0 = [16, 16, 20], c1 = [150, 155, 168], k = lit * 0.65;
+        g.fillStyle = `rgb(${c0[0] + (c1[0] - c0[0]) * k | 0},${c0[1] + (c1[1] - c0[1]) * k | 0},${c0[2] + (c1[2] - c0[2]) * k | 0})`;
+        g.beginPath();
+        g.moveTo(x + Math.cos(h.a - h.w) * h.r0, y + Math.sin(h.a - h.w) * h.r0);
+        g.lineTo(x + ca * h.r1, y + sa * h.r1);
+        g.lineTo(x + Math.cos(h.a + h.w) * h.r0, y + Math.sin(h.a + h.w) * h.r0);
+        g.closePath(); g.fill();
+        g.strokeStyle = `rgba(220,228,245,${0.12 + lit * 0.4})`; g.lineWidth = 1; g.stroke();
+        if (h.inner) addGlow(g, '#ff3a2a', x + ca * h.r1, y + sa * h.r1, 7 + rage * 5, 0.5 + rage * 0.4);
+      }
+      g.strokeStyle = `rgba(255,60,50,${0.25 + 0.2 * pulse + rage * 0.3})`; g.lineWidth = 2;
+      g.beginPath(); g.arc(x, y, 184 * clamp(Math.min(W, H) / 560, 0.72, 1), 0, 7); g.stroke();
+      g.restore();
+    }
+    const view = designView('sovereign', S.box);
+    setViewMesh(view, S.build(b.jaw, b.reach));
+    const pal = Object.assign({
+      glow: { emit: [1, 0.12 + 0.2 * pulse, 0.08] },
+      maw: { emit: [1, 0.25 + 0.4 * b.jaw + 0.3 * charge, 0.06 + 0.25 * charge] },
+      crack: { emit: [0.07 + 0.93 * rage * (0.7 + 0.3 * pulse), 0.07 + 0.2 * rage, 0.09] },
+    }, S.pal);
+    blitFlash(g, renderMesh(view, b.ang, b.roll, S.scale, pal, [1, 0.25, 0.2]), x, y, S.box, b.hit);
+    for (const sl of S.slits) { const p = meshXform(sl, b.roll, b.ang, S.scale, [0, 0, 0]); addGlow(g, '#ff2a1a', x + p[0], y + p[1], 18 + pulse * 6, 0.55); }
+    const e = meshXform(S.eye, b.roll, b.ang, S.scale, [0, 0, 0]);
+    drawEyeball(g, x + e[0], y + e[1], 25, b.look, b.blink, charge);
+    if (b.jaw > 0.05) { const mw = meshXform(S.maw(b.jaw), b.roll, b.ang, S.scale, [0, 0, 0]); addGlow(g, '#ff5a1a', x + mw[0], y + mw[1], 26 + 40 * b.jaw, 0.8); }
+  }
+
   // bosses are drawn well above the player's scale so they tower over your ship
   const BOSS_ZOOM = 1.45;
   for (const D of [THORN, WIDOW, REAPER, OCULUS, LEVI_HEAD]) { D.scale *= BOSS_ZOOM; D.box = Math.ceil(D.box * BOSS_ZOOM); }
@@ -1961,7 +2183,11 @@
       core: b => ({ x: b.x, y: b.y }),
       draw: (b, x, y, pulse) => drawLeviathan(ctx, b.body.map(p => [p.x + x - b.x, p.y + y - b.y]), b.t, pulse, b.hit) },
   ];
-  const bossType = () => BOSS_TYPES[boss.type];
+  const FINAL = BOSS_TYPES.length;
+  BOSS_TYPES.push({ name: 'THE SOVEREIGN', r: 118, final: true,
+    muzzles: b => { const e = bossWorld(b, SOVEREIGN.eye, SOVEREIGN.scale); return [e, e]; },
+    core: b => bossWorld(b, SOVEREIGN.eye, SOVEREIGN.scale),
+    draw: (b, x, y, pulse, charge) => drawSovereign(ctx, b, x, y, pulse, charge) });
 
   // Leviathan: resample the head's recent path into evenly spaced body segments
   const LEVI_SEGS = 15, LEVI_GAP = 29;
@@ -1981,41 +2207,81 @@
     while (out.length <= LEVI_SEGS) { const l = out[out.length - 1]; out.push({ x: l.x - Math.cos(b.ang) * LEVI_GAP, y: l.y - Math.sin(b.ang) * LEVI_GAP }); }
     return out;
   }
-  // what a player laser hit: the guardian's weak point ('hit'), its armoured body ('block'), or nothing
-  function bossLaserHit(L) {
-    if (!boss || boss.dying) return null;
-    const T = bossType();
-    if (Math.hypot(boss.x - L.x, boss.y - L.y) < T.r) return 'hit';
-    if (T.serpent) for (let i = 1; i < boss.body.length; i++) { const p = boss.body[i]; if (Math.hypot(p.x - L.x, p.y - L.y) < 23) return 'block'; }
+  // what a player laser hit: a guardian's weak point ('hit'), armoured body ('block'), or nothing
+  function bossLaserHit(b, L) {
+    if (b.dying) return null;
+    const T = BOSS_TYPES[b.type];
+    if (Math.hypot(b.x - L.x, b.y - L.y) < T.r) return 'hit';
+    if (T.serpent) for (let i = 1; i < b.body.length; i++) { const p = b.body[i]; if (Math.hypot(p.x - L.x, p.y - L.y) < 23) return 'block'; }
     return null;
   }
+  const inView = (b, pad = 0) => { const x = b.x + CX - cam.x, y = b.y + CY - cam.y; return x > -pad && x < W + pad && y > -pad && y < H + pad; };
 
-  function spawnBoss() {
-    const sw = shipWorld(), type = sectorIndex % BOSS_TYPES.length, T = BOSS_TYPES[type];
-    const dx = sw.x - wormhole.x, dy = sw.y - wormhole.y, d = Math.hypot(dx, dy) || 1;
-    const x = wormhole.x + dx / d * 260, y = wormhole.y + dy / d * 260;
-    const hp = Math.round((50 + 10 * Math.min(sectorIndex, 8)) * T.hp);
-    const ang = Math.atan2(sw.y - y, sw.x - x);
-    boss = { type, x, y, vx: 0, vy: 0, ang, roll: 0, hp, max: hp, hit: 0, t: 0,
-      fireT: 2.4, burst: 0, burstT: 0, side: 0, ringT: 6.5, strafe: Math.random() < 0.5 ? -1 : 1,
-      orbit: Math.atan2(y - sw.y, x - sw.x), dying: 0, boomT: 0, rammed: 0, lastHitSfx: 0,
-      look: [0, 0], blink: 0, blinkT: 2, blinkP: 0, walk: 0, lungeT: 4, lunging: 0, trail: [], body: [],
-      name: T.name + (sectorIndex >= BOSS_TYPES.length ? ' MK-' + ROMAN[Math.min(8, Math.floor(sectorIndex / BOSS_TYPES.length))] : '') };
+  // o: { hpMul, rate (attack interval multiplier), dmg (bolt damage), leash, delay, anchor }
+  function makeBoss(type, x, y, o = {}) {
+    const sw = shipWorld(), T = BOSS_TYPES[type];
+    const base = T.final ? 240 : (50 + 10 * Math.min(sectorIndex, 4)) * T.hp;
+    const hp = Math.round(base * (o.hpMul || 1));
+    const ang = Math.atan2(sw.y - y, sw.x - x), rate = o.rate || 1;
+    const b = { type, x, y, vx: 0, vy: 0, ang, roll: 0, hp, max: hp, hit: 0, t: 0,
+      fireT: 2.4 * rate + (o.delay || 0), burst: 0, burstT: 0, side: 0, ringT: 6.5 * rate + (o.delay || 0) * 2.6,
+      strafe: Math.random() < 0.5 ? -1 : 1, orbit: Math.atan2(y - sw.y, x - sw.x), dying: 0, boomT: 0, rammed: 0, lastHitSfx: 0,
+      look: [0, 0], blink: 0, blinkT: 2, blinkP: 0, walk: 0, lungeT: 4 + (o.delay || 0), lunging: 0, trail: [], body: [],
+      rate, dmg: o.dmg || 12, leash: o.leash || 620, slot: o.slot, anchor: o.anchor || (wormhole ? { x: wormhole.x, y: wormhole.y } : { x, y }),
+      phase: 1, jaw: 0, jawT: 0, reach: 0, reachT: 0, invul: 0, spinA: 0, streamT: 0, spiralT: 9, clawT: 6, eyeT: 2.6,
+      name: T.name };
     if (T.serpent) {
-      for (let i = 60; i >= 1; i--) boss.trail.push({ x: x - Math.cos(ang) * i * 6, y: y - Math.sin(ang) * i * 6 });
-      boss.body = leviBody(boss);
+      for (let i = 60; i >= 1; i--) b.trail.push({ x: x - Math.cos(ang) * i * 6, y: y - Math.sin(ang) * i * 6 });
+      b.body = leviBody(b);
     }
     ring(x, y, 20, 7, HOSTILE, 34);
     burst(x, y, 26, '#ff6a5a', 6, 40, 3);
     addP({ k: 'g', x, y, vx: 0, vy: 0, max: 14, size: 150, col: '#ffffff', drag: 1 });
-    showBanner('WARNING · GUARDIAN INBOUND', boss.name, 3.2, true);
-    $('boss-name').textContent = boss.name;
+    bosses.push(b);
+    return b;
+  }
+
+  // the guardian(s) that seal this sector's wormhole
+  function spawnGuardians() {
+    const sw = shipWorld();
+    const dx = sw.x - wormhole.x, dy = sw.y - wormhole.y, d = Math.hypot(dx, dy) || 1, base = Math.atan2(dy, dx);
+    if (sector.rush) {
+      // level 6: every guardian at once, each weaker and slower to fire so the fight stays fair
+      for (let k = 0; k < 5; k++) {
+        const a = base + (k - 2) * 0.85;
+        makeBoss(k, wormhole.x + Math.cos(a) * 330, wormhole.y + Math.sin(a) * 330,
+          { hpMul: 0.45, rate: 2.1, dmg: 7, leash: 1400, delay: k * 0.5, anchor: { x: (sw.x + wormhole.x) / 2, y: (sw.y + wormhole.y) / 2 }, slot: base + Math.PI + k * Math.PI * 2 / 5 });
+      }
+      bossWave = { name: 'THE CONVERGENCE', max: bosses.reduce((s, b) => s + b.max, 0) };
+      showBanner('WARNING · EVERY GUARDIAN', 'THE CONVERGENCE', 3.6, true);
+    } else {
+      const b = makeBoss(sectorIndex % 5, wormhole.x + dx / d * 260, wormhole.y + dy / d * 260);
+      bossWave = { name: b.name, max: b.max };
+      showBanner('WARNING · GUARDIAN INBOUND', b.name, 3.2, true);
+    }
+    $('boss-name').textContent = bossWave.name;
     sfx.siren();
   }
 
-  function updateBoss(dt, sec, sw) {
-    const b = boss, T = bossType();
-    b.t += sec; b.hit = Math.max(0, b.hit - sec * 5); b.rammed = Math.max(0, b.rammed - sec);
+  // level 7: the Sovereign rises ahead of you
+  function spawnFinal() {
+    finalSpawned = true;
+    const sw = shipWorld(), d = travelDir();
+    const x = sw.x + d.x * 520, y = sw.y + d.y * 520;
+    const b = makeBoss(FINAL, x, y, { anchor: { x, y }, leash: 900, dmg: 10 });
+    b.orbit = Math.atan2(y - sw.y, x - sw.x);
+    b.invul = 2.2; b.jawT = 1;
+    bossWave = { name: 'THE SOVEREIGN', max: b.max };
+    $('boss-name').textContent = bossWave.name;
+    ring(x, y, 60, 12, '#ffffff', 50); ring(x, y, 40, 9, HOSTILE, 44);
+    flash = Math.max(flash, 0.5); shake = reduceMotion ? 0 : 18;
+    sfx.roar();
+  }
+
+  function updateBoss(b, dt, sec, sw) {
+    const T = BOSS_TYPES[b.type];
+    b.t += sec; b.hit = Math.max(0, b.hit - sec * 5); b.rammed = Math.max(0, b.rammed - sec); b.invul = Math.max(0, b.invul - sec);
+    if (T.final) return updateFinal(b, dt, sec, sw);
     if (b.dying > 0) {                                         // chain explosions, then the big one
       b.dying -= sec;
       b.vx *= Math.pow(0.95, dt); b.vy *= Math.pow(0.95, dt);
@@ -2027,28 +2293,37 @@
         explode(at.x + rand(-40, 40), at.y + rand(-40, 40), rand(20, 36), b.vx, b.vy);
         sfx.boom(28); shake = reduceMotion ? 0 : Math.max(shake, 5);
       }
-      if (b.dying <= 0) finishBoss();
+      if (b.dying <= 0) finishBoss(b);
       return;
     }
-    // movement: hold a ring around the player (each design in its own way), leashed to its wormhole
+    // movement: hold a ring around the player (each design in its own way), leashed to what it guards
     let orbitR = T.orbit, maxV = T.speed, strafeRate = 0.35;
     if (T.swoop) { orbitR = 250 + Math.sin(b.t * 0.9) * 150; strafeRate = 0.6; }         // Reaper: swooping passes
     if (T.lunge) {                                                                          // Widow: sudden lunges
       b.lungeT -= sec;
-      if (b.lungeT <= 0 && b.lunging <= 0) { b.lunging = 0.8; b.lungeT = rand(4.5, 6.5); }
+      if (b.lungeT <= 0 && b.lunging <= 0) { b.lunging = 0.8; b.lungeT = rand(4.5, 6.5) * b.rate; }
       if (b.lunging > 0) { b.lunging -= sec; orbitR = 120; maxV = 9.5; }
     }
-    b.orbit += b.strafe * strafeRate * sec;
-    const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
-    b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.98, dt));
+    if (bosses.length > 1) orbitR += 60;                                                    // give each other room in a crowd
+    if (b.slot != null) b.orbit = b.slot + b.t * 0.14;                                        // the Convergence: a slowly turning ring around you
+    else {
+      b.orbit += b.strafe * strafeRate * sec;
+      const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
+      b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.98, dt));
+    }
     let tx = sw.x + Math.cos(b.orbit) * orbitR, ty = sw.y + Math.sin(b.orbit) * orbitR;
     if (T.serpent) { const w = Math.sin(b.t * 2.4) * 110; tx += -Math.sin(b.ang) * w; ty += Math.cos(b.ang) * w; }   // slither
-    const lx = tx - wormhole.x, ly = ty - wormhole.y, ld = Math.hypot(lx, ly);
-    if (ld > 620) { tx = wormhole.x + lx / ld * 620; ty = wormhole.y + ly / ld * 620; }
+    const lx = tx - b.anchor.x, ly = ty - b.anchor.y, ld = Math.hypot(lx, ly);
+    if (ld > b.leash) { tx = b.anchor.x + lx / ld * b.leash; ty = b.anchor.y + ly / ld * b.leash; }
     const ke = 1 - Math.pow(0.95, dt);
     b.vx = lerp(b.vx, clamp((tx - b.x) * 0.025, -maxV, maxV), ke);
     b.vy = lerp(b.vy, clamp((ty - b.y) * 0.025, -maxV, maxV), ke);
     b.x += b.vx * dt; b.y += b.vy * dt;
+    for (const o of bosses) {                                                               // don't stack on top of each other
+      if (o === b || o.dying) continue;
+      const ddx = b.x - o.x, ddy = b.y - o.y, dd = Math.hypot(ddx, ddy), minD = (T.r + BOSS_TYPES[o.type].r) * 0.95;
+      if (dd < minD && dd > 0.1) { const push = (minD - dd) * 0.06 * dt; b.x += ddx / dd * push; b.y += ddy / dd * push; }
+    }
     if (Math.random() < 0.004 * dt) b.strafe *= -1;
     const speed = Math.hypot(b.vx, b.vy);
     let want = Math.atan2(sw.y - b.y, sw.x - b.x);
@@ -2076,13 +2351,13 @@
     const phase2 = b.hp < b.max * 0.5;
     // aimed three-shot bursts
     b.fireT -= sec;
-    if (b.fireT <= 0 && !b.burst) { b.burst = 3; b.burstT = 0; b.fireT = phase2 ? 1.9 : 2.5; }
+    if (b.fireT <= 0 && !b.burst) { b.burst = 3; b.burstT = 0; b.fireT = (phase2 ? 1.9 : 2.5) * b.rate; }
     if (b.burst) {
       b.burstT -= sec;
       if (b.burstT <= 0) {
         b.burstT = 0.15; b.burst--; b.side ^= 1;
         const from = T.muzzles(b)[b.side];
-        bossShot(from, Math.atan2(sw.y - from.y, sw.x - from.x), 4.2);
+        bossShot(from, Math.atan2(sw.y - from.y, sw.x - from.x), 4.2, b.dmg);
         addP({ k: 'g', x: from.x, y: from.y, vx: b.vx, vy: b.vy, max: 7, size: 18, col: '#ff7a5a', drag: 1 });
         sfx.bossFire();
       }
@@ -2091,30 +2366,141 @@
     b.ringT -= sec;
     if (b.ringT <= 0.8 && !b.charging) { b.charging = true; sfx.charge(); }
     if (b.ringT <= 0) {
-      b.charging = false; b.ringT = phase2 ? 5 : 7;
+      b.charging = false; b.ringT = (phase2 ? 5 : 7) * b.rate;
       const c = T.core(b), n = phase2 ? 14 : 12, off = rand(0, 6.28);
-      for (let i = 0; i < n; i++) bossShot(c, off + i / n * Math.PI * 2, 2.7);
+      for (let i = 0; i < n; i++) bossShot(c, off + i / n * Math.PI * 2, 2.7, b.dmg);
       ring(c.x, c.y, 10, 5, HOSTILE, 18);
       sfx.bossRing();
     }
-    // bumping into it pushes you off; warping into it does damage instead
-    const bump = (px, py, rad, canRam) => {
-      const d = Math.hypot(sw.x - px, sw.y - py);
-      if (d >= rad + 12 || d < 0.1) return;
-      const nx = (sw.x - px) / d, ny = (sw.y - py) / d, push = rad + 12 - d;
-      cam.x += nx * push; cam.y += ny * push; cam.vx += nx * 3; cam.vy += ny * 3;
-      if (warp > 0.45) { if (canRam && !b.rammed) { b.rammed = 0.35; damageBoss(3); sfx.ram(); shake = reduceMotion ? 0 : 6; } }
-      else if (ship.inv <= 0) hurtShip(10);
-    };
-    bump(b.x, b.y, T.r, true);
-    if (T.serpent) for (let i = 2; i < b.body.length; i++) bump(b.body[i].x, b.body[i].y, 21, false);
+    bossBump(b, sw, b.x, b.y, T.r, true);
+    if (T.serpent) for (let i = 2; i < b.body.length; i++) bossBump(b, sw, b.body[i].x, b.body[i].y, 21, false);
   }
 
-  function drawBoss(ox, oy) {
-    const b = boss, T = bossType(), x = b.x + ox, y = b.y + oy;
-    if (!T.serpent && (x < -300 || x > W + 300 || y < -300 || y > H + 300)) return;
+  // bumping into a guardian pushes you off; warping into it does damage instead
+  function bossBump(b, sw, px, py, rad, canRam) {
+    const d = Math.hypot(sw.x - px, sw.y - py);
+    if (d >= rad + 12 || d < 0.1) return;
+    const nx = (sw.x - px) / d, ny = (sw.y - py) / d, push = rad + 12 - d;
+    cam.x += nx * push; cam.y += ny * push; cam.vx += nx * 3; cam.vy += ny * 3;
+    if (warp > 0.45) { if (canRam && !b.rammed) { b.rammed = 0.35; damageBoss(b, 3); sfx.ram(); shake = reduceMotion ? 0 : 6; } }
+    else if (ship.inv <= 0) hurtShip(10);
+  }
+
+  // The Sovereign: three phases (at 66% and 33% health), each adding an attack. Still slow, dodgeable bolts.
+  function updateFinal(b, dt, sec, sw) {
+    const ke = 1 - Math.pow(0.95, dt);
+    if (b.dying > 0) {
+      b.dying -= sec;
+      b.vx *= Math.pow(0.9, dt); b.vy *= Math.pow(0.9, dt);
+      b.x += b.vx * dt + rand(-2, 2); b.y += b.vy * dt + rand(-2, 2);
+      b.jaw = lerp(b.jaw, 1, ke); b.blink = lerp(b.blink, 1, ke * 0.5); b.roll = Math.sin(b.t * 9) * 0.12;
+      b.boomT -= sec;
+      if (b.boomT <= 0) {
+        b.boomT = 0.07;
+        const a = rand(0, 6.28), r = rand(0, 170);
+        explode(b.x + Math.cos(a) * r, b.y + Math.sin(a) * r, rand(24, 50));
+        sfx.boom(40); shake = reduceMotion ? 0 : Math.max(shake, 9);
+      }
+      if (b.dying < 1.2) flash = Math.max(flash, (1.2 - b.dying) * 0.7);
+      if (b.dying <= 0) finishBoss(b);
+      return;
+    }
+    // phase changes: a roar, a shockwave and a moment of invulnerability
+    const frac = b.hp / b.max, ph = frac > 0.66 ? 1 : frac > 0.33 ? 2 : 3;
+    if (ph > b.phase) {
+      b.phase = ph; b.invul = 1.6; b.charging = false; b.jawT = 1.4;
+      if (ph === 2) b.spiralT = 2.6; if (ph === 3) { b.clawT = 2.6; b.spiralT = Math.min(b.spiralT, 5); }
+      for (const bl of bossBolts) sparks(bl.x, bl.y, 3, '#ffb0a0', 3, 10);
+      bossBolts = [];
+      ring(b.x, b.y, 80, 14, '#ffffff', 40); ring(b.x, b.y, 60, 10, HOSTILE, 44);
+      const d = Math.hypot(sw.x - b.x, sw.y - b.y) || 1;
+      if (d < 420) { cam.vx += (sw.x - b.x) / d * 14; cam.vy += (sw.y - b.y) / d * 14; }
+      shake = reduceMotion ? 0 : 16; sfx.roar();
+      showBanner(ph === 2 ? 'THE SOVEREIGN STIRS' : 'THE SOVEREIGN IS ENRAGED', ph === 2 ? 'ITS MAW OPENS' : 'ITS CLAWS REACH FOR YOU', 2.8, true);
+    }
+    // drift slowly around you at a distance, never far from where it rose
+    b.orbit += b.strafe * 0.14 * sec;
+    const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
+    b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.985, dt));
+    const od = Math.min(400, Math.min(W, H) * 0.55);                          // close enough to fill the view, not on top of you
+    let tx = sw.x + Math.cos(b.orbit) * od, ty = sw.y + Math.sin(b.orbit) * od;
+    const lx = tx - b.anchor.x, ly = ty - b.anchor.y, ld = Math.hypot(lx, ly);
+    if (ld > b.leash) { tx = b.anchor.x + lx / ld * b.leash; ty = b.anchor.y + ly / ld * b.leash; }
+    b.vx = lerp(b.vx, clamp((tx - b.x) * 0.02, -2.8, 2.8), ke * 0.6);
+    b.vy = lerp(b.vy, clamp((ty - b.y) * 0.02, -2.8, 2.8), ke * 0.6);
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (Math.random() < 0.002 * dt) b.strafe *= -1;
+    const want = Math.atan2(sw.y - b.y, sw.x - b.x), da = angDiff(b.ang, want);
+    b.ang += da * (1 - Math.pow(0.97, dt));
+    b.roll = lerp(b.roll, clamp(-da * 1.2, -0.3, 0.3), ke);
+    const dx = sw.x - b.x, dy = sw.y - b.y, dd = Math.hypot(dx, dy) || 1, k = Math.min(1, dd / 300);
+    b.look[0] = lerp(b.look[0], dx / dd * k, Math.min(1, ke * 2)); b.look[1] = lerp(b.look[1], dy / dd * k, Math.min(1, ke * 2));
+    b.blinkT -= sec;
+    if (b.blinkT <= 0) { b.blinkT = rand(5, 8); b.blinkP = 0.3; }
+    if (b.blinkP > 0) { b.blinkP -= sec; b.blink = Math.sin(Math.PI * clamp(1 - b.blinkP / 0.3, 0, 1)); } else b.blink = 0;
+    b.jawT = Math.max(0, b.jawT - sec); b.reachT = Math.max(0, b.reachT - sec);
+    b.jaw = lerp(b.jaw, b.jawT > 0 ? 1 : 0, ke * 1.5);
+    b.reach = lerp(b.reach, b.reachT > 0 ? 1 : 0, ke * 1.2);
+
+    if (!playing || jump || b.invul > 0) return;
+    const eye = bossWorld(b, SOVEREIGN.eye, SOVEREIGN.scale);
+    // 1) the third eye fires a fan at you
+    b.eyeT -= sec;
+    if (b.eyeT <= 0) {
+      b.eyeT = [2.8, 2.4, 2.1][b.phase - 1];
+      const n = b.phase === 1 ? 5 : 7, a0 = Math.atan2(sw.y - eye.y, sw.x - eye.x);
+      for (let i = 0; i < n; i++) bossShot(eye, a0 + (i - (n - 1) / 2) * 0.13, 3.5, b.dmg);
+      addP({ k: 'g', x: eye.x, y: eye.y, vx: 0, vy: 0, max: 8, size: 30, col: '#ff7a5a', drag: 1 });
+      sfx.bossFire();
+    }
+    // 2) a telegraphed ring from the eye
+    b.ringT -= sec;
+    if (b.ringT <= 1 && !b.charging) { b.charging = true; sfx.charge(); }
+    if (b.ringT <= 0) {
+      b.charging = false; b.ringT = [7.5, 6.5, 5.5][b.phase - 1];
+      const n = [16, 20, 24][b.phase - 1], off = rand(0, 6.28);
+      for (let i = 0; i < n; i++) bossShot(eye, off + i / n * Math.PI * 2, 2.5, b.dmg);
+      ring(eye.x, eye.y, 14, 6, HOSTILE, 20);
+      sfx.bossRing();
+    }
+    // 3) phase 2+: the jaw opens and a spiral pours out of the maw
+    if (b.phase >= 2) {
+      b.spiralT -= sec;
+      if (b.spiralT <= 0) { b.spiralT = 9; b.jawT = 3.6; b.streamT = 3; b.spinA = rand(0, 6.28); sfx.roar(); }
+      if (b.streamT > 0 && b.jaw > 0.6) {
+        b.streamT -= sec; b.spinA += 2.1 * sec;
+        b.streamShot = (b.streamShot || 0) - sec;
+        if (b.streamShot <= 0) {
+          b.streamShot = 0.11;
+          const mw = bossWorld(b, SOVEREIGN.maw(b.jaw), SOVEREIGN.scale), arms = b.phase === 3 ? 3 : 2;
+          for (let k = 0; k < arms; k++) bossShot(mw, b.spinA + k * Math.PI * 2 / arms, 2.6, b.dmg);
+        }
+      }
+    }
+    // 4) phase 3: the claws reach out and burst
+    if (b.phase >= 3) {
+      b.clawT -= sec;
+      if (b.clawT <= 0) { b.clawT = 6; b.reachT = 1.3; b.clawFire = 0.7; }
+      if (b.clawFire > 0) {
+        b.clawFire -= sec;
+        if (b.clawFire <= 0) {
+          for (const c of SOVEREIGN.claws(1)) {
+            const p = bossWorld(b, c, SOVEREIGN.scale), off = rand(0, 6.28);
+            for (let i = 0; i < 8; i++) bossShot(p, off + i / 8 * Math.PI * 2, 2.8, b.dmg);
+            ring(p.x, p.y, 10, 5, HOSTILE, 16);
+          }
+          sfx.bossRing();
+        }
+      }
+    }
+    bossBump(b, sw, b.x, b.y, 118, true);
+  }
+
+  function drawBoss(b, ox, oy) {
+    const T = BOSS_TYPES[b.type], x = b.x + ox, y = b.y + oy;
+    if (!T.serpent && (x < -420 || x > W + 420 || y < -420 || y > H + 420)) return;
     const pulse = 0.5 + 0.5 * Math.sin(time * 6);
-    const charge = b.charging ? clamp(1 - b.ringT / 0.8, 0, 1) : 0;
+    const charge = b.charging ? clamp(1 - b.ringT / (T.final ? 1 : 0.8), 0, 1) : 0;
     T.draw(b, x, y, pulse, charge);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -2128,44 +2514,68 @@
       ctx.beginPath(); ctx.arc(cx, cy, 170 - charge * 125, 0, 7); ctx.stroke();
     }
     if (b.burst) for (const p of T.muzzles(b)) { ctx.globalAlpha = 0.8; ctx.drawImage(glowSprite('#ff7a5a'), p.x + ox - 10, p.y + oy - 10, 20, 20); }
+    if (b.invul > 0 && !b.dying) {                               // shimmering shield while it changes phase
+      ctx.globalAlpha = Math.min(1, b.invul) * 0.5;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, (T.r + 30) * (1 + 0.03 * Math.sin(time * 20)), 0, 7); ctx.stroke();
+    }
     ctx.restore();
   }
 
-  function damageBoss(n) {
-    const b = boss;
+  function damageBoss(b, n) {
     if (!b || b.dying) return;
+    if (b.invul > 0) { b.hit = Math.max(b.hit, 0.2); return; }
     b.hp -= n; b.hit = Math.max(b.hit, n >= 1 ? 1 : 0.4); score += Math.max(1, Math.round(5 * n));
     if (time - b.lastHitSfx > 0.07) { b.lastHitSfx = time; sfx.bossHit(); }
     if (b.hp <= 0) {
-      b.hp = 0; b.dying = 1.5;
+      b.hp = 0; b.dying = BOSS_TYPES[b.type].final ? 4.5 : 1.5;
       for (const bl of bossBolts) sparks(bl.x, bl.y, 4, '#ffb0a0', 3, 12);
       bossBolts = [];
       sfx.bossDown();
+      if (BOSS_TYPES[b.type].final) {                           // the halo breaks apart
+        b.shattered = true;
+        for (const h of haloBlades(b)) {
+          const px = b.x + Math.cos(h.a) * (h.r0 + h.r1) / 2, py = b.y + Math.sin(h.a) * (h.r0 + h.r1) / 2, s = rand(3, 7);
+          const verts = [[s * 2.2, 0], [-s, -s * 0.8], [-s, s * 0.8]];
+          addP({ k: 'd', x: px, y: py, vx: Math.cos(h.a) * rand(2, 6), vy: Math.sin(h.a) * rand(2, 6), max: rand(80, 140), size: s, verts, rot: h.a, rv: rand(-0.15, 0.15), drag: 0.99 });
+        }
+        sfx.shatter();
+        showBanner('THE SOVEREIGN', 'IS FALLING', 3.5, true);
+      }
     }
   }
 
-  function finishBoss() {
-    const b = boss;
+  function finishBoss(b) {
+    const T = BOSS_TYPES[b.type];
+    bosses = bosses.filter(o => o !== b);
+    guardiansDefeated++;
     if (b.body && b.body.length) for (let i = 2; i < b.body.length; i += 3) explode(b.body[i].x, b.body[i].y, 28);
-    explode(b.x, b.y, 120, b.vx, b.vy);
-    ring(b.x, b.y, 30, 9, '#ffd9a0', 40);
-    ring(b.x, b.y, 20, 6, HOSTILE, 34);
-    flash = Math.max(flash, 0.55); shake = reduceMotion ? 0 : 16;
-    const pts = 1000 + 250 * Math.min(sectorIndex, 8);
+    explode(b.x, b.y, T.final ? 200 : 120, b.vx, b.vy);
+    ring(b.x, b.y, 30, T.final ? 16 : 9, '#ffd9a0', T.final ? 60 : 40);
+    ring(b.x, b.y, 20, T.final ? 12 : 6, HOSTILE, T.final ? 54 : 34);
+    flash = Math.max(flash, T.final ? 1 : 0.55); shake = reduceMotion ? 0 : (T.final ? 24 : 16);
+    const pts = T.final ? 10000 : bossWave && bosses.length ? 600 : 1000 + 250 * Math.min(sectorIndex, 8);
     score += pts;
     popup(b.x, b.y - 40, '+' + pts, '#ffffff');
-    boss = null;
+    if (T.final) {                                             // the end: roll the ending once the light fades
+      bossWave = null; endT = 2.2;
+      ring(b.x, b.y, 80, 20, '#ffffff', 70);
+      return;
+    }
+    if (bosses.length) { popup(b.x, b.y - 70, bosses.length + (bosses.length === 1 ? ' GUARDIAN REMAINS' : ' GUARDIANS REMAIN'), HOSTILE); return; }
+    bossWave = null;
     if (wormhole) {
       wormhole.sealed = false; wormhole.bossDone = true;
       ring(wormhole.x, wormhole.y, 50, 6, sector.accent, 36);
       burst(wormhole.x, wormhole.y, 30, sector.accent, 5, 40, 3);
     }
-    showBanner('GUARDIAN DESTROYED', 'THE WAY IS OPEN', 3.2);
+    if (sector.rush) showBanner('THE CONVERGENCE IS BROKEN', 'ONE GATE REMAINS', 3.6);
+    else showBanner('GUARDIAN DESTROYED', 'THE WAY IS OPEN', 3.2);
     setTimeout(sfx.unseal, 500);
   }
 
-  function bossShot(from, ang, speed) {
-    bossBolts.push({ x: from.x, y: from.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 0 });
+  function bossShot(from, ang, speed, dmg = 12) {
+    bossBolts.push({ x: from.x, y: from.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 0, dmg });
   }
 
   function updateBolts(dt, sec, sw) {
@@ -2179,7 +2589,7 @@
       if (!dead && playing && !jump && Math.hypot(sw.x - bl.x, sw.y - bl.y) < 15) {
         dead = true;
         sparks(bl.x, bl.y, 8, '#ffb0a0', 4, 14);
-        if (warp < 0.45 && ship.inv <= 0) hurtShip(12);
+        if (warp < 0.45 && ship.inv <= 0) hurtShip(bl.dmg || 12);
       }
       if (dead) bossBolts.splice(i, 1);
     }
@@ -2218,7 +2628,7 @@
   }
 
   // red marker on the screen edge when the guardian is out of view
-  function drawBossPointer(sx, sy) {
+  function drawBossPointer(sx, sy, label = 'GUARDIAN') {
     const m = 60;
     if (sx > -20 && sx < W + 20 && sy > -20 && sy < H + 20) return;
     const dx = sx - CX, dy = sy - CY, a = Math.atan2(dy, dx);
@@ -2238,7 +2648,7 @@
     ctx.restore();
     ctx.save();
     chevron(ex, ey, a, 13, HOSTILE, 'rgba(3,2,16,0.75)');
-    pill(ex - Math.cos(a) * 70, ey - Math.sin(a) * 36, 'GUARDIAN', HOSTILE);
+    pill(ex - Math.cos(a) * 70, ey - Math.sin(a) * 36, label, HOSTILE);
     ctx.restore();
   }
 
@@ -2379,7 +2789,7 @@
     const onScreen = sx > m && sx < W - m && sy > m && sy < H - m;
     const bearing = Math.atan2(sy - ship.sy, sx - ship.sx);
     const bc = Math.cos(bearing), bs = Math.sin(bearing);
-    const bossInView = boss && boss.x + CX - cam.x > 0 && boss.x + CX - cam.x < W && boss.y + CY - cam.y > 0 && boss.y + CY - cam.y < H;
+    const bossInView = bosses.some(b => inView(b));
 
     // sonar wavefronts leaving the ship toward the signal (one per ping)
     ctx.save();
@@ -2430,7 +2840,7 @@
       ctx.shadowColor = acc; ctx.shadowBlur = 12;
       chevron(ex + Math.cos(a) * 3, ey + Math.sin(a) * 3, a, 15, '#ffffff');
       ctx.shadowBlur = 0;
-      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, (boss && !bossInView ? 'GUARDIAN ' : 'SIGNAL ') + fmtDist(dist), boss ? HOSTILE : acc);
+      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, (bosses.length && !bossInView ? 'GUARDIAN ' : 'SIGNAL ') + fmtDist(dist), bosses.length ? HOSTILE : acc);
       ctx.restore();
     } else {
       // target brackets around the wormhole once it's in view
@@ -2447,7 +2857,7 @@
       ctx.restore();
       let py = sy - R - 26;
       if (py < 180 && (sx < 330 || sx > W - 330)) py = sy + R + 26;     // keep clear of the corner HUD
-      pill(sx, py, wormhole.sealed ? (boss ? 'SEALED · DESTROY THE GUARDIAN' : 'SEALED') : dist < 420 ? 'ENTER' : 'SIGNAL ' + fmtDist(dist), wormhole.sealed ? HOSTILE : acc);
+      pill(sx, py, wormhole.sealed ? (bosses.length > 1 ? 'SEALED · DESTROY THE GUARDIANS' : bosses.length ? 'SEALED · DESTROY THE GUARDIAN' : 'SEALED') : dist < 420 ? 'ENTER' : 'SIGNAL ' + fmtDist(dist), wormhole.sealed ? HOSTILE : acc);
     }
 
     // compass arrow orbiting the ship: always right where you're looking
@@ -2470,7 +2880,7 @@
   }
 
   function draw() {
-    ctx.fillStyle = '#030210';
+    ctx.fillStyle = sector.bg || '#030210';
     ctx.fillRect(0, 0, W, H);
     const shx = shake ? rand(-shake, shake) : 0, shy = shake ? rand(-shake, shake) : 0;
     ctx.save();
@@ -2481,6 +2891,7 @@
     drawSun();
     drawStars();
     drawComets();
+    drawLightning();
 
     // planets (far to near)
     const sw = shipWorld();
@@ -2510,6 +2921,7 @@
         }
       }
     }
+    drawShards();
     ctx.restore();
 
     ctx.save();
@@ -2543,7 +2955,8 @@
     for (const a of asteroids) {
       const x = a.x + ox, y = a.y + oy;
       if (x < -a.size * 1.4 || x > W + a.size * 1.4 || y < -a.size * 1.4 || y > H + a.size * 1.4) continue;
-      const sheet = rockSheets[a.kind] || (rockSheets.length ? rockSheets[a.kind % rockSheets.length] : null);
+      const sheet = sector.silver && rockSheetsSilver.length ? rockSheetsSilver[a.kind % rockSheetsSilver.length]
+        : rockSheets[a.kind] || (rockSheets.length ? rockSheets[a.kind % rockSheets.length] : null);
       if (sheet) {
         const f = mod(a.spin, 1) * sheet.frames, i0 = Math.floor(f) % sheet.frames, fr = f - Math.floor(f), i1 = (i0 + 1) % sheet.frames;
         const S = a.size * 1.32, T = sheet.tile;
@@ -2571,7 +2984,7 @@
       ctx.restore();
     }
 
-    if (boss) drawBoss(ox, oy);
+    for (const b of bosses) drawBoss(b, ox, oy);
 
     // particles: dust and rock chunks first (normal blending), then light (additive)
     const smoke = smokeSprite();
@@ -2647,7 +3060,7 @@
     drawFlare();
 
     if (playing && wormhole && !jump) drawSignalGuide(wormhole.x + ox, wormhole.y + oy, Math.hypot(wormhole.x - sw.x, wormhole.y - sw.y));
-    if (playing && boss && !boss.dying && !jump) drawBossPointer(boss.x + ox, boss.y + oy);
+    if (playing && !jump) for (const b of bosses) if (!b.dying) drawBossPointer(b.x + ox, b.y + oy, BOSS_TYPES[b.type].final ? 'SOVEREIGN' : bosses.length > 1 ? BOSS_TYPES[b.type].name : 'GUARDIAN');
 
     // warp tunnel tint
     if (warp > 0.02) {
@@ -2655,11 +3068,155 @@
       g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, hexA(sector.accent, 0.18 * warp));
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     }
+    drawSectorOverlayFX();
     if (flash > 0.01) {
       ctx.fillStyle = `rgba(255,255,255,${Math.min(1, flash)})`;
       ctx.fillRect(0, 0, W, H);
     }
   }
+
+  // ---------- sector atmosphere: The Maw (dread) and the Silver Dimension ----------
+  const SHARD_T = 1900;
+  const shards = Array.from({ length: 22 }, () => ({ x: rand(0, SHARD_T), y: rand(0, SHARD_T), d: rand(0.45, 0.85), s: rand(8, 26), rot: rand(0, 6.28), rv: rand(-0.01, 0.01), k: rand(0.5, 1) }));
+  function makeLightning() {
+    const x0 = rand(W * 0.1, W * 0.9), y0 = rand(-40, H * 0.4), a = rand(0.6, 2.5), len = rand(260, 620);
+    const pts = [[x0, y0]];
+    let x = x0, y = y0;
+    for (let i = 0; i < 14; i++) { x += Math.cos(a) * len / 14 + rand(-26, 26); y += Math.sin(a) * len / 14 + rand(-26, 26); pts.push([x, y]); }
+    const branches = [];
+    for (let k = 0; k < 2; k++) {
+      const s = pts[3 + ((Math.random() * 8) | 0)], ba = a + rand(-1, 1), bp = [[s[0], s[1]]];
+      let bx = s[0], by = s[1];
+      for (let i = 0; i < 6; i++) { bx += Math.cos(ba) * 22 + rand(-14, 14); by += Math.sin(ba) * 22 + rand(-14, 14); bp.push([bx, by]); }
+      branches.push(bp);
+    }
+    lightning.push({ pts, branches, t: 0 });
+    lightFlash = 0.35;
+    setTimeout(() => sfx.thunder(), rand(200, 700));
+  }
+  function updateSectorFX(dt, sec) {
+    for (let i = lightning.length - 1; i >= 0; i--) { lightning[i].t += sec; if (lightning[i].t > 0.4) lightning.splice(i, 1); }
+    lightFlash = Math.max(0, lightFlash - sec * 1.6);
+    for (let i = ripples.length - 1; i >= 0; i--) { ripples[i].t += sec; if (ripples[i].t > 1.8) ripples.splice(i, 1); }
+    if (sector.dread) {
+      lightT -= sec;
+      if (lightT <= 0) { lightT = rand(2.5, 6); makeLightning(); }
+      hbT -= sec;
+      if (hbT <= 0) { hbT = 1.35; hbAt = time; if (playing) sfx.heartbeat(); }
+    }
+    if (sector.silver) { sheenT -= sec; if (sheenT <= -1.8) sheenT = rand(3, 6); }
+    for (const s of shards) s.rot += s.rv * dt;
+  }
+  function drawLightning() {
+    if (!lightning.length) return;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (const L of lightning) {
+      const a = (1 - L.t / 0.4) * (0.6 + 0.4 * Math.sin(L.t * 90));
+      for (const [w, col] of [[9, `rgba(255,40,30,${0.18 * a})`], [3.5, `rgba(255,90,70,${0.5 * a})`], [1.4, `rgba(255,235,225,${0.95 * a})`]]) {
+        ctx.strokeStyle = col; ctx.lineWidth = w;
+        for (const path of [L.pts, ...L.branches]) { ctx.beginPath(); path.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+      }
+    }
+    ctx.restore();
+  }
+  // drifting mirror shards: the Silver Dimension's floating debris
+  function drawShards() {
+    if (!sector.silver) return;
+    for (const s of shards) {
+      const px = mod(s.x - cam.x * s.d, SHARD_T) - 100, py = mod(s.y - cam.y * s.d, SHARD_T) - 100;
+      for (let x = px; x < W + 100; x += SHARD_T) for (let y = py; y < H + 100; y += SHARD_T) {
+        const lit = 0.5 + 0.5 * Math.cos(s.rot * 2 - 2.4);
+        ctx.save(); ctx.translate(x, y); ctx.rotate(s.rot);
+        const g = ctx.createLinearGradient(-s.s, -s.s, s.s, s.s);
+        g.addColorStop(0, `rgba(${200 + 55 * lit | 0},${205 + 50 * lit | 0},${215 + 40 * lit | 0},${0.8 * s.k})`); g.addColorStop(1, `rgba(70,74,88,${0.75 * s.k})`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.moveTo(s.s, 0); ctx.lineTo(-s.s * 0.6, -s.s * 0.5); ctx.lineTo(-s.s * 0.3, s.s * 0.7); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = `rgba(255,255,255,${0.2 + 0.6 * lit * lit})`; ctx.lineWidth = 1; ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+  function drawSectorOverlayFX() {
+    if (sector.dread) {                                         // a heartbeat pulsing in blood-red edges
+      const ph = time - hbAt, v = Math.exp(-Math.pow(ph / 0.07, 2)) + 0.7 * Math.exp(-Math.pow((ph - 0.26) / 0.07, 2));
+      const g = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.25, CX, CY, DIAG * 0.62);
+      g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, `rgba(140,0,6,${0.3 + 0.28 * v})`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (lightFlash > 0) { ctx.fillStyle = `rgba(255,50,40,${lightFlash * 0.22})`; ctx.fillRect(0, 0, W, H); }
+    }
+    if (sector.silver) {
+      if (sheenT < 0) {                                         // a band of light sliding across polished metal
+        const k = -sheenT / 1.8, x = -W * 0.4 + k * W * 1.8;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x, CY); ctx.rotate(0.5);
+        const g = ctx.createLinearGradient(-140, 0, 140, 0);
+        g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(235,242,255,0.1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g; ctx.fillRect(-140, -DIAG, 280, DIAG * 2);
+        ctx.restore();
+      }
+      const g = ctx.createRadialGradient(CX, CY, Math.min(W, H) * 0.3, CX, CY, DIAG * 0.6);
+      g.addColorStop(0, 'rgba(200,210,230,0)'); g.addColorStop(1, 'rgba(210,220,238,0.2)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    if (ripples.length) {                                       // the mirror you just flew through, rippling out
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const r of ripples) {
+        if (r.t < 0) continue;
+        const k = r.t / 1.8;
+        ctx.strokeStyle = `rgba(230,238,255,${(1 - k) * 0.5})`; ctx.lineWidth = 8 * (1 - k) + 1;
+        ctx.beginPath(); ctx.arc(ship.sx, ship.sy, 20 + k * DIAG * 0.7, 0, 7); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  // a black sun with a flickering red corona
+  function drawEclipse(p) {
+    const x = p.x, y = p.y;
+    ctx.globalCompositeOperation = 'lighter';
+    radial(x, y, 520, '#ff2a1a', 0.13);
+    radial(x, y, 110, '#ff4a2a', 0.55);
+    ctx.save(); ctx.translate(x, y); ctx.lineCap = 'round';
+    for (let i = 0; i < 28; i++) {
+      const a = i / 28 * 6.283 + Math.sin(time * 0.3 + i) * 0.05, len = 70 + 40 * Math.sin(time * 1.3 + i * 2.1) + (i % 3) * 26;
+      const gr = ctx.createLinearGradient(0, 0, Math.cos(a) * len, Math.sin(a) * len);
+      gr.addColorStop(0, 'rgba(255,110,70,0.6)'); gr.addColorStop(1, 'rgba(255,40,20,0)');
+      ctx.strokeStyle = gr; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * 34, Math.sin(a) * 34); ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x, y, 34, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,140,100,0.9)'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // ---------- the end ----------
+  function completeGame() {
+    gameOver = true; playing = false; firing = false; warpHeld = false; keys.clear();
+    ship.visible = false;
+    document.body.classList.remove('playing', 'boss-on', 'has-signal');
+    document.body.classList.add('ended');
+    saveProgress(); store.set('completed', true); completed = true;
+    const m = Math.floor(playTime / 60), s = Math.floor(playTime % 60);
+    $('end-stats').innerHTML = [['Score', score.toLocaleString()], ['Distance', (distance / 9000).toFixed(2) + ' ly'],
+      ['Flight time', m + ':' + String(s).padStart(2, '0')], ['Guardians', guardiansDefeated]]
+      .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+    applyVolume(); sfx.victory();
+    setTimeout(() => $('againBtn').focus({ preventScroll: true }), 600);
+  }
+  function newGame() {
+    score = 0; distance = 0; combo = 0; comboTimer = 0; playTime = 0; guardiansDefeated = 0;
+    bosses = []; bossBolts = []; bossWave = null; wormhole = null; wormholeTimer = 12; jump = null; launch = 0;
+    asteroids = []; orbs = []; planets = []; lasers = []; particles = []; popups = []; comets = []; sigWaves = []; ripples = []; lightning = [];
+    ship.shield = 100; ship.inv = 0; warpEnergy = 1; warpLock = false; endT = 0; gameOver = false; flash = 0;
+    started = false;
+    setSector(0); populate(true);
+    chordStep = 0; nextChord();
+    $('start').textContent = 'START';
+  }
+  $('againBtn').addEventListener('click', e => { e.stopPropagation(); document.body.classList.remove('ended'); newGame(); start(); });
+  $('homeBtn').addEventListener('click', e => {
+    e.stopPropagation(); document.body.classList.remove('ended'); newGame();
+    intro.classList.remove('gone'); renderStats(); $('start').focus({ preventScroll: true });
+  });
 
   // ---------- HUD + audio tick ----------
   let hudT = 0, saveTimer = 3;
@@ -2678,11 +3235,13 @@
       $('h-sig-arrow').style.transform = `rotate(${Math.atan2(wormhole.y - s0.y, wormhole.x - s0.x)}rad)`;
       if (sigPrevD !== null) sigTrend = lerp(sigTrend, sigPrevD - d, 0.35);
       sigPrevD = d;
-      $('h-sig').textContent = fmtDist(d) + (boss ? ' · guarded' : wormhole.sealed ? ' · sealed' : sigTrend > 4 ? ' · closing' : sigTrend < -4 ? ' · drifting' : '');
+      $('h-sig').textContent = fmtDist(d) + (bosses.length ? ' · guarded' : wormhole.sealed ? ' · sealed' : sigTrend > 4 ? ' · closing' : sigTrend < -4 ? ' · drifting' : '');
     }
-    document.body.classList.toggle('boss-on', !!(boss && playing));
-    if (boss) {
-      $('boss-hp').style.width = (boss.hp / boss.max * 100) + '%';
+    document.body.classList.toggle('boss-on', !!(bosses.length && bossWave && playing));
+    if (bosses.length && bossWave) {
+      const hp = bosses.reduce((t, b) => t + Math.max(0, b.hp), 0);
+      $('boss-hp').style.width = (hp / bossWave.max * 100) + '%';
+      $('boss-name').textContent = bossWave.name + (bosses.length > 1 ? ' · ' + bosses.length + ' LEFT' : '');
     }
     const hc = $('h-combo');
     hc.classList.toggle('on', comboMult() > 1);

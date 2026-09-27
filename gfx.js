@@ -162,13 +162,21 @@ void main(){
       col *= 0.86 + 0.18 * dune;
       col = mix(col, lin(vec3(0.95, 0.93, 0.9)), smoothstep(0.86, 0.93, abs(P.y) + (h - 0.5) * 0.2));
       craters(P, nObj, alb, 0.6);
-    } else {                                             // lava
+    } else if (uType < 5.5) {                            // lava
       float h = fbm3(P * 2.6 + uSeed);
       float cr = pow(1. - abs(2. * fbm3(P * 3.5 + uSeed * 3.) - 1.), 9.);
       col = lin(vec3(0.09, 0.07, 0.07)) * (0.6 + 0.9 * h);
       emis = lin(vec3(1., 0.32, 0.05)) * cr * 2.2 * (0.4 + h) + lin(vec3(1., 0.75, 0.3)) * pow(cr, 28.) * 3.;
       emisDay = 0.6;
       craters(P, nObj, alb, 0.5);
+    } else {                                             // chrome: a mirror reflecting a silver sky
+      vec3 Rv = vec3(2. * N.z * N.x, 2. * N.z * N.y, 2. * N.z * N.z - 1.);
+      float h = Rv.y + (fbm3(P * 2.2 + uSeed) - 0.5) * 0.35;
+      vec3 sky = mix(lin(uC2), lin(uC1), smoothstep(-0.05, 0.85, h));
+      vec3 ground = lin(uC3) * (0.55 + 0.45 * smoothstep(-1., -0.05, h));
+      col = h > 0. ? sky : ground;
+      col += vec3(1.) * smoothstep(0.05, 0., abs(h)) * 0.7;
+      col = mix(col, lin(uC1), pow(1. - N.z, 3.) * 0.5);
     }
     vec3 nV = normalize(Mi * nObj);
     float ndl = dot(nV, L), ndlS = dot(N, L);
@@ -184,6 +192,7 @@ void main(){
     }
     vec3 H = normalize(L + vec3(0., 0., 1.));
     lit += vec3(1., 0.95, 0.85) * pow(max(dot(N, H), 0.), 70.) * spec * 0.9 * step(0., ndlS);
+    if (uType > 5.5) lit = col * (0.5 + 0.6 * max(ndlS, 0.)) + vec3(1.) * pow(max(dot(N, H), 0.), 120.) * 1.6;
     lit += emis * mix(1., emisDay, smoothstep(-0.2, 0.25, ndlS));
     float rim = pow(1. - zs, 2.5);
     lit += lin(uAtm) * rim * uAtmK * clamp(ndlS + 0.35, 0., 1.) * 1.4;
