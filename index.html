@@ -319,6 +319,12 @@
     get(k, d) { try { const v = localStorage.getItem('drift.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('drift.' + k, JSON.stringify(v)); } catch (e) {} },
   };
+  // best scores saved by older versions of the game are wiped once (bump this to reset everyone's again)
+  const SAVE_VERSION = 2;
+  if (store.get('ver', 1) < SAVE_VERSION) {
+    try { localStorage.removeItem('drift.best'); localStorage.removeItem('drift.sectors'); } catch (e) {}
+    store.set('ver', SAVE_VERSION);
+  }
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = arr => arr[(Math.random() * arr.length) | 0];
@@ -997,9 +1003,9 @@
     const done = completed ? '<b>✓ Game completed</b> · ' : '';
     if (started) {
       el.innerHTML = done + `This flight <b>${score.toLocaleString()}</b> pts · <b>${(distance / 9000).toFixed(2)}</b> ly · best <b>${best.toLocaleString()}</b>`;
-    } else if (best > 0 || completed) {
+    } else if (best > 0) {
       el.innerHTML = done + `Best <b>${best.toLocaleString()}</b> · <b>${bestSectors}</b> sector${bestSectors === 1 ? '' : 's'} charted`;
-    } else el.textContent = '';
+    } else el.innerHTML = completed ? '<b>✓ Game completed</b>' : '';
   }
 
   function start() {
