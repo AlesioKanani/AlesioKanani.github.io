@@ -1081,11 +1081,14 @@
       const L = lasers[i];
       L.x += L.vx * dt; L.y += L.vy * dt; L.life += sec;
       let dead = L.life > 1.1;
-      if (boss && !boss.dying && Math.hypot(boss.x - L.x, boss.y - L.y) < BOSS_R) {
+      const bh = bossLaserHit(L);
+      if (bh) {
         dead = true;
-        sparks(L.x, L.y, 7, '#ffe8c0', 5, 14, boss.vx, boss.vy);
-        addP({ k: 'g', x: L.x, y: L.y, vx: boss.vx, vy: boss.vy, max: 8, size: 16, col: sector.accent, drag: 1 });
-        damageBoss(1);
+        sparks(L.x, L.y, 7, bh === 'hit' ? '#ffe8c0' : '#a8b8c8', 5, 14, boss.vx, boss.vy);
+        if (bh === 'hit') {
+          addP({ k: 'g', x: L.x, y: L.y, vx: boss.vx, vy: boss.vy, max: 8, size: 16, col: sector.accent, drag: 1 });
+          damageBoss(1);
+        } else damageBoss(0.35);                                   // armoured body: still chips away, the head takes full damage
       }
       for (let j = bossBolts.length - 1; j >= 0 && !dead; j--) {
         const bl = bossBolts[j];
@@ -1384,6 +1387,11 @@
       let dir = face.hint;
       if (dir.axis) dir = [0, cen[1] - dir.axis[0], cen[2] - dir.axis[1]];
       else if (dir.center) dir = cen.map((x, i) => x - dir.center[i]);
+      else if (dir.line) {                     // round part along an arbitrary segment: point away from the segment
+        const [p, q] = dir.line, d = [q[0] - p[0], q[1] - p[1], q[2] - p[2]];
+        const t = Math.max(0, Math.min(1, ((cen[0] - p[0]) * d[0] + (cen[1] - p[1]) * d[1] + (cen[2] - p[2]) * d[2]) / (d[0] * d[0] + d[1] * d[1] + d[2] * d[2] || 1)));
+        dir = cen.map((x, i) => x - (p[i] + d[i] * t));
+      }
       if (n[0] * dir[0] + n[1] * dir[1] + n[2] * dir[2] < 0) n = n.map(x => -x);
       face.n = n;
     }
@@ -1497,79 +1505,636 @@
     }
   }
 
-  // ---------- guardian boss ----------
-  // Warps in when you approach a signal; the wormhole stays sealed until it's destroyed.
-  // Tuned to be beatable: slow dodgeable bolts, modest damage, shots can be blocked or shot down.
+  // ---------- guardian bosses ----------
+  // One per sector, cycling: Thornlord (sector 1), Oculus, Widow, Reaper, Leviathan. A guardian warps in
+  // when you approach a signal and the wormhole stays sealed until it's destroyed. All tuned to be beatable:
+  // slow dodgeable bolts, modest damage, shots can be blocked by rocks or shot down.
   const HOSTILE = '#ff4a4a';
-  const BOSS_SCALE = 2.2, BOSS_BOX = 200, BOSS_R = 54;
-  const BOSS = (() => {
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  const v3 = {
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    norm: a => { const m = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / m, a[1] / m, a[2] / m]; },
+    lerp: (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t],
+  };
+  function meshBuilder() {
     const V = [], F = [];
     const v = (x, y, z) => (V.push([x, y, z]), V.length - 1);
+    const vp = p => v(p[0], p[1], p[2]);
     const f = (idx, col, hint) => F.push({ idx, col, hint });
-    // faceted arrowhead hull: raised spine, a ring of armour plates, glowing red chevron at the nose
-    const top = v(-1, 0, 7), bot = v(-1, 0, -4);
-    const rim = [v(20, 0, 1), v(12, 8, 1.6), v(6, 15, 1.2), v(-10, 14, 1.2), v(-18, 7, 1.4), v(-20, 0, 1.6), v(-18, -7, 1.4), v(-10, -14, 1.2), v(6, -15, 1.2), v(12, -8, 1.6)];
-    const inner = rim.map(i => { const p = V[i], t = V[top]; return v(t[0] + (p[0] - t[0]) * 0.5, t[1] + (p[1] - t[1]) * 0.5, (t[2] + p[2]) * 0.5 + 1.3); });
-    const hc = { center: [-1, 0, 1.5] };
-    const outerCols = ['trim', 'armor', 'hull', 'armor', 'hull', 'hull', 'hull', 'armor', 'hull', 'armor'];
-    const outerCols2 = ['hull', 'hull', 'armor', 'hull', 'armor', 'armor', 'armor', 'hull', 'armor', 'trim'];
-    rim.forEach((a, i) => {
-      const j = (i + 1) % rim.length, b = rim[j], ia = inner[i], ib = inner[j];
-      f([top, ia, ib], i % 2 ? 'armor' : 'hull', hc);
-      f([ia, a, b], outerCols[i], hc); f([ia, b, ib], outerCols2[i], hc);
-      f([bot, b, a], 'dark', hc);
-    });
-    for (const s of [-1, 1]) {
-      // mandible cannons
-      const B1 = v(4, 9 * s, 3), B2 = v(4, 16 * s, 0.8), B3 = v(4, 9 * s, -1.5), T = v(29, 11 * s, 0.9);
-      const ax = { axis: [11 * s, 0.8] };
-      f([B1, B2, T], 'armor', ax); f([B2, B3, T], 'dark', ax); f([B3, B1, T], 'hull', ax); f([B1, B3, B2], 'dark', [-1, 0, 0]);
-      // engine pods
-      const py = 10 * s, pz = 0, pax = { axis: [py, pz] };
-      const hex = (x, r) => Array.from({ length: 6 }, (_, k) => { const t = k * Math.PI / 3 + Math.PI / 6; return v(x, py + Math.cos(t) * r, pz + Math.sin(t) * r); });
-      const h1 = hex(-8, 2.6), h2 = hex(-12, 3.4), h3 = hex(-24, 3);
-      for (let k = 0; k < 6; k++) {
-        const k2 = (k + 1) % 6;
-        f([h1[k], h1[k2], h2[k2]], 'pod', pax); f([h1[k], h2[k2], h2[k]], 'pod', pax);
-        f([h2[k], h2[k2], h3[k2]], 'pod', pax); f([h2[k], h3[k2], h3[k]], 'pod', pax);
+    const quad = (a, b, c, d, col, hint) => { f([a, b, c], col, hint); f([a, c, d], col, hint); };
+    // n-sided tube from p0 to p1 (r1 = 0 makes a cone)
+    const tube = (p0, p1, r0, r1, n, col) => {
+      const ax = v3.norm(v3.sub(p1, p0)), up = Math.abs(ax[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+      const u = v3.norm(v3.cross(ax, up)), w = v3.cross(ax, u);
+      const ring = (p, r) => Array.from({ length: n }, (_, k) => { const t = k / n * Math.PI * 2 + Math.PI / n; return vp(v3.add(p, v3.add(v3.mul(u, Math.cos(t) * r), v3.mul(w, Math.sin(t) * r)))); });
+      const hint = { line: [p0, p1] }, A = ring(p0, r0);
+      if (r1 <= 0.01) { const tip = vp(p1); for (let k = 0; k < n; k++) f([A[k], A[(k + 1) % n], tip], col, hint); return; }
+      const B = ring(p1, r1);
+      for (let k = 0; k < n; k++) { const k2 = (k + 1) % n; quad(A[k], A[k2], B[k2], B[k], col, hint); }
+    };
+    // faceted dome / ellipsoid: levels = [[z, scale], ...] from rim to top
+    const dome = (cx, rx, ry, levels, apexZ, n, colFn, underCol, cy = 0) => {
+      const rings = levels.map(([z, s]) => Array.from({ length: n }, (_, k) => { const a = k / n * Math.PI * 2; return v(cx + Math.cos(a) * rx * s, cy + Math.sin(a) * ry * s, z); }));
+      const apex = v(cx, cy, apexZ), under = v(cx, cy, levels[0][0] - 3);
+      const hint = { center: [cx, cy, (levels[0][0] + apexZ) / 2 - 1] };
+      for (let r = 0; r < rings.length - 1; r++) for (let k = 0; k < n; k++) { const k2 = (k + 1) % n; quad(rings[r][k], rings[r][k2], rings[r + 1][k2], rings[r + 1][k], colFn(r, k), hint); }
+      const last = rings[rings.length - 1];
+      for (let k = 0; k < n; k++) f([last[k], last[(k + 1) % n], apex], colFn(rings.length - 1, k), hint);
+      for (let k = 0; k < n; k++) f([under, rings[0][(k + 1) % n], rings[0][k]], underCol, hint);
+    };
+    return { V, F, v, vp, f, quad, tube, dome, done: () => { meshNormals(V, F); return { V, F }; } };
+  }
+  function setViewMesh(view, M) {
+    view.M = M;
+    if (view.tv.length !== M.V.length) view.tv = M.V.map(() => [0, 0, 0]);
+    if (view.order.length !== M.F.length) view.order = M.F.map((_, i) => i);
+  }
+  const glowEmit = k => ({ emit: [1, 0.1 + 0.12 * k, 0.07] });
+
+  // --- WIDOW: arachnid dreadnought. Eight walking legs, eye cluster, fangs, red hourglass.
+  const WIDOW = {
+    scale: 2.55, box: 230, r: 50,
+    pal: { chitin: [0.1, 0.09, 0.11], shell: [0.2, 0.16, 0.2], plate: [0.3, 0.22, 0.28] },
+    eyes: [[12.6, -1.6, 4.7], [12.6, 1.6, 4.7], [13.9, -3.4, 3.9], [13.9, 3.4, 3.9], [11.2, -2.9, 5.4], [11.2, 2.9, 5.4], [14.9, -1.2, 3.3], [14.9, 1.2, 3.3]],
+    muzzles: [[21.5, -1.2, -0.6], [21.5, 1.2, -0.6]], core: [-10, 0, 9.5],
+    build(t) {
+      const m = meshBuilder();
+      // abdomen with the hourglass on top
+      m.dome(-10, 15, 12, [[0.5, 1], [4.5, 0.86], [7.5, 0.55]], 9.2, 10,
+        (r, k) => (r === 2 && (k === 0 || k === 9 || k === 4 || k === 5)) ? 'glow' : (k + r) % 2 ? 'shell' : 'plate', 'chitin');
+      // head
+      m.dome(7, 8.5, 7.5, [[0.5, 1], [3.8, 0.75]], 5.6, 10, (r, k) => (k + r) % 2 ? 'plate' : 'shell', 'chitin');
+      for (const s of [-1, 1]) {
+        m.tube([14, 2.4 * s, 1.2], [18.5, 3.3 * s, 0.2], 1.4, 0.9, 4, 'shell');     // fangs
+        m.tube([18.5, 3.3 * s, 0.2], [21.6, 1.2 * s, -0.6], 0.9, 0, 4, 'plate');
+        for (let i = 0; i < 4; i++) {                                                 // legs, walking
+          const ph = t * 6 + i * 1.7 + (s > 0 ? 0 : Math.PI), lift = Math.max(0, Math.sin(ph)) * 2.6;
+          const fx = [17, 6, -8, -19][i] + Math.cos(ph) * 2.4;
+          const base = [10.5 - i * 3.3, 5.6 * s, 1.8];
+          const knee = [base[0] + (fx - base[0]) * 0.45, 14 * s, 10.5 + lift];
+          const foot = [fx, (22.5 - Math.abs(i - 1.5) * 1.6) * s, -1 + lift * 0.4];
+          m.tube(base, knee, 2.1, 1.5, 5, 'chitin');
+          m.tube(knee, foot, 1.5, 0.15, 5, 'shell');
+          m.tube(knee, v3.add(knee, [-2.5, 2.2 * s, 3.2]), 0.9, 0, 4, 'plate');        // joint spur
+        }
       }
-      const rc = v(-24.4, py, pz);
-      for (let k = 0; k < 6; k++) f([rc, h3[k], h3[(k + 1) % 6]], 'enozzle', [-1, 0, 0]);
+      return m.done();
+    },
+    kneePts(t) {
+      const out = [];
+      for (const s of [-1, 1]) for (let i = 0; i < 4; i++) {
+        const ph = t * 6 + i * 1.7 + (s > 0 ? 0 : Math.PI), lift = Math.max(0, Math.sin(ph)) * 2.6;
+        const fx = [17, 6, -8, -19][i] + Math.cos(ph) * 2.4, bx = 10.5 - i * 3.3;
+        out.push([bx + (fx - bx) * 0.45, 14 * s, 10.5 + lift]);
+      }
+      return out;
+    },
+  };
+
+  // --- REAPER: scythe-winged obsidian manta with glowing veins and slit eyes.
+  const REAPER = {
+    scale: 2.4, box: 280, r: 56,
+    pal: { obsidian: [0.06, 0.05, 0.07], shell: [0.12, 0.1, 0.13], plate: [0.19, 0.15, 0.2], chitin: [0.04, 0.04, 0.05] },
+    muzzles: [[15, -3, 2], [15, 3, 2]], core: [3, 0, 7.5], nozzles: [[-20, -2.2, 1], [-20, 2.2, 1]],
+    build() {
+      const m = meshBuilder();
+      // hooded head riding on the hump
+      m.dome(10, 7.5, 6, [[2.5, 1], [5.5, 0.7]], 7.8, 8, (r, k) => (k + r) % 2 ? 'obsidian' : 'plate', 'chitin');
+      const st = [
+        { L: [16, 0, 1], T: [-20, 0, 1], z: 7.2 },
+        { L: [8, 9, 0.8], T: [-15, 11, 0.8], z: 4.6 },
+        { L: [-1, 18, 0.4], T: [-16, 20, 0.4], z: 2.6 },
+        { L: [-12, 27, 0], T: [-22, 28, 0], z: 1.1 },
+        { L: [-31, 36, -0.5], T: [-31, 36, -0.5], z: -0.5 },
+      ];
+      for (const s of [-1, 1]) {
+        const P = st.map(o => {
+          const L = [o.L[0], o.L[1] * s, o.L[2]], T = [o.T[0], o.T[1] * s, o.T[2]];
+          const R = v3.lerp(L, T, 0.4); R[2] = o.z;
+          return { L: m.vp(L), T: m.vp(T), R: m.vp(R), Rp: R };
+        });
+        const up = [0, 0, 1], down = [0, 0, -1];
+        for (let i = 0; i < P.length - 1; i++) {
+          const a = P[i], b = P[i + 1];
+          m.quad(a.L, b.L, b.R, a.R, i % 2 ? 'shell' : 'obsidian', up);
+          m.quad(a.R, b.R, b.T, a.T, i % 2 ? 'obsidian' : 'plate', up);
+          m.quad(a.L, a.T, b.T, b.L, 'chitin', down);
+          // glowing vein riding the ridge
+          const r0 = v3.add(a.Rp, [0, 0, 0.18]), r1 = v3.add(P[i + 1].Rp, [0, 0, 0.18]);
+          const side = v3.mul(v3.norm(v3.cross(v3.sub(r1, r0), [0, 0, 1])), 0.45 * (1 - i / 4));
+          m.quad(m.vp(v3.add(r0, side)), m.vp(v3.add(r1, side)), m.vp(v3.sub(r1, side)), m.vp(v3.sub(r0, side)), 'glow', up);
+        }
+        // serrated leading edge: barbs pointing forward and out
+        for (const [bx, by] of [[5, 12.5], [-3, 20.5], [-11, 28]]) m.tube([bx, by * s, 0.6], [bx + 7, (by + 4.5) * s, 0.3], 1.1, 0, 4, 'plate');
+        // horns sweeping back off the hood
+        m.tube([9, 3.2 * s, 6], [-2, 8 * s, 12.5], 1.4, 0, 4, 'shell');
+        // slanted glowing eye slits on the hood
+        m.quad(m.v(15.2, 1.1 * s, 5.2), m.v(12, 5 * s, 4.6), m.v(11.2, 5.2 * s, 5.3), m.v(14.6, 1.4 * s, 5.9), 'glow', up);
+        // tail spikes
+        m.tube([-17, 3 * s, 1], [-46, 8 * s, 0], 1.7, 0, 4, 'shell');
+      }
+      return m.done();
+    },
+  };
+
+  // --- OCULUS: a giant bloodshot eye in a rotating crown of spikes, with tentacles.
+  const OCULUS = {
+    scale: 2.2, box: 220, r: 50, eyeR: 17,
+    pal: { chitin: [0.09, 0.08, 0.1], shell: [0.2, 0.17, 0.2], plate: [0.3, 0.25, 0.3] },
+    muzzles: [[0, 0, 12], [0, 0, 12]], core: [0, 0, 12],
+    build() {
+      const m = meshBuilder(), up = [0, 0, 1];
+      const n = 11;
+      for (let i = 0; i < n; i++) {                       // spikes
+        const a = i / n * Math.PI * 2, da = 0.16;
+        const P = (ang, r, z) => m.v(Math.cos(ang) * r, Math.sin(ang) * r, z);
+        const b1 = P(a - da, 18.5, -1), b2 = P(a + da, 18.5, -1), top = P(a, 21, 4.2), tip = P(a, 35, 0.4);
+        m.f([b1, tip, top], 'plate', { center: [0, 0, -2] }); m.f([top, tip, b2], 'shell', { center: [0, 0, -2] });
+        const g1 = P(a - 0.03, 30, 1.4), g2 = P(a + 0.03, 30, 1.4);
+        m.f([g1, tip, g2], 'glow', up);
+      }
+      const k = 16;                                       // armoured collar around the eye
+      for (let i = 0; i < k; i++) {
+        const a0 = i / k * Math.PI * 2, a1 = (i + 1) / k * Math.PI * 2;
+        const P = (ang, r, z) => m.v(Math.cos(ang) * r, Math.sin(ang) * r, z);
+        m.quad(P(a0, 16.2, 5), P(a1, 16.2, 5), P(a1, 20.5, 1), P(a0, 20.5, 1), i % 2 ? 'shell' : 'chitin', { center: [0, 0, -3] });
+      }
+      return m.done();
+    },
+  };
+
+  // --- LEVIATHAN: armoured serpent; segments trail the head's path.
+  const LEVI_HEAD = {
+    scale: 2.1, box: 170, r: 36,
+    pal: { chitin: [0.08, 0.1, 0.1], shell: [0.16, 0.2, 0.2], plate: [0.25, 0.3, 0.29] },
+    build() {
+      const m = meshBuilder(), up = [0, 0, 1];
+      m.dome(2, 13, 9, [[0.5, 1], [3.8, 0.78], [6, 0.45]], 7, 8, (r, k) => (k + r) % 2 ? 'shell' : 'plate', 'chitin');
+      for (const s of [-1, 1]) {
+        m.tube([9, 5.5 * s, 1.5], [17, 8.5 * s, 1], 1.8, 1.2, 4, 'plate');       // mandibles
+        m.tube([17, 8.5 * s, 1], [22, 3.5 * s, 0.6], 1.2, 0, 4, 'shell');
+        m.quad(m.v(12.5, 2.2 * s, 5.1), m.v(9.5, 5.4 * s, 4.7), m.v(8.8, 5.6 * s, 5.2), m.v(12, 2.4 * s, 5.7), 'glow', up);   // eyes
+        m.tube([-2, 4 * s, 5.5], [-12, 7 * s, 11], 1.3, 0, 4, 'shell');         // horns
+      }
+      return m.done();
+    },
+  };
+  const LEVI_SEG = {
+    pal: LEVI_HEAD.pal,
+    build() {
+      const m = meshBuilder(), up = [0, 0, 1], n = 6;
+      const ring = (x, r, z) => Array.from({ length: n }, (_, k) => { const a = k / n * Math.PI * 2 + Math.PI / 6; return m.v(x, Math.cos(a) * r, Math.sin(a) * r + z); });
+      const A = ring(5, 7, 1), B = ring(-5, 8, 1.4), C = ring(-7, 5.5, 1.2);
+      for (let k = 0; k < n; k++) {
+        const k2 = (k + 1) % n, h = { axis: [0, 1.2] };
+        m.quad(A[k], A[k2], B[k2], B[k], k % 2 ? 'plate' : 'shell', h);
+        m.quad(B[k], B[k2], C[k2], C[k], 'glow', h);                              // glowing seam
+      }
+      m.tube([0, 0, 8.5], [-6, 0, 15], 1.6, 0, 4, 'plate');                        // dorsal spike
+      return m.done();
+    },
+  };
+
+  // ---------- drawing helpers for the designs (g = any 2D context) ----------
+  const designViews = {};
+  function designView(key, box) { return designViews[key] || (designViews[key] = makeMeshView({ V: [], F: [] }, box)); }
+  function blit(g, img, x, y, box, alpha) {
+    g.save(); g.globalAlpha = alpha == null ? 1 : alpha;
+    g.shadowColor = 'rgba(255,40,40,0.4)'; g.shadowBlur = 18;
+    g.drawImage(img, x - box / 2, y - box / 2, box, box);
+    g.restore();
+  }
+  function blitFlash(g, img, x, y, box, flash) {
+    blit(g, img, x, y, box);
+    if (flash > 0) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = flash * 0.55; g.drawImage(img, x - box / 2, y - box / 2, box, box); g.restore(); }
+  }
+  function addGlow(g, col, x, y, r, a) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = a; g.drawImage(glowSprite(col), x - r, y - r, r * 2, r * 2); g.restore(); }
+
+  const staticMesh = {};
+  function drawWidow(g, x, y, ang, roll, t, pulse, flash = 0) {
+    const view = designView('widow', WIDOW.box);
+    setViewMesh(view, WIDOW.build(t));
+    const pal = Object.assign({ glow: glowEmit(pulse) }, WIDOW.pal);
+    blitFlash(g, renderMesh(view, ang, roll, WIDOW.scale, pal, [1, 0.2, 0.2]), x, y, WIDOW.box, flash);
+    for (const e of WIDOW.eyes) { const p = meshXform(e, roll, ang, WIDOW.scale, [0, 0, 0]); addGlow(g, '#ff2a1a', x + p[0], y + p[1], 7 + pulse * 2, 0.9); addGlow(g, '#ffffff', x + p[0], y + p[1], 1.6, 1); }
+    for (const kp of WIDOW.kneePts(t)) { const p = meshXform(kp, roll, ang, WIDOW.scale, [0, 0, 0]); addGlow(g, '#ff2a1a', x + p[0], y + p[1], 5, 0.5); }
+  }
+  function drawReaper(g, x, y, ang, roll, t, pulse, flash = 0) {
+    const view = designView('reaper', REAPER.box);
+    if (!staticMesh.reaper) staticMesh.reaper = REAPER.build();
+    setViewMesh(view, staticMesh.reaper);
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const nz of REAPER.nozzles) { const p = meshXform(nz, roll, ang, REAPER.scale, [0, 0, 0]); const c = g; c.save(); c.translate(x + p[0], y + p[1]); c.rotate(ang); c.globalAlpha = 0.6; c.drawImage(glowSprite('#ff3a2a'), -26, -12, 30, 24); c.restore(); }
+    g.restore();
+    const pal = Object.assign({ glow: glowEmit(pulse) }, REAPER.pal);
+    blitFlash(g, renderMesh(view, ang, roll, REAPER.scale, pal, [1, 0.2, 0.2]), x, y, REAPER.box, flash);
+    const c = meshXform(REAPER.core, roll, ang, REAPER.scale, [0, 0, 0]);
+    addGlow(g, '#ff2a1a', x + c[0], y + c[1], 16 + pulse * 5, 0.35);
+  }
+
+  // eye textures are painted once
+  function scleraSprite() {
+    if (spriteCache.sclera) return spriteCache.sclera;
+    const S = 256, h = S / 2, c = makeCanvas(S), g = c.getContext('2d');
+    const gr = g.createRadialGradient(h * 0.85, h * 0.8, 0, h, h, h);
+    gr.addColorStop(0, '#f6ecdf'); gr.addColorStop(0.55, '#e7cdbd'); gr.addColorStop(0.85, '#b86a5e'); gr.addColorStop(1, '#4a1418');
+    g.fillStyle = gr; g.beginPath(); g.arc(h, h, h, 0, 7); g.fill();
+    g.save(); g.beginPath(); g.arc(h, h, h, 0, 7); g.clip();
+    g.lineCap = 'round';
+    for (let i = 0; i < 26; i++) {                      // bloodshot veins creeping in from the rim
+      let a = Math.random() * 6.28, r = h, x = h + Math.cos(a) * r, y = h + Math.sin(a) * r, w = rand(1.6, 3);
+      g.strokeStyle = `rgba(${150 + Math.random() * 60 | 0},20,24,${rand(0.35, 0.7)})`;
+      for (let j = 0; j < 7 && r > h * 0.35; j++) {
+        const nr = r - rand(8, 18), na = a + rand(-0.25, 0.25), nx = h + Math.cos(na) * nr, ny = h + Math.sin(na) * nr;
+        g.lineWidth = w; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo((x + nx) / 2 + rand(-6, 6), (y + ny) / 2 + rand(-6, 6), nx, ny); g.stroke();
+        if (Math.random() < 0.35) { g.lineWidth = w * 0.5; g.beginPath(); g.moveTo(nx, ny); g.lineTo(nx + rand(-14, 14), ny + rand(-14, 14)); g.stroke(); }
+        x = nx; y = ny; r = nr; a = na; w *= 0.8;
+      }
     }
-    // reactor core on the spine: the glowing weak point
-    const cT = v(-2, 0, 12), cF = v(2, 0, 8), cB = v(-6, 0, 8), cL = v(-2, -4, 8), cR = v(-2, 4, 8);
-    const cc = { center: [-2, 0, 9] };
-    f([cT, cF, cR], 'core', cc); f([cT, cR, cB], 'core', cc); f([cT, cB, cL], 'core', cc); f([cT, cL, cF], 'core', cc);
-    meshNormals(V, F);
-    return { V, F, muzzles: [[30, -11, 0.9], [30, 11, 0.9]], nozzles: [[-24.8, -10, 0], [-24.8, 10, 0]], core: [-2, 0, 10] };
-  })();
-  const BOSS_COL = { hull: [0.3, 0.32, 0.38], armor: [0.48, 0.5, 0.57], dark: [0.12, 0.13, 0.16], pod: [0.3, 0.32, 0.38] };
-  const bossView = makeMeshView(BOSS, BOSS_BOX);
-  const BOSS_NAMES = ['SENTINEL', 'WARDEN', 'GATEKEEPER', 'OBELISK', 'HARBINGER', 'REVENANT', 'LEVIATHAN'];
-  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
-  const bossPt = (p, b) => meshXform(p, b.roll, b.ang, BOSS_SCALE, [0, 0, 0]);
+    const sh = g.createRadialGradient(h * 0.7, h * 0.6, h * 0.3, h, h, h * 1.05);   // sphere shading, lit from upper-left
+    sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(0.7, 'rgba(20,0,5,0.25)'); sh.addColorStop(1, 'rgba(10,0,4,0.85)');
+    g.fillStyle = sh; g.fillRect(0, 0, S, S);
+    g.restore();
+    return (spriteCache.sclera = c);
+  }
+  function irisSprite() {
+    if (spriteCache.iris) return spriteCache.iris;
+    const S = 128, h = S / 2, c = makeCanvas(S), g = c.getContext('2d');
+    const gr = g.createRadialGradient(h, h, 0, h, h, h);
+    gr.addColorStop(0, '#3a0400'); gr.addColorStop(0.3, '#ff6a18'); gr.addColorStop(0.62, '#d1300c'); gr.addColorStop(0.9, '#5a0a04'); gr.addColorStop(1, '#1a0000');
+    g.fillStyle = gr; g.beginPath(); g.arc(h, h, h, 0, 7); g.fill();
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 90; i++) {                      // radial fibres
+      const a = Math.random() * 6.28, r0 = h * rand(0.28, 0.4), r1 = h * rand(0.7, 0.95);
+      g.strokeStyle = `rgba(255,${150 + Math.random() * 80 | 0},60,${rand(0.08, 0.22)})`; g.lineWidth = rand(0.6, 1.6);
+      g.beginPath(); g.moveTo(h + Math.cos(a) * r0, h + Math.sin(a) * r0); g.lineTo(h + Math.cos(a + rand(-0.1, 0.1)) * r1, h + Math.sin(a + rand(-0.1, 0.1)) * r1); g.stroke();
+    }
+    return (spriteCache.iris = c);
+  }
+  // look: [-1..1] direction the eye looks; blink 0..1; charge 0..1
+  function drawOculus(g, x, y, spin, look, t, pulse, blink, charge, flash = 0) {
+    const S = OCULUS.scale, R = OCULUS.eyeR * S;
+    // tentacles behind everything
+    g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    for (let i = 0; i < 7; i++) {
+      const base = i / 7 * Math.PI * 2 + 0.3, len = 34 * S * (0.8 + 0.25 * Math.sin(i * 2.1));
+      const pts = [];
+      for (let j = 0; j <= 14; j++) {
+        const u = j / 14, a = base + Math.sin(t * 2.2 + i * 1.3 + u * 4) * 0.35 * u;
+        pts.push([x + Math.cos(a) * (R * 0.9 + u * len), y + Math.sin(a) * (R * 0.9 + u * len)]);
+      }
+      for (let j = 0; j < 14; j++) {
+        const u = j / 14;
+        g.strokeStyle = '#150d12'; g.lineWidth = (1 - u) * 11 + 1.5;
+        g.beginPath(); g.moveTo(pts[j][0], pts[j][1]); g.lineTo(pts[j + 1][0], pts[j + 1][1]); g.stroke();
+        g.strokeStyle = `rgba(255,50,40,${0.35 * (1 - u)})`; g.lineWidth = Math.max(0.6, (1 - u) * 2.2);
+        g.beginPath(); g.moveTo(pts[j][0], pts[j][1] - 1); g.lineTo(pts[j + 1][0], pts[j + 1][1] - 1); g.stroke();
+      }
+      addGlow(g, '#ff2a1a', pts[14][0], pts[14][1], 6 + pulse * 2, 0.7);
+    }
+    g.restore();
+    // crown of spikes
+    const view = designView('oculus', OCULUS.box);
+    if (!staticMesh.oculus) staticMesh.oculus = OCULUS.build();
+    setViewMesh(view, staticMesh.oculus);
+    blitFlash(g, renderMesh(view, spin, 0, S, Object.assign({ glow: glowEmit(pulse) }, OCULUS.pal), [1, 0.2, 0.2]), x, y, OCULUS.box, flash);
+    // the eye
+    g.save();
+    g.translate(x, y);
+    g.drawImage(scleraSprite(), -R, -R, R * 2, R * 2);
+    g.beginPath(); g.arc(0, 0, R, 0, 7); g.clip();
+    const lm = Math.min(1, Math.hypot(look[0], look[1])), la = Math.atan2(look[1], look[0]);
+    const off = lm * R * 0.4, sq = Math.sqrt(1 - Math.pow(off / R, 2) * 0.9), ir = R * 0.5;
+    g.save();
+    g.translate(Math.cos(la) * off, Math.sin(la) * off); g.rotate(la); g.scale(sq, 1);
+    addGlow(g, '#ff4a1a', 0, 0, ir * 1.5, 0.35 + charge * 0.6);
+    g.drawImage(irisSprite(), -ir, -ir, ir * 2, ir * 2);
+    g.rotate(-la);
+    g.fillStyle = '#050000';                                // slit pupil, narrows while charging
+    g.beginPath(); g.ellipse(0, 0, ir * (0.2 - charge * 0.12), ir * 0.78, 0, 0, 7); g.fill();
+    g.restore();
+    g.globalCompositeOperation = 'lighter';                 // wet highlight
+    g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.ellipse(-R * 0.38, -R * 0.42, R * 0.2, R * 0.1, -0.6, 0, 7); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.25)'; g.beginPath(); g.arc(R * 0.3, R * 0.35, R * 0.05, 0, 7); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    if (blink > 0) {                                        // eyelids
+      g.fillStyle = '#1b1016';
+      const e = R * 1.05 * blink;
+      g.beginPath(); g.moveTo(-R, -R); g.lineTo(R, -R); g.lineTo(R, -R + e); g.quadraticCurveTo(0, -R + e * 1.35, -R, -R + e); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(-R, R); g.lineTo(R, R); g.lineTo(R, R - e); g.quadraticCurveTo(0, R - e * 1.35, -R, R - e); g.closePath(); g.fill();
+    }
+    g.restore();
+    g.save(); g.strokeStyle = `rgba(255,60,50,${0.5 + 0.3 * pulse})`; g.lineWidth = 2; g.beginPath(); g.arc(x, y, R + 1, 0, 7); g.stroke(); g.restore();
+    if (flash > 0) addGlow(g, '#ffffff', x, y, R * 1.3, flash * 0.45);
+  }
+
+  // path: list of [x, y] from head backwards (screen space)
+  function drawLeviathan(g, path, t, pulse, flash = 0) {
+    const segView = designView('leviseg', 170), headView = designView('levihead', LEVI_HEAD.box);
+    if (!staticMesh.seg) { staticMesh.seg = LEVI_SEG.build(); staticMesh.head = LEVI_HEAD.build(); }
+    const pal = Object.assign({ glow: glowEmit(pulse) }, LEVI_HEAD.pal);
+    const n = path.length;
+    for (let i = n - 1; i >= 1; i--) {                      // tail first so the head sits on top
+      const p = path[i], q = path[i - 1], a = Math.atan2(q[1] - p[1], q[0] - p[0]);
+      const k = 1 - i / n * 0.55;
+      setViewMesh(segView, staticMesh.seg);
+      blit(g, renderMesh(segView, a, Math.sin(t * 3 + i) * 0.25, 2.5 * k * BOSS_ZOOM, pal, [1, 0.2, 0.2]), p[0], p[1], 170);
+    }
+    const h = path[0], a = Math.atan2(h[1] - path[1][1], h[0] - path[1][0]);
+    setViewMesh(headView, staticMesh.head);
+    blitFlash(g, renderMesh(headView, a, 0, LEVI_HEAD.scale, pal, [1, 0.2, 0.2]), h[0], h[1], LEVI_HEAD.box, flash);
+  }
+
+
+  // --- THORNLORD: spiked gunmetal warlord with a faceted red core gem, twin orange eyes and mace arms with claws.
+  // Laid out to match the reference art when it faces you (its beak and claws point at the player).
+  const THORN = {
+    scale: 2.05, box: 210, r: 48,
+    pal: { slate: [0.3, 0.32, 0.37], slate2: [0.38, 0.4, 0.46], dark: [0.16, 0.17, 0.2], bezel: [0.22, 0.23, 0.27] },
+    muzzles: [[20.5, -31.5, -0.5], [20.5, 31.5, -0.5]], core: [0, 0, 8.6], eyes: [[-13.6, -10, 6.6], [-13.6, 10, 6.6]],
+    build() {
+      const m = meshBuilder(), up = [0, 0, 1];
+      // body: a faceted shield, rim -> mid -> plateau
+      const half = [[-19.7, 0], [-18.6, 8.6], [-14.2, 15], [-6.6, 16], [3.1, 14.2], [10, 10.2], [15.5, 4.8], [17.6, 0]];
+      const outline = half.concat(half.slice(1, -1).reverse().map(([x, y]) => [x, -y]));
+      const cx = -1, n = outline.length, hint = { center: [cx, 0, -2] };
+      const ringAt = (s, z) => outline.map(([x, y]) => m.v(cx + (x - cx) * s, y * s, z));
+      const R0 = ringAt(1, 0), R1 = ringAt(0.7, 4), R2 = ringAt(0.44, 5.9);
+      const top = m.v(0, 0, 6.1), under = m.v(cx, 0, -3);
+      for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        m.quad(R0[i], R0[j], R1[j], R1[i], i % 2 ? 'slate' : 'slate2', hint);
+        m.quad(R1[i], R1[j], R2[j], R2[i], i % 2 ? 'slate2' : 'slate', hint);
+        m.f([R2[i], R2[j], top], 'slate', hint);
+        m.f([under, R0[j], R0[i]], 'dark', hint);
+      }
+      // octagonal socket and the faceted core gem
+      const oct = (r, z, cxo = 0, cyo = 0, sx = 1) => Array.from({ length: 8 }, (_, k) => { const a = k / 8 * Math.PI * 2 + Math.PI / 8; return m.v(cxo + Math.cos(a) * r * sx, cyo + Math.sin(a) * r, z); });
+      const gh = { center: [0, 0, 4] };
+      const B0 = oct(6.4, 5.8), B1 = oct(6.1, 7), B2 = oct(4.6, 7.1), G0 = oct(4.4, 7.15), G1 = oct(2.5, 8.7), gt = m.v(0, 0, 8.75);
+      const gemCols = ['gemA', 'gemB', 'gemC', 'gemB', 'gemA', 'gemC', 'gemB', 'gemC'];
+      for (let i = 0; i < 8; i++) {
+        const j = (i + 1) % 8;
+        m.quad(B0[i], B0[j], B1[j], B1[i], 'bezel', gh);
+        m.quad(B1[i], B1[j], B2[j], B2[i], i % 2 ? 'slate2' : 'slate', gh);
+        m.quad(B2[i], B2[j], G0[j], G0[i], 'dark', gh);
+        m.quad(G0[i], G0[j], G1[j], G1[i], gemCols[i], gh);
+        m.f([G1[i], G1[j], gt], i % 2 ? 'gemT' : 'gemC', gh);
+      }
+      for (const s of [-1, 1]) {
+        // eye: hooded housing with an orange gem
+        const ex = -13.6, ey = 10 * s, eh = { center: [ex, ey, 2] };
+        const H0 = oct(4.1, 3.2, ex, ey, 1.35), H1 = oct(3.4, 6, ex, ey, 1.35), E0 = oct(2.6, 6.1, ex, ey, 1.4), E1 = oct(1.4, 7.1, ex, ey, 1.4), et = m.v(ex, ey, 7.15);
+        for (let i = 0; i < 8; i++) {
+          const j = (i + 1) % 8;
+          m.quad(H0[i], H0[j], H1[j], H1[i], i % 2 ? 'slate' : 'slate2', eh);
+          m.quad(E0[i], E0[j], E1[j], E1[i], i % 3 ? 'eyeA' : 'eyeC', eh);
+          m.f([E1[i], E1[j], et], 'eyeB', eh);
+        }
+        // spikes: [from, to, radius]
+        const spikes = [
+          [[-17, 4.5, 4], [-29.5, 6.2, 1.5], 2.6], [[-15.5, 2.3, 5], [-24.5, 2.8, 4.5], 1.8],
+          [[-16.8, 10.5, 5], [-25, 11.4, 3], 2.6], [[-15, 14, 3], [-21, 18.2, 1], 2.2],
+          [[-9, 14.5, 2], [-15.5, 22.4, 0], 3.2], [[-4, 15.4, 2.5], [-7.5, 20.2, 3], 1.8],
+          [[-11.5, 6, 5.5], [-16, 6.8, 8.5], 1.5],
+          [[5, 12, 1.5], [9.6, 16.8, 0], 2.2], [[11.5, 8, 1.5], [19.2, 11.6, 0], 2],
+          [[14.5, 4.8, 1.5], [23.2, 6.9, 0], 2.2], [[13, 2.6, 2.5], [21.6, 4.3, 0.5], 2],
+        ];
+        for (const [a, b, r] of spikes) m.tube([a[0], a[1] * s, a[2]], [b[0], b[1] * s, b[2]], r, 0, 5, 'slate');
+        // arm: strut, spiked mace pod and a long claw
+        m.tube([0, 14 * s, 1.2], [0, 20.5 * s, 1.2], 3.1, 2.9, 6, 'slate2');
+        m.dome(-0.5, 6.4, 5.4, [[-1.5, 1], [2.8, 0.88], [5.8, 0.5]], 7.2, 8, (r, k) => (k + r) % 2 ? 'slate' : 'slate2', 'dark', 25 * s);
+        const pod = [
+          [[-5, 23.5, 3], [-11.5, 22.5, 1.5], 2.2], [[-4, 28, 3], [-7.5, 31.5, 1.5], 2], [[-0.5, 30, 2], [-1.5, 34, 0.5], 1.8],
+          [[3, 29.5, 2.5], [5.5, 32.5, 1], 1.5], [[-0.5, 25, 6.5], [-1.5, 25.8, 10.5], 1.6], [[-4.5, 25.5, 5], [-8, 27, 8], 1.2],
+        ];
+        for (const [a, b, r] of pod) m.tube([a[0], a[1] * s, a[2]], [b[0], b[1] * s, b[2]], r, 0, 5, 'slate');
+        m.tube([4, 26.5 * s, 1], [20.5, 31.5 * s, -0.5], 3.3, 0, 5, 'slate2');
+        m.tube([5, 23.2 * s, 1], [11.5, 24 * s, -0.2], 1.8, 0, 5, 'slate');
+      }
+      m.tube([-17, 0, 4.5], [-28, 0, 2.5], 2.4, 0, 5, 'slate2');          // crown centre
+      m.tube([11, 0, 3.5], [28.5, 0, 0], 3.4, 0, 5, 'slate2');            // beak
+      return m.done();
+    },
+  };
+  function drawThorn(g, x, y, ang, roll, t, pulse, flash = 0, charge = 0) {
+    const view = designView('thorn', THORN.box);
+    if (!staticMesh.thorn) staticMesh.thorn = THORN.build();
+    setViewMesh(view, staticMesh.thorn);
+    const k = 0.78 + 0.22 * pulse + charge * 0.25;
+    const pal = Object.assign({
+      gemA: { emit: [1 * k, 0.26 * k, 0.1 * k] }, gemB: { emit: [0.86 * k, 0.12 * k, 0.05] }, gemC: { emit: [1, 0.4 * k, 0.16 * k] },
+      gemT: { emit: [1, 0.34 + 0.35 * charge, 0.14 + 0.35 * charge] },
+      eyeA: { emit: [1, 0.4, 0.06] }, eyeB: { emit: [1, 0.52, 0.12] }, eyeC: { emit: [0.82, 0.26, 0.03] },
+    }, THORN.pal);
+    const img = renderMesh(view, ang, roll, THORN.scale, pal, [1, 0.3, 0.2]);
+    blitFlash(g, img, x, y, THORN.box, flash);
+    const c = meshXform(THORN.core, roll, ang, THORN.scale, [0, 0, 0]);
+    addGlow(g, '#ff4a1a', x + c[0], y + c[1], 22 + pulse * 6 + charge * 20, 0.4 + charge * 0.3);
+    for (const e of THORN.eyes) { const p = meshXform(e, roll, ang, THORN.scale, [0, 0, 0]); addGlow(g, '#ff8a1a', x + p[0], y + p[1], 11 + pulse * 2, 0.45); }
+  }
+
+
+  // bosses are drawn well above the player's scale so they tower over your ship
+  const BOSS_ZOOM = 1.45;
+  for (const D of [THORN, WIDOW, REAPER, OCULUS, LEVI_HEAD]) { D.scale *= BOSS_ZOOM; D.box = Math.ceil(D.box * BOSS_ZOOM); }
+  function bossWorld(b, p, scale) { const q = meshXform(p, b.roll, b.ang, scale, [0, 0, 0]); return { x: b.x + q[0], y: b.y + q[1] }; }
+  const BOSS_TYPES = [
+    { name: 'THORNLORD', r: 66, orbit: 330, speed: 5, hp: 1,
+      muzzles: b => THORN.muzzles.map(p => bossWorld(b, p, THORN.scale)), core: b => bossWorld(b, THORN.core, THORN.scale),
+      draw: (b, x, y, pulse, charge) => drawThorn(ctx, x, y, b.ang, b.roll, b.t, pulse, b.hit, charge) },
+    { name: 'OCULUS', r: 60, orbit: 350, speed: 3.6, hp: 1, eye: true,
+      muzzles: b => { const R = OCULUS.eyeR * OCULUS.scale * 0.45, p = { x: b.x + b.look[0] * R, y: b.y + b.look[1] * R }; return [p, p]; },
+      core: b => ({ x: b.x, y: b.y }),
+      draw: (b, x, y, pulse, charge) => drawOculus(ctx, x, y, b.ang, b.look, b.t, pulse, b.blink, charge, b.hit) },
+    { name: 'WIDOW', r: 64, orbit: 310, speed: 5.5, hp: 1, lunge: true,
+      muzzles: b => WIDOW.muzzles.map(p => bossWorld(b, p, WIDOW.scale)), core: b => bossWorld(b, WIDOW.core, WIDOW.scale),
+      draw: (b, x, y, pulse) => drawWidow(ctx, x, y, b.ang, b.roll, b.walk, pulse, b.hit) },
+    { name: 'REAPER', r: 66, orbit: 330, speed: 7, hp: 1, swoop: true,
+      muzzles: b => REAPER.muzzles.map(p => bossWorld(b, p, REAPER.scale)), core: b => bossWorld(b, REAPER.core, REAPER.scale),
+      draw: (b, x, y, pulse) => drawReaper(ctx, x, y, b.ang, b.roll, b.t, pulse, b.hit) },
+    { name: 'LEVIATHAN', r: 46, orbit: 300, speed: 5.5, hp: 0.8, serpent: true,
+      muzzles: b => { const p = { x: b.x + Math.cos(b.ang) * 58, y: b.y + Math.sin(b.ang) * 58 }; return [p, p]; },
+      core: b => ({ x: b.x, y: b.y }),
+      draw: (b, x, y, pulse) => drawLeviathan(ctx, b.body.map(p => [p.x + x - b.x, p.y + y - b.y]), b.t, pulse, b.hit) },
+  ];
+  const bossType = () => BOSS_TYPES[boss.type];
+
+  // Leviathan: resample the head's recent path into evenly spaced body segments
+  const LEVI_SEGS = 15, LEVI_GAP = 29;
+  function leviBody(b) {
+    const out = [{ x: b.x, y: b.y }];
+    let need = LEVI_GAP, px = b.x, py = b.y;
+    for (let i = b.trail.length - 1; i >= 0 && out.length <= LEVI_SEGS; i--) {
+      const q = b.trail[i];
+      let d = Math.hypot(q.x - px, q.y - py);
+      while (d >= need && out.length <= LEVI_SEGS) {
+        const t = need / d; px += (q.x - px) * t; py += (q.y - py) * t;
+        out.push({ x: px, y: py });
+        d = Math.hypot(q.x - px, q.y - py); need = LEVI_GAP;
+      }
+      need -= d; px = q.x; py = q.y;
+    }
+    while (out.length <= LEVI_SEGS) { const l = out[out.length - 1]; out.push({ x: l.x - Math.cos(b.ang) * LEVI_GAP, y: l.y - Math.sin(b.ang) * LEVI_GAP }); }
+    return out;
+  }
+  // what a player laser hit: the guardian's weak point ('hit'), its armoured body ('block'), or nothing
+  function bossLaserHit(L) {
+    if (!boss || boss.dying) return null;
+    const T = bossType();
+    if (Math.hypot(boss.x - L.x, boss.y - L.y) < T.r) return 'hit';
+    if (T.serpent) for (let i = 1; i < boss.body.length; i++) { const p = boss.body[i]; if (Math.hypot(p.x - L.x, p.y - L.y) < 23) return 'block'; }
+    return null;
+  }
 
   function spawnBoss() {
-    const sw = shipWorld();
+    const sw = shipWorld(), type = sectorIndex % BOSS_TYPES.length, T = BOSS_TYPES[type];
     const dx = sw.x - wormhole.x, dy = sw.y - wormhole.y, d = Math.hypot(dx, dy) || 1;
     const x = wormhole.x + dx / d * 260, y = wormhole.y + dy / d * 260;
-    const hp = 50 + 10 * Math.min(sectorIndex, 8);
-    boss = { x, y, vx: 0, vy: 0, ang: Math.atan2(sw.y - y, sw.x - x), roll: 0, hp, max: hp, hit: 0, t: 0,
+    const hp = Math.round((50 + 10 * Math.min(sectorIndex, 8)) * T.hp);
+    const ang = Math.atan2(sw.y - y, sw.x - x);
+    boss = { type, x, y, vx: 0, vy: 0, ang, roll: 0, hp, max: hp, hit: 0, t: 0,
       fireT: 2.4, burst: 0, burstT: 0, side: 0, ringT: 6.5, strafe: Math.random() < 0.5 ? -1 : 1,
       orbit: Math.atan2(y - sw.y, x - sw.x), dying: 0, boomT: 0, rammed: 0, lastHitSfx: 0,
-      name: pick(BOSS_NAMES) + ' MK-' + ROMAN[Math.min(sectorIndex, 8)] };
+      look: [0, 0], blink: 0, blinkT: 2, blinkP: 0, walk: 0, lungeT: 4, lunging: 0, trail: [], body: [],
+      name: T.name + (sectorIndex >= BOSS_TYPES.length ? ' MK-' + ROMAN[Math.min(8, Math.floor(sectorIndex / BOSS_TYPES.length))] : '') };
+    if (T.serpent) {
+      for (let i = 60; i >= 1; i--) boss.trail.push({ x: x - Math.cos(ang) * i * 6, y: y - Math.sin(ang) * i * 6 });
+      boss.body = leviBody(boss);
+    }
     ring(x, y, 20, 7, HOSTILE, 34);
     burst(x, y, 26, '#ff6a5a', 6, 40, 3);
     addP({ k: 'g', x, y, vx: 0, vy: 0, max: 14, size: 150, col: '#ffffff', drag: 1 });
-    showBanner('WARNING', 'GUARDIAN INBOUND', 3, true);
+    showBanner('WARNING · GUARDIAN INBOUND', boss.name, 3.2, true);
     $('boss-name').textContent = boss.name;
     sfx.siren();
+  }
+
+  function updateBoss(dt, sec, sw) {
+    const b = boss, T = bossType();
+    b.t += sec; b.hit = Math.max(0, b.hit - sec * 5); b.rammed = Math.max(0, b.rammed - sec);
+    if (b.dying > 0) {                                         // chain explosions, then the big one
+      b.dying -= sec;
+      b.vx *= Math.pow(0.95, dt); b.vy *= Math.pow(0.95, dt);
+      b.x += b.vx * dt; b.y += b.vy * dt; b.ang += 0.02 * dt; b.roll += 0.03 * dt;
+      b.boomT -= sec;
+      if (b.boomT <= 0) {
+        b.boomT = 0.11;
+        const at = T.serpent && b.body.length ? b.body[(Math.random() * b.body.length) | 0] : b;
+        explode(at.x + rand(-40, 40), at.y + rand(-40, 40), rand(20, 36), b.vx, b.vy);
+        sfx.boom(28); shake = reduceMotion ? 0 : Math.max(shake, 5);
+      }
+      if (b.dying <= 0) finishBoss();
+      return;
+    }
+    // movement: hold a ring around the player (each design in its own way), leashed to its wormhole
+    let orbitR = T.orbit, maxV = T.speed, strafeRate = 0.35;
+    if (T.swoop) { orbitR = 250 + Math.sin(b.t * 0.9) * 150; strafeRate = 0.6; }         // Reaper: swooping passes
+    if (T.lunge) {                                                                          // Widow: sudden lunges
+      b.lungeT -= sec;
+      if (b.lungeT <= 0 && b.lunging <= 0) { b.lunging = 0.8; b.lungeT = rand(4.5, 6.5); }
+      if (b.lunging > 0) { b.lunging -= sec; orbitR = 120; maxV = 9.5; }
+    }
+    b.orbit += b.strafe * strafeRate * sec;
+    const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
+    b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.98, dt));
+    let tx = sw.x + Math.cos(b.orbit) * orbitR, ty = sw.y + Math.sin(b.orbit) * orbitR;
+    if (T.serpent) { const w = Math.sin(b.t * 2.4) * 110; tx += -Math.sin(b.ang) * w; ty += Math.cos(b.ang) * w; }   // slither
+    const lx = tx - wormhole.x, ly = ty - wormhole.y, ld = Math.hypot(lx, ly);
+    if (ld > 620) { tx = wormhole.x + lx / ld * 620; ty = wormhole.y + ly / ld * 620; }
+    const ke = 1 - Math.pow(0.95, dt);
+    b.vx = lerp(b.vx, clamp((tx - b.x) * 0.025, -maxV, maxV), ke);
+    b.vy = lerp(b.vy, clamp((ty - b.y) * 0.025, -maxV, maxV), ke);
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (Math.random() < 0.004 * dt) b.strafe *= -1;
+    const speed = Math.hypot(b.vx, b.vy);
+    let want = Math.atan2(sw.y - b.y, sw.x - b.x);
+    if ((T.swoop || T.serpent) && speed > 1.2) want = Math.atan2(b.vy, b.vx);              // flyers face where they're going
+    const da = angDiff(b.ang, want);
+    b.ang += da * (1 - Math.pow(T.serpent ? 0.9 : 0.94, dt));
+    b.roll = lerp(b.roll, clamp(-da * 1.5 - b.strafe * 0.15, -0.5, 0.5), ke);
+    b.walk += (0.35 + speed * 0.3) * sec;
+    if (T.eye) {                                                                            // Oculus: stare and blink
+      const dx = sw.x - b.x, dy = sw.y - b.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 220);
+      b.look[0] = lerp(b.look[0], dx / d * k, Math.min(1, ke * 2)); b.look[1] = lerp(b.look[1], dy / d * k, Math.min(1, ke * 2));
+      b.blinkT -= sec;
+      if (b.blinkT <= 0) { b.blinkT = rand(2.5, 5); b.blinkP = 0.24; }
+      if (b.blinkP > 0) { b.blinkP -= sec; b.blink = Math.sin(Math.PI * clamp(1 - b.blinkP / 0.24, 0, 1)); } else b.blink = 0;
+      b.ang = b.t * 0.3;                                                                    // the crown spins
+    }
+    if (T.serpent) {
+      const l = b.trail[b.trail.length - 1];
+      if (!l || Math.hypot(l.x - b.x, l.y - b.y) > 3) b.trail.push({ x: b.x, y: b.y });
+      if (b.trail.length > 500) b.trail.shift();
+      b.body = leviBody(b);
+    }
+
+    if (!playing || jump) return;
+    const phase2 = b.hp < b.max * 0.5;
+    // aimed three-shot bursts
+    b.fireT -= sec;
+    if (b.fireT <= 0 && !b.burst) { b.burst = 3; b.burstT = 0; b.fireT = phase2 ? 1.9 : 2.5; }
+    if (b.burst) {
+      b.burstT -= sec;
+      if (b.burstT <= 0) {
+        b.burstT = 0.15; b.burst--; b.side ^= 1;
+        const from = T.muzzles(b)[b.side];
+        bossShot(from, Math.atan2(sw.y - from.y, sw.x - from.x), 4.2);
+        addP({ k: 'g', x: from.x, y: from.y, vx: b.vx, vy: b.vy, max: 7, size: 18, col: '#ff7a5a', drag: 1 });
+        sfx.bossFire();
+      }
+    }
+    // telegraphed ring of slow bolts from the core
+    b.ringT -= sec;
+    if (b.ringT <= 0.8 && !b.charging) { b.charging = true; sfx.charge(); }
+    if (b.ringT <= 0) {
+      b.charging = false; b.ringT = phase2 ? 5 : 7;
+      const c = T.core(b), n = phase2 ? 14 : 12, off = rand(0, 6.28);
+      for (let i = 0; i < n; i++) bossShot(c, off + i / n * Math.PI * 2, 2.7);
+      ring(c.x, c.y, 10, 5, HOSTILE, 18);
+      sfx.bossRing();
+    }
+    // bumping into it pushes you off; warping into it does damage instead
+    const bump = (px, py, rad, canRam) => {
+      const d = Math.hypot(sw.x - px, sw.y - py);
+      if (d >= rad + 12 || d < 0.1) return;
+      const nx = (sw.x - px) / d, ny = (sw.y - py) / d, push = rad + 12 - d;
+      cam.x += nx * push; cam.y += ny * push; cam.vx += nx * 3; cam.vy += ny * 3;
+      if (warp > 0.45) { if (canRam && !b.rammed) { b.rammed = 0.35; damageBoss(3); sfx.ram(); shake = reduceMotion ? 0 : 6; } }
+      else if (ship.inv <= 0) hurtShip(10);
+    };
+    bump(b.x, b.y, T.r, true);
+    if (T.serpent) for (let i = 2; i < b.body.length; i++) bump(b.body[i].x, b.body[i].y, 21, false);
+  }
+
+  function drawBoss(ox, oy) {
+    const b = boss, T = bossType(), x = b.x + ox, y = b.y + oy;
+    if (!T.serpent && (x < -300 || x > W + 300 || y < -300 || y > H + 300)) return;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 6);
+    const charge = b.charging ? clamp(1 - b.ringT / 0.8, 0, 1) : 0;
+    T.draw(b, x, y, pulse, charge);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const c = T.core(b), cx = c.x + ox, cy = c.y + oy;
+    if (charge > 0) {                                            // telegraph: glow builds, a ring closes in before the volley
+      ctx.globalAlpha = 0.5 + charge * 0.5;
+      const cs = 20 + charge * 50;
+      ctx.drawImage(glowSprite(charge > 0.5 ? '#ffd0b0' : '#ff5a3a'), cx - cs, cy - cs, cs * 2, cs * 2);
+      ctx.globalAlpha = charge;
+      ctx.strokeStyle = HOSTILE; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 170 - charge * 125, 0, 7); ctx.stroke();
+    }
+    if (b.burst) for (const p of T.muzzles(b)) { ctx.globalAlpha = 0.8; ctx.drawImage(glowSprite('#ff7a5a'), p.x + ox - 10, p.y + oy - 10, 20, 20); }
+    ctx.restore();
   }
 
   function damageBoss(n) {
     const b = boss;
     if (!b || b.dying) return;
-    b.hp -= n; b.hit = 1; score += 5 * n;
+    b.hp -= n; b.hit = Math.max(b.hit, n >= 1 ? 1 : 0.4); score += Math.max(1, Math.round(5 * n));
     if (time - b.lastHitSfx > 0.07) { b.lastHitSfx = time; sfx.bossHit(); }
     if (b.hp <= 0) {
       b.hp = 0; b.dying = 1.5;
@@ -1581,6 +2146,7 @@
 
   function finishBoss() {
     const b = boss;
+    if (b.body && b.body.length) for (let i = 2; i < b.body.length; i += 3) explode(b.body[i].x, b.body[i].y, 28);
     explode(b.x, b.y, 120, b.vx, b.vy);
     ring(b.x, b.y, 30, 9, '#ffd9a0', 40);
     ring(b.x, b.y, 20, 6, HOSTILE, 34);
@@ -1600,73 +2166,6 @@
 
   function bossShot(from, ang, speed) {
     bossBolts.push({ x: from.x, y: from.y, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed, life: 0 });
-  }
-
-  function updateBoss(dt, sec, sw) {
-    const b = boss;
-    b.t += sec; b.hit = Math.max(0, b.hit - sec * 5); b.rammed = Math.max(0, b.rammed - sec);
-    if (b.dying > 0) {                                         // chain explosions, then the big one
-      b.dying -= sec;
-      b.vx *= Math.pow(0.95, dt); b.vy *= Math.pow(0.95, dt);
-      b.x += b.vx * dt; b.y += b.vy * dt; b.ang += 0.02 * dt; b.roll += 0.03 * dt;
-      b.boomT -= sec;
-      if (b.boomT <= 0) {
-        b.boomT = 0.11;
-        explode(b.x + rand(-48, 48), b.y + rand(-48, 48), rand(20, 36), b.vx, b.vy);
-        sfx.boom(28); shake = reduceMotion ? 0 : Math.max(shake, 5);
-      }
-      if (b.dying <= 0) finishBoss();
-      return;
-    }
-    // hold a ring ~300px around the player and strafe, but stay near the wormhole it guards
-    b.orbit += b.strafe * 0.35 * sec;
-    const cur = Math.atan2(b.y - sw.y, b.x - sw.x);
-    b.orbit += angDiff(b.orbit, cur) * (1 - Math.pow(0.98, dt));
-    let tx = sw.x + Math.cos(b.orbit) * 300, ty = sw.y + Math.sin(b.orbit) * 300;
-    const lx = tx - wormhole.x, ly = ty - wormhole.y, ld = Math.hypot(lx, ly);
-    if (ld > 620) { tx = wormhole.x + lx / ld * 620; ty = wormhole.y + ly / ld * 620; }
-    const ke = 1 - Math.pow(0.95, dt);
-    b.vx = lerp(b.vx, clamp((tx - b.x) * 0.025, -5, 5), ke);
-    b.vy = lerp(b.vy, clamp((ty - b.y) * 0.025, -5, 5), ke);
-    b.x += b.vx * dt; b.y += b.vy * dt;
-    if (Math.random() < 0.004 * dt) b.strafe *= -1;
-    const want = Math.atan2(sw.y - b.y, sw.x - b.x), da = angDiff(b.ang, want);
-    b.ang += da * (1 - Math.pow(0.94, dt));
-    b.roll = lerp(b.roll, clamp(-da * 1.5 - b.strafe * 0.15, -0.5, 0.5), ke);
-
-    if (!playing || jump) return;
-    const phase2 = b.hp < b.max * 0.5;
-    // aimed three-shot bursts from alternating mandibles
-    b.fireT -= sec;
-    if (b.fireT <= 0 && !b.burst) { b.burst = 3; b.burstT = 0; b.fireT = phase2 ? 1.9 : 2.5; }
-    if (b.burst) {
-      b.burstT -= sec;
-      if (b.burstT <= 0) {
-        b.burstT = 0.15; b.burst--; b.side ^= 1;
-        const m = bossPt(BOSS.muzzles[b.side], b), from = { x: b.x + m[0], y: b.y + m[1] };
-        bossShot(from, Math.atan2(sw.y - from.y, sw.x - from.x), 4.2);
-        addP({ k: 'g', x: from.x, y: from.y, vx: b.vx, vy: b.vy, max: 7, size: 18, col: '#ff7a5a', drag: 1 });
-        sfx.bossFire();
-      }
-    }
-    // telegraphed ring of slow bolts from the core
-    b.ringT -= sec;
-    if (b.ringT <= 0.8 && !b.charging) { b.charging = true; sfx.charge(); }
-    if (b.ringT <= 0) {
-      b.charging = false; b.ringT = phase2 ? 5 : 7;
-      const c = bossPt(BOSS.core, b), n = phase2 ? 14 : 12, off = rand(0, 6.28);
-      for (let i = 0; i < n; i++) bossShot({ x: b.x + c[0], y: b.y + c[1] }, off + i / n * Math.PI * 2, 2.7);
-      ring(b.x + c[0], b.y + c[1], 10, 5, HOSTILE, 18);
-      sfx.bossRing();
-    }
-    // bumping into the hull pushes you off; warping into it does damage instead
-    const dsh = Math.hypot(sw.x - b.x, sw.y - b.y);
-    if (dsh < BOSS_R + 12 && dsh > 0.1) {
-      const nx = (sw.x - b.x) / dsh, ny = (sw.y - b.y) / dsh, push = BOSS_R + 12 - dsh;
-      cam.x += nx * push; cam.y += ny * push; cam.vx += nx * 3; cam.vy += ny * 3;
-      if (warp > 0.45) { if (!b.rammed) { b.rammed = 0.35; damageBoss(3); sfx.ram(); shake = reduceMotion ? 0 : 6; } }
-      else if (ship.inv <= 0) hurtShip(10);
-    }
   }
 
   function updateBolts(dt, sec, sw) {
@@ -1698,41 +2197,6 @@
     cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = cg;
     ctx.beginPath(); ctx.moveTo(0.5, -1.4 * w); ctx.quadraticCurveTo(-cf * 0.5, -1.2 * w, -cf, 0); ctx.quadraticCurveTo(-cf * 0.5, 1.2 * w, 0.5, 1.4 * w); ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-
-  function drawBoss(ox, oy) {
-    const b = boss, x = b.x + ox, y = b.y + oy;
-    if (x < -160 || x > W + 160 || y < -160 || y > H + 160) return;
-    const pulse = 0.5 + 0.5 * Math.sin(time * 6);
-    const charge = b.charging ? clamp(1 - b.ringT / 0.8, 0, 1) : 0;
-    const speed = Math.hypot(b.vx, b.vy);
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (const nz of BOSS.nozzles) { const p = bossPt(nz, b); drawPlume(x + p[0], y + p[1], b.ang, 14 + speed * 4, '#ff5a3a', 1.7); }
-    ctx.restore();
-    const pal = Object.assign({}, BOSS_COL, {
-      trim: { emit: [1, 0.22 + 0.18 * pulse, 0.2] },
-      core: { emit: [1, 0.35 + 0.2 * pulse + charge * 0.5, 0.2 + charge * 0.7] },
-      enozzle: { emit: [1, 0.5, 0.35] },
-    });
-    const img = renderMesh(bossView, b.ang, b.roll, BOSS_SCALE, pal, [1, 0.3, 0.3]);
-    ctx.save();
-    ctx.shadowColor = 'rgba(255,60,60,0.45)'; ctx.shadowBlur = 16;
-    ctx.drawImage(img, x - BOSS_BOX / 2, y - BOSS_BOX / 2, BOSS_BOX, BOSS_BOX);
-    ctx.restore();
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    if (b.hit > 0) { ctx.globalAlpha = b.hit * 0.55; ctx.drawImage(img, x - BOSS_BOX / 2, y - BOSS_BOX / 2, BOSS_BOX, BOSS_BOX); }
-    const c = bossPt(BOSS.core, b), cs = 26 + pulse * 6 + charge * 46;
-    ctx.globalAlpha = 0.7 + charge * 0.3;
-    ctx.drawImage(glowSprite(charge > 0.5 ? '#ffd0b0' : '#ff5a3a'), x + c[0] - cs, y + c[1] - cs, cs * 2, cs * 2);
-    if (charge > 0) {                                            // telegraph: a ring closing in before the volley
-      ctx.globalAlpha = charge;
-      ctx.strokeStyle = HOSTILE; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(x + c[0], y + c[1], 120 - charge * 90, 0, 7); ctx.stroke();
-    }
-    if (b.burst) for (const mz of BOSS.muzzles) { const p = bossPt(mz, b); ctx.globalAlpha = 0.8; ctx.drawImage(glowSprite('#ff7a5a'), x + p[0] - 10, y + p[1] - 10, 20, 20); }
     ctx.restore();
   }
 
@@ -1915,6 +2379,7 @@
     const onScreen = sx > m && sx < W - m && sy > m && sy < H - m;
     const bearing = Math.atan2(sy - ship.sy, sx - ship.sx);
     const bc = Math.cos(bearing), bs = Math.sin(bearing);
+    const bossInView = boss && boss.x + CX - cam.x > 0 && boss.x + CX - cam.x < W && boss.y + CY - cam.y > 0 && boss.y + CY - cam.y < H;
 
     // sonar wavefronts leaving the ship toward the signal (one per ping)
     ctx.save();
@@ -1965,7 +2430,7 @@
       ctx.shadowColor = acc; ctx.shadowBlur = 12;
       chevron(ex + Math.cos(a) * 3, ey + Math.sin(a) * 3, a, 15, '#ffffff');
       ctx.shadowBlur = 0;
-      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, (boss ? 'GUARDIAN ' : 'SIGNAL ') + fmtDist(dist), boss ? HOSTILE : acc);
+      pill(ex - Math.cos(a) * 98, ey - Math.sin(a) * 58, (boss && !bossInView ? 'GUARDIAN ' : 'SIGNAL ') + fmtDist(dist), boss ? HOSTILE : acc);
       ctx.restore();
     } else {
       // target brackets around the wormhole once it's in view
@@ -1986,7 +2451,6 @@
     }
 
     // compass arrow orbiting the ship: always right where you're looking
-    const bossInView = boss && boss.x + CX - cam.x > 0 && boss.x + CX - cam.x < W && boss.y + CY - cam.y > 0 && boss.y + CY - cam.y < H;
     if (!(onScreen && dist < 320) && !bossInView) {
       const R0 = 60;
       ctx.save();
