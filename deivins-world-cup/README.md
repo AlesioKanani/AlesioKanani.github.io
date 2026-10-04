@@ -7,15 +7,15 @@ A Unity 6 3D arcade soccer game. Deivin's squad plays Messi's crew in three-minu
 Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Kick Off**.
 
 - Bottom-left joystick: move relative to the screen.
-- Pass: a firmer pass with gentle assistance toward the receiver; opponents can still intercept. Switch players while defending.
-- Through: send a lofted ball into fixed space ahead of a teammate's run, then move the receiver to collect it; tackle while defending.
+- Pass: hold to charge more ball speed, then release. A tap gives a normal assisted pass. Aim backward to pass to the AI goalkeeper, who automatically chooses an outfield outlet. Switch players immediately while defending.
+- Through: hold to charge a farther lead into fixed space ahead of a teammate's run, then release and move the receiver to collect it; tackle immediately while defending.
 - Shoot / Tackle: Shoot from either half while attacking; hold to charge and release. Fully charged shots have more speed and airtime. While defending, tap Tackle to slide with a short speed boost. Goalkeepers track shots and make saves, fast balls use swept contact checks, and goals only count between the posts below the crossbar. Shots and tackles can still miss.
-- Sprint & Skill: hold to sprint; touch with the ball to perform a juke.
+- Sprint & Skill: hold to sprint; touch with the ball to perform a juke. Two quick taps rainbow-flick the ball from behind your body into forward space, releasing it for you to chase.
 - Camera and Pause: top corners.
 
-A horizontal power bar fills at the bottom center while you charge a shot. After a slide animation finishes, you can immediately slide again with no extra cooldown.
+A horizontal power bar fills at the bottom center for shots, pass speed, and through distance. Shoot while chasing a loose ball queues an immediate medium-power first-touch shot on the next home outfield reception. When an opponent has possession, Shoot becomes Tackle. After a slide animation finishes, you can immediately slide again with no extra cooldown.
 
-Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot (press to slide when defending), J to pass, L for a through ball, K to slide-tackle, Q/Tab to switch, C for camera, Esc to pause, M for sound.
+Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot (press to queue a first-touch shot for a loose ball or slide against an opponent in possession), hold/release J to charge pass speed, hold/release L to charge through distance, K to slide-tackle, Q/Tab to switch, C for camera, Esc to pause, M for sound.
 
 ## Teams and control
 
@@ -33,4 +33,4 @@ Choose **English** or **Albanian** under **Language / Gjuha** on the starting sc
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-All 150 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, passing, skills, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
+All 213 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, charged passing, goalkeeper back-passes, rainbow recovery, first-touch shooting, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
