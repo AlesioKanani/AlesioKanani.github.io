@@ -7,10 +7,10 @@ A Unity 6 3D arcade soccer game. Deivin's squad plays Messi's crew in three-minu
 Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Kick Off**.
 
 - Bottom-left joystick: move relative to the screen.
-- Pass: hold to charge more ball speed, then release. A tap gives a normal assisted pass. Aim backward to pass to the AI goalkeeper, who automatically chooses an outfield outlet. Switch players immediately while defending.
+- Pass / Switch: hold to charge more ball speed, then release. A tap gives a normal assisted pass. Aim backward to pass to the AI goalkeeper, who automatically chooses an outfield outlet. Without possession, the button reads Switch and switches outfield players immediately.
 - Through: hold to charge a farther lead into fixed space ahead of a teammate's run, then release and move the receiver to collect it; tackle immediately while defending.
 - Shoot / Tackle: Shoot from either half while attacking; hold to charge and release. Fully charged shots have more speed and airtime. While defending, tap Tackle to slide with a short speed boost. Goalkeepers track shots and make saves, fast balls use swept contact checks, and goals only count between the posts below the crossbar. Shots and tackles can still miss.
-- Sprint & Skill: hold to sprint; touch with the ball to perform a juke. Two quick taps rainbow-flick the ball from behind your body into forward space, releasing it for you to chase.
+- Sprint & Skill: hold to sprint; touch with the ball to perform a juke. Two quick taps rainbow-flick the ball from behind your body into forward space, releasing it for you to chase. Its launch follows your current running direction and speed so the descending ball stays ahead even while sprinting.
 - Camera and Pause: top corners.
 
 A horizontal power bar fills at the bottom center for shots, pass speed, and through distance. Shoot while chasing a loose ball queues an immediate medium-power first-touch shot on the next home outfield reception. When an opponent has possession, Shoot becomes Tackle. After a slide animation finishes, you can immediately slide again with no extra cooldown.
@@ -23,7 +23,7 @@ Home: Deivin #7, Max #13, Alesio #10, John #5, Aaron #9, and goalkeeper Emi Mart
 
 Away: Messi #10, Lamine Yamal #19, Mbappe #7, tall Haaland #9, defender Bellingham #5, and goalkeeper Courtois #1.
 
-Control automatically follows whichever home outfield player receives or wins the ball. Passing lets you steer the intended receiver; if another teammate collects the ball, control follows the actual receiver. There is no player picker or saved player choice. While defending, use Pass or Q/Tab to switch to another outfield player. Goalkeepers are controlled by AI and cannot be selected. The joystick keeps its large size with a simpler design, action buttons are about 15 percent smaller, and players are 30 percent larger.
+Control automatically follows whichever home outfield player receives or wins the ball. Passing lets you steer the intended receiver; if another teammate collects the ball, control follows the actual receiver. There is no player picker or saved player choice. Without possession, the Pass button becomes Switch; use it or Q/Tab to switch to another outfield player. Goalkeepers are controlled by AI and cannot be selected. The joystick keeps its large size with a simpler design, action buttons are about 15 percent smaller, and players are 30 percent larger.
 
 ## Languages
 
@@ -33,4 +33,4 @@ Choose **English** or **Albanian** under **Language / Gjuha** on the starting sc
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-All 213 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, charged passing, goalkeeper back-passes, rainbow recovery, first-touch shooting, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
+All 231 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, charged passing, goalkeeper back-passes, rainbow recovery during continuous running and sprinting, contextual Pass/Switch labels, first-touch shooting, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
