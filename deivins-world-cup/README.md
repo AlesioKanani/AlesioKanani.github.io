@@ -15,8 +15,12 @@ Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter th
 
 Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot, J to pass, K to tackle, Q/Tab to switch, C for camera, Esc to pause, M for sound.
 
+## Languages
+
+Choose **English** or **Albanian** under **Language / Gjuha** on the starting screen. Albanian translates the menus, instructions, touch buttons, match announcements, descriptive character labels, stadium signs, results, and browser loading screen. The choice is remembered on the device. Proper personal names and physical keyboard keys keep their original names.
+
 ## Deployment
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-55 built-game checks passed, covering match rules, touch layouts, simultaneous fingers, canceled touches, Clear/Shoot switching, charged shots, passing, and skills. The Web player was loaded and played in a browser. Actual mobile hardware remains to be tested.
+65 built-game checks passed, covering match rules, touch layouts, simultaneous fingers, canceled touches, Clear/Shoot switching, charged shots, passing, skills, language persistence, and live stadium text updates. The Web player was loaded and played in a browser. Actual mobile hardware remains to be tested.

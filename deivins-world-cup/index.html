@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Deivin's World Cup</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <link id="game-manifest" rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="cup.svg" type="image/svg+xml">
   <style>
     * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -19,12 +19,19 @@
     h1 { font-size:clamp(29px,5vw,58px); letter-spacing:-1.5px; margin:18px 0 10px; line-height:1; }
     p { color:#9caeb5; font-size:15px; max-width:470px; line-height:1.5; margin:9px 0 19px; }
     #start { border:0; border-radius:10px; padding:19px 35px; background:#30edc3; color:#07121c; font-size:16px; font-weight:800; cursor:pointer; min-height:56px; }
+    .languages { margin:0 0 20px; }
+    .languages h2 { font-size:12px; letter-spacing:2px; color:#9caeb5; margin:0 0 10px; }
+    .language-options { display:flex; justify-content:center; gap:10px; }
+    .language-options button { min-width:132px; min-height:48px; border:1px solid #34545b; border-radius:8px; color:#eff7f3; background:#11252d; font-size:15px; font-weight:700; cursor:pointer; }
+    .language-options button[aria-pressed="true"] { background:#30edc3; border-color:#30edc3; color:#07121c; }
+    .language-options button:focus-visible,#start:focus-visible { outline:2px solid white; outline-offset:4px; }
     #progress { width:min(360px,80vw); height:6px; background:#1b343b; border-radius:6px; overflow:hidden; margin-top:22px; display:none; }
     #bar { height:100%; width:0; background:#30edc3; transition:width .2s; }
     #status { font-size:12px; color:#9caeb5; min-height:20px; margin-top:15px; }
     #rotate { position:fixed; inset:0; display:none; z-index:5; align-items:center; justify-content:center; flex-direction:column; text-align:center; background:#07121c; padding:32px; }
     #rotate strong { font-size:25px; margin:20px 0 10px; }
     @media (orientation:portrait) and (pointer:coarse) { #rotate { display:flex; } }
+    @media (max-height:440px) { .languages { margin-bottom:12px; } .languages h2 { margin-bottom:6px; } .language-options button { min-height:42px; } }
     @media (max-height:440px) { #welcome { padding:12px; } #welcome img { width:35px; height:35px; } h1 { margin:12px 0 4px; } p { margin:6px 0 12px; font-size:13px; } #start { padding:15px 25px; min-height:50px; } }
   </style>
 </head>
@@ -32,21 +39,51 @@
   <div id="stage"><canvas id="unity-canvas" tabindex="0"></canvas></div>
   <div id="welcome">
     <img src="cup.svg" alt="" width="58" height="58">
-    <span class="badge">THE FAMILY SHOWDOWN</span>
-    <h1>DEIVIN'S WORLD CUP</h1>
-    <p>5 a side. One unforgettable cup.<br>Joystick on the left. Your winning moves on the right.</p>
+    <span id="badge" class="badge">THE FAMILY SHOWDOWN</span>
+    <h1 id="title">DEIVIN'S WORLD CUP</h1>
+    <p id="lede">5 a side. One unforgettable cup.<br>Joystick on the left. Your winning moves on the right.</p>
+    <section class="languages" aria-labelledby="language-heading">
+      <h2 id="language-heading">Language / Gjuha</h2>
+      <div class="language-options">
+        <button id="english" type="button" aria-pressed="true">English</button>
+        <button id="albanian" type="button" aria-pressed="false">Albanian</button>
+      </div>
+    </section>
     <button id="start">ENTER THE STADIUM &gt;</button>
     <div id="progress"><div id="bar"></div></div>
     <div id="status"></div>
   </div>
-  <div id="rotate"><img src="cup.svg" alt="" width="65" height="65"><strong>TURN YOUR SCREEN</strong><p>Play Deivin's World Cup in landscape.</p></div>
+  <div id="rotate"><img src="cup.svg" alt="" width="65" height="65"><strong id="rotate-title">TURN YOUR SCREEN</strong><p id="rotate-copy">Play Deivin's World Cup in landscape.</p></div>
   <script src="Build/MobileGame.loader.js"></script>
   <script>
+    const copy={
+      en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'5 a side. One unforgettable cup.\nJoystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM >',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
+      sq:{title:'Kupa e Botës e Deivinit',badge:'PËRBALLJA FAMILJARE',heading:'KUPA E BOTËS E DEIVINIT',lede:'5 kundër 5. Një kupë e paharrueshme.\nLeva majtas. Veprimet e tua fituese djathtas.',english:'Anglisht',albanian:'Shqip',enter:'HYR NË STADIUM >',opening:'PO HAPEN PORTAT...',loading:'PO PËRGATITET STADIUMI',retry:'PROVO PËRSËRI',failed:'Stadiumi nuk u ngarkua. Kontrollo lidhjen dhe provo përsëri.',rotate:'RROTULLO EKRANIN',rotateCopy:'Luaj Kupën e Botës të Deivinit me ekranin horizontal.'}
+    };
+    let language='en',loading=false,failed=false;
+    try { if(localStorage.getItem('dwwc-language')==='sq') language='sq'; } catch(error) {}
+    const t=key=>copy[language][key];
+    window.setWorldCupLanguage=next=>{
+      language=next==='sq'?'sq':'en'; window.dwwcLanguage=language;
+      try { localStorage.setItem('dwwc-language',language); } catch(error) {}
+      document.documentElement.lang=language; document.title=t('title');
+      for(const [id,key] of [['badge','badge'],['title','heading'],['english','english'],['albanian','albanian'],['rotate-title','rotate'],['rotate-copy','rotateCopy']]) document.getElementById(id).textContent=t(key);
+      document.getElementById('lede').textContent=t('lede'); document.getElementById('lede').style.whiteSpace='pre-line';
+      document.getElementById('english').setAttribute('aria-pressed',language==='en');
+      document.getElementById('albanian').setAttribute('aria-pressed',language==='sq');
+      document.getElementById('game-manifest').href=language==='sq'?'manifest-sq.webmanifest':'manifest.webmanifest';
+      document.getElementById('start').textContent=t(loading?'opening':failed?'retry':'enter');
+      if(failed) document.getElementById('status').textContent=t('failed');
+    };
+    document.getElementById('english').addEventListener('click',()=>window.setWorldCupLanguage('en'));
+    document.getElementById('albanian').addEventListener('click',()=>window.setWorldCupLanguage('sq'));
+    window.setWorldCupLanguage(language);
     const canvas=document.getElementById('unity-canvas');
     canvas.addEventListener('contextmenu',e=>e.preventDefault());
     canvas.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
     document.getElementById('start').addEventListener('click',async()=>{
-      const start=document.getElementById('start'); start.disabled=true; start.textContent='OPENING THE GATES...';
+      const start=document.getElementById('start'); loading=true; failed=false; start.disabled=true; start.textContent=t('opening');
+      document.getElementById('english').disabled=document.getElementById('albanian').disabled=true;
       document.getElementById('progress').style.display='block';
       if(document.documentElement.requestFullscreen&&matchMedia('(pointer:coarse)').matches) { document.documentElement.requestFullscreen().catch(()=>{}); }
       try {
@@ -57,13 +94,13 @@
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Deivin's Games",
           productName:"Deivin's World Cup",
-          productVersion:"1.1.0",
+          productVersion:"1.2.0",
           devicePixelRatio:Math.min(1.5,window.devicePixelRatio||1),
           matchWebGLToCanvasSize:true,
-          showBanner:(message,type)=>{ if(type==='error') document.getElementById('status').textContent=message; }
-        },progress=>{ document.getElementById('bar').style.width=(progress*100)+'%'; document.getElementById('status').textContent='GETTING THE STADIUM READY  '+Math.round(progress*100)+'%'; });
+          showBanner:(message,type)=>{ if(type==='error') document.getElementById('status').textContent=t('failed'); }
+        },progress=>{ document.getElementById('bar').style.width=(progress*100)+'%'; document.getElementById('status').textContent=t('loading')+'  '+Math.round(progress*100)+'%'; });
         window.worldCup=game; document.getElementById('welcome').style.display='none'; canvas.focus();
-      } catch(error) { start.disabled=false; start.textContent='TRY AGAIN'; document.getElementById('status').textContent='The stadium could not load. Check your connection and try again.'; console.error(error); }
+      } catch(error) { loading=false; failed=true; start.disabled=false; start.textContent=t('retry'); document.getElementById('status').textContent=t('failed'); document.getElementById('english').disabled=document.getElementById('albanian').disabled=false; console.error(error); }
     });
   </script>
 </body>
