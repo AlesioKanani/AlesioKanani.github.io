@@ -20,3 +20,8 @@ When a **signal** is detected, an arrow orbits your ship pointing toward it, the
 
 No build step. `index.html` holds the game (canvas + Web Audio). `gfx.js` renders the realistic graphics with WebGL shaders: a tileable noise nebula with dark dust lanes, lit 3D planets (gas giants with storms and shadowed rings, ocean worlds with clouds and city lights, cratered moons, ice, desert, lava and mirror-chrome worlds), ray-marched tumbling asteroids, and gravitational lensing around the wormhole. If WebGL isn't available, the game falls back to simpler canvas drawing. `og.jpg` is the link-preview image.
 The previous site lives at [`puzzle.html`](https://alesiokanani.github.io/puzzle.html).
+
+
+## Deivin's World Cup
+
+[Play Deivin's World Cup](https://alesiokanani.github.io/deivins-world-cup/): a Unity 3D 5v5 soccer game with AI opponents, a sideline broadcast camera, and landscape touch controls for iPad and phones. Clear becomes Shoot in the opponent's half; hold Shoot to charge and release to kick. The compiled browser game lives in `deivins-world-cup/`.

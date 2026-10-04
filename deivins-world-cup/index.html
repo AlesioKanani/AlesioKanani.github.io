@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#07121c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Deivin's World Cup</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="cup.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { width:100%; height:100%; margin:0; overflow:hidden; background:#07121c; color:#eff7f3; font-family:Arial,sans-serif; overscroll-behavior:none; }
+    #stage { position:fixed; top:env(safe-area-inset-top,0); left:env(safe-area-inset-left,0); right:env(safe-area-inset-right,0); bottom:env(safe-area-inset-bottom,0); }
+    canvas { display:block; width:100%; height:100%; background:#07121c; touch-action:none; outline:none; }
+    #welcome { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; text-align:center; background:radial-gradient(ellipse at top,#183c3a,#07121c 65%); z-index:3; }
+    .badge { color:#30edc3; letter-spacing:3px; font-size:11px; font-weight:700; }
+    h1 { font-size:clamp(29px,5vw,58px); letter-spacing:-1.5px; margin:18px 0 10px; line-height:1; }
+    p { color:#9caeb5; font-size:15px; max-width:470px; line-height:1.5; margin:9px 0 19px; }
+    #start { border:0; border-radius:10px; padding:19px 35px; background:#30edc3; color:#07121c; font-size:16px; font-weight:800; cursor:pointer; min-height:56px; }
+    #progress { width:min(360px,80vw); height:6px; background:#1b343b; border-radius:6px; overflow:hidden; margin-top:22px; display:none; }
+    #bar { height:100%; width:0; background:#30edc3; transition:width .2s; }
+    #status { font-size:12px; color:#9caeb5; min-height:20px; margin-top:15px; }
+    #rotate { position:fixed; inset:0; display:none; z-index:5; align-items:center; justify-content:center; flex-direction:column; text-align:center; background:#07121c; padding:32px; }
+    #rotate strong { font-size:25px; margin:20px 0 10px; }
+    @media (orientation:portrait) and (pointer:coarse) { #rotate { display:flex; } }
+    @media (max-height:440px) { #welcome { padding:12px; } #welcome img { width:35px; height:35px; } h1 { margin:12px 0 4px; } p { margin:6px 0 12px; font-size:13px; } #start { padding:15px 25px; min-height:50px; } }
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="unity-canvas" tabindex="0"></canvas></div>
+  <div id="welcome">
+    <img src="cup.svg" alt="" width="58" height="58">
+    <span class="badge">THE FAMILY SHOWDOWN</span>
+    <h1>DEIVIN'S WORLD CUP</h1>
+    <p>5 a side. One unforgettable cup.<br>Joystick on the left. Your winning moves on the right.</p>
+    <button id="start">ENTER THE STADIUM &gt;</button>
+    <div id="progress"><div id="bar"></div></div>
+    <div id="status"></div>
+  </div>
+  <div id="rotate"><img src="cup.svg" alt="" width="65" height="65"><strong>TURN YOUR SCREEN</strong><p>Play Deivin's World Cup in landscape.</p></div>
+  <script src="Build/MobileGame.loader.js"></script>
+  <script>
+    const canvas=document.getElementById('unity-canvas');
+    canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    canvas.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+    document.getElementById('start').addEventListener('click',async()=>{
+      const start=document.getElementById('start'); start.disabled=true; start.textContent='OPENING THE GATES...';
+      document.getElementById('progress').style.display='block';
+      if(document.documentElement.requestFullscreen&&matchMedia('(pointer:coarse)').matches) { document.documentElement.requestFullscreen().catch(()=>{}); }
+      try {
+        const game=await createUnityInstance(canvas,{
+          dataUrl:'Build/MobileGame.data',
+          frameworkUrl:'Build/MobileGame.framework.js',
+          codeUrl:'Build/MobileGame.wasm',
+          streamingAssetsUrl:'StreamingAssets',
+          companyName:"Deivin's Games",
+          productName:"Deivin's World Cup",
+          productVersion:"1.1.0",
+          devicePixelRatio:Math.min(1.5,window.devicePixelRatio||1),
+          matchWebGLToCanvasSize:true,
+          showBanner:(message,type)=>{ if(type==='error') document.getElementById('status').textContent=message; }
+        },progress=>{ document.getElementById('bar').style.width=(progress*100)+'%'; document.getElementById('status').textContent='GETTING THE STADIUM READY  '+Math.round(progress*100)+'%'; });
+        window.worldCup=game; document.getElementById('welcome').style.display='none'; canvas.focus();
+      } catch(error) { start.disabled=false; start.textContent='TRY AGAIN'; document.getElementById('status').textContent='The stadium could not load. Check your connection and try again.'; console.error(error); }
+    });
+  </script>
+</body>
+</html>
