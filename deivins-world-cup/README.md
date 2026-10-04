@@ -7,13 +7,13 @@ A Unity 6 3D arcade soccer game. Deivin's squad plays Messi's crew in three-minu
 Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Kick Off**.
 
 - Bottom-left joystick: move relative to the screen.
-- Pass: pass and switch to the receiver; switch players while defending.
+- Pass: a firmer pass with gentle assistance toward the receiver; opponents can still intercept. Switch players while defending.
 - Through: lead a teammate into space; tackle while defending.
-- Shoot: always available in either half. Hold to charge and release to kick. Shots travel through normal physics; long-range attempts can miss, fall short, or be saved.
+- Shoot / Tackle: Shoot from either half while attacking; hold to charge and release. Fully charged shots have more speed and airtime. While defending, tap Tackle to slide with a short speed boost. Shots and tackles can still miss.
 - Sprint & Skill: hold to sprint; touch with the ball to perform a juke.
 - Camera and Pause: top corners.
 
-Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot, J to pass, K to tackle, Q/Tab to switch, C for camera, Esc to pause, M for sound.
+Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot (press to slide when defending), J to pass, K to slide-tackle, Q/Tab to switch, C for camera, Esc to pause, M for sound.
 
 ## Teams and control
 
@@ -31,4 +31,4 @@ Choose **English** or **Albanian** under **Language / Gjuha** on the starting sc
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-All 89 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged shots, passing, skills, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
+All 116 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, sliding tackles, passing, skills, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
