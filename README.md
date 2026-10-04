@@ -24,4 +24,4 @@ The previous site lives at [`puzzle.html`](https://alesiokanani.github.io/puzzle
 
 ## Deivin's World Cup
 
-[Play Deivin's World Cup](https://alesiokanani.github.io/deivins-world-cup/): a Unity 3D 6v6 soccer game on a larger field, with AI goalkeepers, automatic control of the home ball carrier, English and Albanian, and landscape touch controls for iPad and phones. Shoot from either half with stronger charged shots, tap the contextual Tackle button to slide while defending, and use assisted passes to reach teammates. The compiled browser game lives in `deivins-world-cup/`.
+[Play Deivin's World Cup](https://alesiokanani.github.io/deivins-world-cup/): a Unity 3D 6v6 soccer game on a larger field, with AI goalkeepers that track and save shots, automatic control of the home ball carrier, English and Albanian, and landscape touch controls for iPad and phones. Shoot from either half with stronger charged shots, tap the contextual Tackle button to slide while defending, and use assisted passes to reach teammates. The compiled browser game lives in `deivins-world-cup/`.

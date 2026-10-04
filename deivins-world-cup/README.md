@@ -9,7 +9,7 @@ Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter th
 - Bottom-left joystick: move relative to the screen.
 - Pass: a firmer pass with gentle assistance toward the receiver; opponents can still intercept. Switch players while defending.
 - Through: lead a teammate into space; tackle while defending.
-- Shoot / Tackle: Shoot from either half while attacking; hold to charge and release. Fully charged shots have more speed and airtime. While defending, tap Tackle to slide with a short speed boost. Shots and tackles can still miss.
+- Shoot / Tackle: Shoot from either half while attacking; hold to charge and release. Fully charged shots have more speed and airtime. While defending, tap Tackle to slide with a short speed boost. Goalkeepers track shots and make saves, fast balls use swept contact checks, and goals only count between the posts below the crossbar. Shots and tackles can still miss.
 - Sprint & Skill: hold to sprint; touch with the ball to perform a juke.
 - Camera and Pause: top corners.
 
@@ -31,4 +31,4 @@ Choose **English** or **Albanian** under **Language / Gjuha** on the starting sc
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-All 116 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, sliding tackles, passing, skills, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
+All 137 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, sliding tackles, passing, skills, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
