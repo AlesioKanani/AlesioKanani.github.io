@@ -49,7 +49,7 @@
         <button id="albanian" type="button" aria-pressed="false">Albanian</button>
       </div>
     </section>
-    <button id="start">ENTER THE STADIUM &gt;</button>
+    <button id="start">ENTER THE STADIUM</button>
     <div id="progress"><div id="bar"></div></div>
     <div id="status"></div>
   </div>
@@ -57,8 +57,8 @@
   <script src="Build/MobileGame.loader.js?v=1.8.15"></script>
   <script>
     const copy={
-      en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'Joystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM >',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
-      sq:{title:'Kupa e Botës e Deivinit',badge:'PËRBALLJA FAMILJARE',heading:'KUPA E BOTËS E DEIVINIT',lede:'Leva majtas. Veprimet e tua fituese djathtas.',english:'Anglisht',albanian:'Shqip',enter:'HYR NË STADIUM >',opening:'PO HAPEN PORTAT...',loading:'PO PËRGATITET STADIUMI',retry:'PROVO PËRSËRI',failed:'Stadiumi nuk u ngarkua. Kontrollo lidhjen dhe provo përsëri.',rotate:'RROTULLO EKRANIN',rotateCopy:'Luaj Kupën e Botës të Deivinit me ekranin horizontal.'}
+      en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'Joystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
+      sq:{title:'Kupa e Botës e Deivinit',badge:'PËRBALLJA FAMILJARE',heading:'KUPA E BOTËS E DEIVINIT',lede:'Leva majtas. Veprimet e tua fituese djathtas.',english:'Anglisht',albanian:'Shqip',enter:'HYR NË STADIUM',opening:'PO HAPEN PORTAT...',loading:'PO PËRGATITET STADIUMI',retry:'PROVO PËRSËRI',failed:'Stadiumi nuk u ngarkua. Kontrollo lidhjen dhe provo përsëri.',rotate:'RROTULLO EKRANIN',rotateCopy:'Luaj Kupën e Botës të Deivinit me ekranin horizontal.'}
     };
     let language='en',loading=false,failed=false;
     try { if(localStorage.getItem('dwwc-language')==='sq') language='sq'; } catch(error) {}
