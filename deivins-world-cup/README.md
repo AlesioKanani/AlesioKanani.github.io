@@ -42,3 +42,5 @@ Difficulty: Easy uses slower opponents with less frequent tackles and weaker sho
 A small yellow downward triangle identifies your controlled player. To steal without sliding, move toward the exposed ball in front of an opponent and get within about 1.25 metres of the ball. Running into their back alone will not win it. A successful steal immediately attaches the ball to your player and displays Ball won; newly won possession has a brief protection against instant steal-backs. Slide tackling remains available.
 
 On desktop, circular action buttons show their keyboard shortcuts beneath the action: Shoot/Tackle (L), Pass/Switch (J), Through (I), Sprint & Skill (K). Hold K to sprint; double tap K for a rainbow. These key hints are hidden on phones and iPads.
+
+Background music is an original 34-second instrumental loop composed for this game, with bell melody, bass, and soft pitched percussion. It replaces the repeating noise ambience. M or the sound control mutes music and effects. No third-party music or license is required.
