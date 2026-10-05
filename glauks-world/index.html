@@ -31,12 +31,12 @@
     width:clamp(68px,18vw,104px);height:clamp(68px,18vw,104px);font-size:clamp(14px,3.4vh,22px);font-family:inherit;
     box-shadow:0 6px 0 rgba(0,0,0,.3);opacity:.9;touch-action:none}
   .pbtn:active,.pbtn.down{opacity:1;transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
-  #bJump{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#5be36f,#1fb347)}
-  #bFly{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 132px);background:linear-gradient(#6aa8ff,#2f6bff)}
-  #bDown{right:calc(env(safe-area-inset-right) + 132px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#ff8a70,#e63946);display:none}
-  #bKick{left:calc(env(safe-area-inset-left) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#fff,#d9d9d9);color:#1c1c55}
-  #bPow{left:calc(env(safe-area-inset-left) + 16px);bottom:calc(env(safe-area-inset-bottom) + 132px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
-  #bPunch{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  #bJump{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 18px);background:linear-gradient(#5be36f,#1fb347)}
+  #bFly{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 112px);background:linear-gradient(#6aa8ff,#2f6bff)}
+  #bKick{right:calc(env(safe-area-inset-right) + 110px);bottom:calc(env(safe-area-inset-bottom) + 18px);background:linear-gradient(#fff,#d9d9d9);color:#1c1c55}
+  #bPow{right:calc(env(safe-area-inset-right) + 110px);bottom:calc(env(safe-area-inset-bottom) + 112px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
+  #bDown{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 206px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  #bPunch{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 18px);background:linear-gradient(#ff8a70,#e63946);display:none}
   body.mode-box #bJump,body.mode-box #bFly,body.mode-box #bDown,body.mode-box #bKick,body.mode-box #bPow{display:none !important}
   body.mode-box.touch #bPunch{display:block}
   body.mode-world #bPunch{display:none !important}
@@ -59,7 +59,7 @@
     pointer-events:auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background:rgba(20,30,90,.0)}
   .screen.show{display:flex}
-  #menu{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 2vh)}
+  #menu{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 2vh);padding-bottom:calc(env(safe-area-inset-bottom) + 18px)}
   h1{margin:0;font-size:clamp(34px,11vh,92px);color:#ffd23f;transform:rotate(-2deg);line-height:1}
   .sub{margin:0;font-size:clamp(16px,4vh,32px);font-weight:bold}
   .spacer{flex:1}
@@ -76,7 +76,7 @@
   #rotate{display:none}
   @media (orientation:portrait){
     .pbtn{width:76px;height:76px;font-size:14px}
-    #bFly,#bPow{bottom:calc(env(safe-area-inset-bottom) + 108px)}
+    #bFly,#bPow{bottom:calc(env(safe-area-inset-bottom) + 104px)}
     #hint{display:none}
     #banner{top:16%;font-size:clamp(28px,7vh,52px)}
     h1{font-size:clamp(32px,8vh,64px)}
@@ -102,7 +102,7 @@
   <button class="pbtn" id="bPunch">PUNCH</button>
   <div id="joyBase"></div><div id="joyKnob"></div>
   <div id="hint" class="stroke">World: WASD, K kick, F fly. Boxing: WASD, J punch.</div>
-  <div id="boxHud"><div class="hp" id="hpG"><div></div></div><div class="hp foe" id="hpF"><div></div></div></div>
+  <div id="boxHud"><div class="hp" id="hpG"><div></div></div><b class="stroke">VS</b><div class="hp foe" id="hpF"><div></div></div></div>
 </div>
 
 <div class="screen show" id="menu">
@@ -419,7 +419,7 @@ function tStart(e){
   if (state !== 'play') return;
   for (const t of e.changedTouches){
     if (t.target.closest && t.target.closest('button')) continue;
-    if (t.clientX < innerWidth * .5 && !touch.joy) {
+    if (t.clientX < innerWidth * .62 && !touch.joy) {
       touch.joy = { id: t.identifier, x: t.clientX, y: t.clientY };
       Object.assign(joyBase.style, { display:'block', left:(t.clientX-65)+'px', top:(t.clientY-65)+'px' }); Object.assign(joyKnob.style, { display:'block', left:(t.clientX-32)+'px', top:(t.clientY-32)+'px' });
     } else if (t.clientX >= innerWidth * .5 && !touch.look) touch.look = { id: t.identifier, x: t.clientX, y: t.clientY };
@@ -481,7 +481,7 @@ function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList
 function startGame(which){
   unlockAudio(); mode = which || 'world'; vel.set(0,0,0); flying = false; pitch = .35; collected = 0; goals = 0; roundT = 0; boxOver = false;
   stars.forEach(s => { s.taken = false; s.m.visible = true; }); makeBall(); setStarsHud();
-  if (mode === 'box'){ gHp = fHp = 100; setHp(); flying = false; hero.position.set(ring.position.x - 2.2, ring.position.y, ring.position.z); foe.position.set(2.2,0,0); yaw = 0; banner('Punch!', 1.6); say('Boxing!'); }
+  if (mode === 'box'){ gHp = fHp = 100; setHp(); flying = false; hero.position.set(ring.position.x - 1.5, ring.position.y, ring.position.z); foe.position.set(1.5,0,0); yaw = 0; banner('Walk in and punch!', 1.8); say('Boxing!'); }
   else { hero.position.set(0, H(0,0), 0); yaw = 0; banner('Run into the ball to kick it.', 2.4); say('Go, Super Glauk!'); }
   showMode(); state = 'play'; show(null); $('#hud').classList.add('show');
 }
@@ -609,10 +609,13 @@ function update(dt){
     p.x = Math.max(rp.x-4.3, Math.min(rp.x+4.3, p.x));
     p.z = Math.max(rp.z-4.3, Math.min(rp.z+4.3, p.z));
     const dx = p.x - fx, dz = p.z - fz, gap = Math.hypot(dx, dz) || .001;
-    if (!boxOver && gap > 1.35){ fp.x += (dx/gap) * 2.4 * dt; fp.z += (dz/gap) * 2.4 * dt; }
+    hero.rotation.y = Math.atan2(fx - p.x, fz - p.z);
+    const toward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy;
+    if (toward){ p.x += (dx/gap) * toward * 3.2 * dt; p.z += (dz/gap) * toward * 3.2 * dt; }
+    if (!boxOver && gap > 1.25){ fp.x += (dx/gap) * 2.1 * dt; fp.z += (dz/gap) * 2.1 * dt; }
     fp.x = Math.max(-4.3, Math.min(4.3, fp.x)); fp.z = Math.max(-4.3, Math.min(4.3, fp.z));
-    foe.lookAt(p.x, rp.y + 1, p.z); hero.rotation.y = Math.atan2(fx - p.x, fz - p.z);
-    if (!boxOver && punchTap && punchCd <= 0){ punchCd = .4; armR.rotation.x = -1.7; if (gap < 1.8){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } }
+    foe.lookAt(p.x, rp.y + 1, p.z);
+    if (!boxOver && punchTap && punchCd <= 0){ punchCd = .4; armR.rotation.x = -1.7; if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } else banner('Get closer!', .7); }
     punchTap = false;
     if (!boxOver && foeCd <= 0 && gap < 1.55){ foeCd = .9; foeArmL.rotation.x = -1.6; gHp = Math.max(0, gHp-9); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
     else { foeArmL.rotation.x *= .8; armR.rotation.x *= .82; }
