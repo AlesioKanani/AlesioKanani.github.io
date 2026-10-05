@@ -43,4 +43,4 @@ A small yellow downward triangle identifies your controlled player. To steal wit
 
 On desktop, circular action buttons show their keyboard shortcuts beneath the action: Shoot/Tackle (L), Pass/Switch (J), Through (I), Sprint & Skill (K). Hold K to sprint; double tap K for a rainbow. These key hints are hidden on phones and iPads.
 
-Background music is an original 34-second instrumental loop composed for this game, with bell melody, bass, and soft pitched percussion. It replaces the repeating noise ambience. M or the sound control mutes music and effects. No third-party music or license is required.
+Music starts OFF every time the game loads. Toggle MUSIC OFF/ON from the home screen or pause menu to enable the original 132 BPM electronic football groove, with driving drums, syncopated bass, and synth stabs. Turning music off leaves gameplay effects enabled. M or the sound control mutes all audio. No third-party music is used.
