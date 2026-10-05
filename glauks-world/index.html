@@ -359,6 +359,7 @@ let mode = 'world', gHp = 100, fHp = 100, punchCd = 0, foeCd = 0, boxOver = fals
 function setHp(){ $('#hpG').firstElementChild.style.width = gHp + '%'; $('#hpF').firstElementChild.style.width = fHp + '%'; }
 function showMode(){
   const box = mode === 'box';
+  hero.scale.setScalar(box ? 1.85 : 1); foe.scale.setScalar(box ? 1.85 : 1);
   document.body.classList.toggle('mode-box', box);
   document.body.classList.toggle('mode-world', !box);
   ball.visible = !box; stars.forEach(s => s.m.visible = !box && !s.taken); ring.visible = box;
@@ -627,7 +628,7 @@ function update(dt){
   }
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
-  if (mode === 'box'){ const rp = ring.position; camTarget.set(rp.x, rp.y+.35, rp.z); camPos.set(rp.x+9, rp.y+8, rp.z+9); }
+  if (mode === 'box'){ const rp = ring.position; camTarget.set(rp.x, rp.y+.8, rp.z); camPos.set(rp.x+13, rp.y+11, rp.z+13); }
   else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6); }
   camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget);
 }
