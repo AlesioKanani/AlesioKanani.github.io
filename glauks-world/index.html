@@ -11,9 +11,9 @@
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
   html,body{margin:0;height:100%;overflow:hidden;background:#87cdfb;overscroll-behavior:none;touch-action:none;
-    font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;color:#fff;position:fixed;inset:0;width:100%}
-  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-  .ui{position:fixed;inset:0;pointer-events:none;
+    font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;color:#fff;position:fixed;top:0;right:0;bottom:0;left:0;width:100%}
+  #c{position:fixed;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block;touch-action:none}
+  .ui{position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;
       padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
   .stroke{text-shadow:0 3px 0 #1c1c55,2px 2px 0 #1c1c55,-2px 2px 0 #1c1c55,2px -2px 0 #1c1c55,-2px -2px 0 #1c1c55}
 
@@ -42,7 +42,7 @@
   body.touch #hint{display:none}
 
   /* menus */
-  .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;
+  .screen{position:fixed;top:0;right:0;bottom:0;left:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;
     pointer-events:auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     background:rgba(20,30,90,.0)}
   .screen.show{display:flex}
@@ -61,14 +61,15 @@
   .row{display:flex;gap:18px}
   #pausescr{background:rgba(10,15,60,.45)}
   .big{font-size:clamp(34px,10vh,64px);font-weight:bold}
-  #rotate{display:none;position:fixed;inset:0;z-index:99;background:#1c2a6b;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:26px;font-weight:bold;text-align:center;padding:20px}
+  #rotate{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:99;background:#1c2a6b;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:26px;font-weight:bold;text-align:center;padding:20px}
   @media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
-  #loading{position:fixed;inset:0;z-index:50;background:#87cdfb;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
+  #loading{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;background:#87cdfb;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="loading" class="stroke">Loading Glauk's World…</div>
+<script>setTimeout(function(){var l=document.getElementById("loading");if(l)l.innerHTML="Couldn't load the game.<br>Check your internet and refresh!";},10000);</script>
 
 <div class="ui" id="hud">
   <div id="stars" class="stroke">⭐ 0 / 0</div>
@@ -98,9 +99,8 @@
 </div>
 <div id="rotate" class="stroke"><div style="font-size:70px">📱↻</div>Turn your phone sideways to play!</div>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <script type="module">
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 /* ======= EASY TWEAKS ======= */
 const WALK = 7, FLY = 16, JUMP = 9, STAR_COUNT = 24;
@@ -377,7 +377,6 @@ function tEnd(e){
 addEventListener('touchstart', tStart, { passive: true }); addEventListener('touchmove', tMove, { passive: false });
 addEventListener('touchend', tEnd); addEventListener('touchcancel', tEnd);
 document.addEventListener('gesturestart', e => e.preventDefault());   // no pinch-zoom on iOS
-let lastTap = 0; document.addEventListener('touchend', e => { const n = Date.now(); if (n - lastTap < 350) e.preventDefault(); lastTap = n; }, { passive: false });
 function hold(el, on, off){ const d = e => { e.preventDefault(); el.classList.add('down'); on(); }, u = e => { e.preventDefault(); el.classList.remove('down'); off && off(); };
   el.addEventListener('pointerdown', d); el.addEventListener('pointerup', u); el.addEventListener('pointercancel', u); el.addEventListener('pointerleave', u); }
 hold($('#bJump'), () => { jumpTap = true; touch.up = true; }, () => touch.up = false);
@@ -407,7 +406,7 @@ $('#resumeBtn').addEventListener('click', resume);
 $('#homeBtn').addEventListener('click', goHome);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 addEventListener('blur', pause);
-addEventListener('pointerdown', unlockAudio, { once: false });
+['pointerdown','touchend','click'].forEach(ev => addEventListener(ev, unlockAudio, { passive: true }));
 const capeBox = $('#capes');
 CAPES.forEach((c,i) => {
   const b = document.createElement('button'); b.className = 'cape' + (i === capeIdx ? ' sel' : ''); b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label','Cape color');
