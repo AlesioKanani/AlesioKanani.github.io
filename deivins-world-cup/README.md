@@ -4,7 +4,7 @@
 
 A Unity 6 3D arcade soccer game. Deivin's squad plays Messi's crew in three-minute 6v6 matches on a larger 44 × 72 pitch with AI teammates and opponents. Single player; no multiplayer server or account required.
 
-Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Kick Off**.
+Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Start**.
 
 Both teams wait in a spread kickoff formation in their own halves, with the goalkeepers in goal. Move or kick the ball to start play and the clock. Matches start in the normal sideline view. Camera switches between this view and a forward-facing view looking toward the opponent goal; there is no zoomed-out option. Goal restarts keep your chosen camera and use the same formation; the opposing team starts automatically after a short pause.
 
