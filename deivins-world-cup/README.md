@@ -17,7 +17,7 @@ Both teams wait in a spread kickoff formation in their own halves, with the goal
 
 A horizontal power bar fills at the bottom center for shots, pass speed, and through distance. Shoot while chasing a loose ball queues an immediate medium-power first-touch shot on the next home outfield reception. When an opponent has possession, Shoot becomes Tackle. After a slide animation finishes, you can immediately slide again with no extra cooldown.
 
-Keyboard: WASD/arrows to move, Shift to sprint, hold/release Space to shoot (press to queue a first-touch shot for a loose ball or slide against an opponent in possession), hold/release J to charge pass speed, hold/release L to charge through distance, K to slide-tackle, F for a rainbow, Q/Tab to switch, C for camera, Esc to pause, M for sound.
+Keyboard: WASD/arrows to move, K to sprint, hold/release L to shoot (press to queue a first-touch shot for a loose ball or slide against an opponent in possession), hold/release J to charge pass speed, hold/release I to charge through distance, double tap K for a rainbow, Q/Tab to switch, C for camera, Esc to pause, M for sound.
 
 ## Teams and control
 
@@ -41,4 +41,4 @@ Difficulty: Easy uses slower opponents with less frequent tackles and weaker sho
 
 A small yellow downward triangle identifies your controlled player. To steal without sliding, move toward the exposed ball in front of an opponent and get within about 1.25 metres of the ball. Running into their back alone will not win it. A successful steal immediately attaches the ball to your player and displays Ball won; newly won possession has a brief protection against instant steal-backs. Slide tackling remains available.
 
-On desktop, circular action buttons show their keyboard shortcuts beneath the action: Shoot/Tackle (SPACE), Pass/Switch (J), Through (L), Sprint & Skill (SHIFT / F). Shift sprints and F performs a rainbow. These key hints are hidden on phones and iPads.
+On desktop, circular action buttons show their keyboard shortcuts beneath the action: Shoot/Tackle (L), Pass/Switch (J), Through (I), Sprint & Skill (K). Hold K to sprint; double tap K for a rainbow. These key hints are hidden on phones and iPads.
