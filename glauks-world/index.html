@@ -35,6 +35,13 @@
   #bFly{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px + clamp(74px,19vh,130px) + 16px);background:linear-gradient(#6aa8ff,#2f6bff)}
   #bDown{right:calc(env(safe-area-inset-right) + 20px + clamp(74px,19vh,130px) + 16px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ff8a70,#e63946);display:none}
   #bPow{left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
+  #bKick{left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px + clamp(74px,19vh,130px) + 16px);background:linear-gradient(#fff,#d9d9d9);color:#1c1c55}
+  #bPunch{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  #boxHud{display:none;position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);gap:10px}
+  #boxHud.show{display:flex}
+  .hp{flex:1;height:18px;background:#1c1c55;border-radius:9px;overflow:hidden;border:2px solid #fff}
+  .hp > div{height:100%;width:100%;background:#5be36f}
+  .hp.foe > div{background:#ff8a70}
   body:not(.touch) .pbtn{display:none !important}
   #joyBase,#joyKnob{position:absolute;border-radius:50%;display:none;pointer-events:none}
   #joyBase{width:130px;height:130px;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.5)}
@@ -87,16 +94,22 @@
   <button class="pbtn" id="bJump">JUMP</button>
   <button class="pbtn" id="bDown">DOWN</button>
   <button class="pbtn" id="bPow">POW</button>
+  <button class="pbtn" id="bKick">KICK</button>
+  <button class="pbtn" id="bPunch">PUNCH</button>
   <div id="joyBase"></div><div id="joyKnob"></div>
-  <div id="hint" class="stroke">Move: WASD or arrows • Look: drag • Jump: Space • Fly: F • Super kick: E • Sprint: Shift</div>
+  <div id="hint" class="stroke">World: WASD, K kick, F fly. Boxing: WASD, J punch.</div>
+  <div id="boxHud"><div class="hp" id="hpG"><div></div></div><div class="hp foe" id="hpF"><div></div></div></div>
 </div>
 
 <div class="screen show" id="menu">
   <h1 class="stroke">Glauk's World</h1>
   <p class="sub stroke">Super Glauk #10</p>
-  <p class="sub stroke" style="font-size:clamp(14px,3.2vh,24px)">Grab stars. Kick goals. Tap FLY.</p>
+  <p class="sub stroke" style="font-size:clamp(14px,3.2vh,24px)">World: stars and soccer. Boxing: 1v1.</p>
   <div class="spacer"></div>
-  <button class="btn play stroke" id="playBtn">▶ PLAY</button>
+  <div class="row">
+    <button class="btn play stroke" id="playBtn">WORLD</button>
+    <button class="btn play stroke" id="boxBtn" style="background:linear-gradient(#ff8a70,#e63946)">BOXING</button>
+  </div>
 </div>
 <div class="screen" id="pausescr">
   <div class="big stroke">Paused</div>
@@ -187,10 +200,12 @@ mesh(G.box, 0x57d84d, 30, .04, 0, 42, .08, 30);
 mesh(G.box, 0xffffff, 30, .1, 0, .3, .02, 30);
 mesh(G.cyl, 0xffffff, 30, .09, 0, 8, .02, 8); mesh(G.cyl, 0x57d84d, 30, .1, 0, 7.5, .02, 7.5);
 for (const [gx, side] of [[48,1],[12,-1]]){
-  for (const s of [-1,1]) mesh(G.cyl, 0xffffff, gx, 1.2, s*3, .22, 2.4, .22);
-  mesh(G.cyl, 0xffffff, gx, 2.4, 0, .22, 6.2, .22, scene, Math.PI/2, 0, 0);
-  mesh(G.box, 0xe8e8f4, gx+side*2.5, 1.2, 0, .08, 2.4, 6);
-  mesh(G.box, 0xe8e8f4, gx+side*1.25, 2.4, 0, 2.5, .05, 6);
+  for (const s of [-1,1]) mesh(G.cyl, 0xffffff, gx, 1.3, s*3.2, .28, 2.6, .28);
+  mesh(G.cyl, 0xffffff, gx, 2.6, 0, .28, 6.6, .28, scene, Math.PI/2, 0, 0);
+  const net = new THREE.Group(); net.position.set(gx+side*1.3, 1.3, 0); scene.add(net);
+  for (let i=0;i<7;i++) mesh(G.box, 0xf4f4f4, 0, 0, -3+i, .04, 2.5, .04, net);
+  for (let i=0;i<5;i++) mesh(G.box, 0xf4f4f4, 0, -1+i*.5, 0, .04, .04, 6, net);
+  mesh(G.box, 0xf7f7f7, side*.7, 1.2, 0, .08, 2.4, 6.2, net);
 }
 // houses
 function house(x, z, wall, roof, w, h, d){
@@ -292,17 +307,17 @@ function jerseyTex(draw){
   const back = new THREE.Mesh(new THREE.PlaneGeometry(.52,.52), new THREE.MeshBasicMaterial({ map: tex }));
   back.position.set(0,.16,-.153); back.rotation.y = Math.PI; model.add(back);
 }
-const starPointer = new THREE.Mesh(new THREE.ConeGeometry(.18,.55,8), new THREE.MeshBasicMaterial({ color: 0xffd426 }));
-starPointer.rotation.x = Math.PI/2; starPointer.position.set(0,2.15,0); hero.add(starPointer);
-
-// ---------- ball ----------
+// ---------- one soccer ball ----------
 let ball;
 const ballState = { v: new THREE.Vector3(), reset: 0 };
 function makeBall(){
   if (ball) scene.remove(ball);
-  ball = new THREE.Group(); ball.position.set(20, H(20,0)+.5, 0); scene.add(ball);
-  mesh(G.sph, 0xffffff, 0,0,0, .9, .9, .9, ball);
-  for (const d of [[0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]]) mesh(G.sphLo, 0x17171a, d[0]*.45,d[1]*.45,d[2]*.45, .28, .28, .28, ball);
+  ball = new THREE.Group(); ball.position.set(30, H(30,0)+.45, 0); scene.add(ball);
+  const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0,0,128,128); g.fillStyle = '#17171a';
+  [[64,30],[28,70],[100,70],[64,104]].forEach(([x,y]) => { g.beginPath(); g.arc(x,y,14,0,6.3); g.fill(); });
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(G.sph, new THREE.MeshLambertMaterial({ map: tex })); m.scale.setScalar(.9); ball.add(m);
   ballState.v.set(0,0,0);
 }
 makeBall();
@@ -326,6 +341,37 @@ function spawnStars(){
   }
 }
 spawnStars();
+
+
+// ---------- boxing ring and rival (Glauk's look stays on hero) ----------
+const ring = new THREE.Group(); ring.position.set(-40, 0, 40); ring.visible = false; scene.add(ring);
+mesh(G.box, 0xf2f2f2, 0, .08, 0, 12, .12, 12, ring);
+mesh(G.box, 0xe0242b, 0, .16, 0, 10, .06, 10, ring);
+for (const [x,z] of [[-5,-5],[5,-5],[-5,5],[5,5]]) mesh(G.cyl, 0xeeeeee, x, 1.5, z, .35, 3, .35, ring);
+for (const z of [-5,5]) mesh(G.cyl, 0xffffff, 0, 2.7, z, .08, 10, .08, ring, 0, 0, Math.PI/2);
+for (const x of [-5,5]) mesh(G.cyl, 0xffffff, x, 2.7, 0, .08, 10, .08, ring, Math.PI/2, 0, 0);
+const foe = new THREE.Group(); foe.position.set(2.2, 0, 0); ring.add(foe);
+const foeModel = new THREE.Group(); foeModel.scale.setScalar(1.02); foeModel.position.y = .97; foe.add(foeModel);
+mesh(G.box, 0x1d4e89, 0,.15,0, .56,.62,.30, foeModel);
+mesh(G.box, 0x111111, 0,-.42,0, .54,.34,.30, foeModel);
+mesh(G.sph, 0xd7a57a, 0,.74,0, .44,.48,.44, foeModel);
+mesh(G.sph, 0x2b2118, 0,.9,-.02, .46,.24,.46, foeModel);
+const foeArmL = new THREE.Group(); foeArmL.position.set(-.36,.38,0); foeModel.add(foeArmL);
+const foeArmR = new THREE.Group(); foeArmR.position.set(.36,.38,0); foeModel.add(foeArmR);
+for (const a of [foeArmL, foeArmR]){ mesh(G.cyl, 0x1d4e89, 0,-.16,0, .15,.36,.15, a); mesh(G.sph, 0xc0392b, 0,-.42,.08, .22,.22,.22, a); }
+let mode = 'world', gHp = 100, fHp = 100, punchCd = 0, foeCd = 0, boxOver = false;
+function setHp(){ $('#hpG').firstElementChild.style.width = gHp + '%'; $('#hpF').firstElementChild.style.width = fHp + '%'; }
+function showMode(){
+  const box = mode === 'box';
+  ball.visible = !box; stars.forEach(s => s.m.visible = !box && !s.taken); ring.visible = box;
+  $('#bPunch').style.display = box && isTouch ? 'block' : 'none';
+  $('#bKick').style.display = !box && isTouch ? 'block' : 'none';
+  $('#bFly').style.display = !box && isTouch ? 'block' : 'none';
+  $('#bPow').style.display = !box && isTouch ? 'block' : 'none';
+  $('#stars').style.display = box ? 'none' : 'block';
+  $('#goals').style.display = box ? 'none' : 'block';
+  $('#boxHud').classList.toggle('show', box);
+}
 
 // ---------- audio (needs a tap first on iPhone) ----------
 let ac;
@@ -357,12 +403,14 @@ function burst(pos, color, n=10, speed=5){
 function confetti(pos){ const cols = [0xff4d4d,0xffd933,0x4dd966,0x4d99ff,0xff80cc]; for (let i=0;i<40;i++) burst(pos.clone().add(new THREE.Vector3(rnd(-3,3), rnd(2,6), rnd(-3,3))), cols[i%5], 1, 2); }
 
 // ---------- input ----------
-const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false, powTap = false;
+const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false, powTap = false, kickTap = false, punchTap = false;
 addEventListener('keydown', e => {
   if (e.repeat) return; keys[e.code] = true;
   if (e.code === 'Space') { jumpTap = true; e.preventDefault(); }
   if (e.code === 'KeyF') flyTap = true;
   if (e.code === 'KeyE') powTap = true;
+  if (e.code === 'KeyK') kickTap = true;
+  if (e.code === 'KeyJ') punchTap = true;
   if (e.code === 'Escape' || e.code === 'KeyP') pauseTap = true;
 });
 addEventListener('keyup', e => keys[e.code] = false);
@@ -408,6 +456,8 @@ hold($('#bJump'), () => { jumpTap = true; touch.up = true; }, () => touch.up = f
 hold($('#bFly'), () => { flyTap = true; });
 hold($('#bDown'), () => touch.down = true, () => touch.down = false);
 hold($('#bPow'), () => { powTap = true; });
+hold($('#bKick'), () => { kickTap = true; });
+hold($('#bPunch'), () => { punchTap = true; });
 
 // ---------- game state ----------
 let state = 'menu', time = 0, collected = 0, goals = 0, bannerT = 0, roundT = 0, walkT = 0, kickCd = 0, flyGrace = 0;
@@ -434,15 +484,18 @@ function superPow(){
 function banner(t, s=2.5){ const b = $('#banner'); b.textContent = t; b.classList.add('on'); bannerT = s; }
 function setStarsHud(){ $('#stars').textContent = '⭐ ' + collected + ' / ' + stars.length; $('#goals').textContent = '⚽ Goals: ' + goals; }
 function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('show')); if (id) $(id).classList.add('show'); }
-function startGame(){
-  unlockAudio(); hero.position.set(0, H(0,0), 0); vel.set(0,0,0); flying = false; yaw = 0; pitch = .35; collected = 0; goals = 0; roundT = 0;
+function startGame(which){
+  unlockAudio(); mode = which || 'world'; vel.set(0,0,0); flying = false; pitch = .35; collected = 0; goals = 0; roundT = 0; boxOver = false;
   stars.forEach(s => { s.taken = false; s.m.visible = true; }); makeBall(); setStarsHud();
-  state = 'play'; show(null); $('#hud').classList.add('show'); banner('Grab the stars! FLY stays on.', 3.2); say('Go, Super Glauk!');
+  if (mode === 'box'){ gHp = fHp = 100; setHp(); hero.position.set(ring.position.x - 2.2, H(ring.position.x, ring.position.z), ring.position.z); foe.position.set(2.2,0,0); yaw = 0; banner('Punch!', 1.6); say('Boxing!'); }
+  else { hero.position.set(0, H(0,0), 0); yaw = 0; banner('Run into the ball to kick it.', 2.4); say('Go, Super Glauk!'); }
+  showMode(); state = 'play'; show(null); $('#hud').classList.add('show');
 }
-function goHome(){ state = 'menu'; hero.position.set(0, H(0,0), 0); $('#hud').classList.remove('show'); show('#menu'); }
+function goHome(){ state = 'menu'; mode = 'world'; hero.position.set(0, H(0,0), 0); $('#hud').classList.remove('show'); $('#boxHud').classList.remove('show'); ball.visible = true; ring.visible = false; show('#menu'); }
 function pause(){ if (state === 'play'){ state = 'pause'; show('#pausescr'); } }
 function resume(){ if (state === 'pause'){ state = 'play'; show(null); } }
-$('#playBtn').addEventListener('click', startGame);
+$('#playBtn').addEventListener('click', () => startGame('world'));
+$('#boxBtn').addEventListener('click', () => startGame('box'));
 $('#pause').addEventListener('click', pause);
 $('#resumeBtn').addEventListener('click', resume);
 $('#homeBtn').addEventListener('click', goHome);
@@ -533,18 +586,17 @@ function update(dt){
     if (s.taken) continue;
     if (s.m.position.distanceTo(tmp) < 2.15){ s.taken = true; s.m.visible = false; collected++; sfx.star(collected); burst(s.m.position, 0xffd940, 12, 5); setStarsHud(); }
   }
-  { let best = null, bd = 1e9; for (const s of stars){ if (s.taken) continue; const d = s.m.position.distanceTo(tmp); if (d < bd){ bd = d; best = s; } }
-    if (best){ const a = Math.atan2(best.m.position.x - p.x, best.m.position.z - p.z); starPointer.visible = true; starPointer.rotation.z = -a + hero.rotation.y; starPointer.position.y = 2.15 + Math.sin(time*4)*.08; }
-    else starPointer.visible = false; }
-  if (powTap){ powTap = false; superPow(); }
+  if (powTap){ powTap = false; if (mode !== 'box') superPow(); }
   if (collected >= stars.length && roundT <= 0){ roundT = 3.5; banner('All the stars! Super Glauk!', 3); sfx.fan(); confetti(p); say('You found all the stars!'); }
   if (roundT > 0){ roundT -= dt; if (roundT <= 0){ stars.forEach(s => { s.taken = false; s.m.visible = true; }); collected = 0; setStarsHud(); } }
 
   // ball
   kickCd = Math.max(0, kickCd - dt);
   const bp = ball.position, bv = ballState.v;
-  { const dx = bp.x - p.x, dz = bp.z - p.z, d = Math.hypot(dx,dz);
-    if (d < 1.2 && kickCd <= 0 && hv > 1.5 && Math.abs(bp.y - p.y) < 2){ const sp = Math.max(hv, 4) * 1.4; bv.set(dx/d*sp, 3, dz/d*sp); kickCd = .3; sfx.kick(); } }
+  if (mode !== 'box'){ const dx = bp.x - p.x, dz = bp.z - p.z, d = Math.hypot(dx,dz);
+    const want = kickTap || hv > .4;
+    if (d < 1.8 && kickCd <= 0 && want && Math.abs(bp.y - p.y) < 2){ const sp = kickTap ? 12 : Math.max(hv, 5) * 1.3; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); bv.set(fx*sp, kickTap ? 4 : 2.4, fz*sp); kickCd = .25; sfx.kick(); banner('Kick!', .6); }
+  } kickTap = false;
   bv.y -= 22*dt; bp.addScaledVector(bv, dt);
   const gb = H(bp.x, bp.z) + .45;
   if (bp.y < gb){ bp.y = gb; if (bv.y < -1) bv.y *= -.55; else bv.y = 0; const f = Math.exp(-1.6*dt); bv.x *= f; bv.z *= f; }
@@ -555,10 +607,25 @@ function update(dt){
 
   if (bannerT > 0){ bannerT -= dt; if (bannerT <= 0) $('#banner').classList.remove('on'); }
 
+  if (mode === 'box' && !boxOver){
+    punchCd = Math.max(0, punchCd - dt); foeCd = Math.max(0, foeCd - dt);
+    const fp = foe.position, rp = ring.position;
+    const wx = p.x - rp.x, wz = p.z - rp.z;
+    if (Math.abs(wx) > 4.4) p.x = rp.x + Math.sign(wx)*4.4;
+    if (Math.abs(wz) > 4.4) p.z = rp.z + Math.sign(wz)*4.4;
+    const toG = new THREE.Vector3(p.x - (rp.x + fp.x), 0, p.z - (rp.z + fp.z));
+    if (toG.length() > 1.3){ fp.x += Math.sign(p.x - rp.x - fp.x) * 2.2 * dt; fp.z += Math.sign(p.z - rp.z - fp.z) * 2.2 * dt; }
+    foe.lookAt(p.x, foe.position.y, p.z);
+    const gap = Math.hypot(p.x - (rp.x+fp.x), p.z - (rp.z+fp.z));
+    if (punchTap && punchCd <= 0){ punchCd = .35; armR.rotation.x = -1.6; if (gap < 1.7){ fHp = Math.max(0, fHp-12); setHp(); sfx.kick(); burst(new THREE.Vector3(rp.x+fp.x, 1.4, rp.z+fp.z), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } }
+    punchTap = false;
+    if (foeCd <= 0 && gap < 1.6){ foeCd = .8; foeArmL.rotation.x = -1.5; gHp = Math.max(0, gHp-8); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
+    else { foeArmL.rotation.x *= .8; foeArmR.rotation.x *= .8; armR.rotation.x *= .85; }
+  }
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
-  camTarget.set(p.x, p.y + 1.6, p.z);
-  camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist);
+  if (mode === 'box'){ const fp = foe.position, rp = ring.position; camTarget.set((p.x+rp.x+fp.x)/2, 1.4, (p.z+rp.z+fp.z)/2); camPos.set(p.x - (rp.x+fp.x-p.x)*1.4, 2.4, p.z - (rp.z+fp.z-p.z)*1.4); }
+  else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); }
   camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6);
   camera.position.lerp(camPos, 1 - Math.exp(-6*dt)); camera.lookAt(camTarget);
 }
