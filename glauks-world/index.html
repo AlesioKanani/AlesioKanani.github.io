@@ -28,16 +28,21 @@
     width:clamp(48px,11vh,70px);height:clamp(48px,11vh,70px);border-radius:50%;border:none;font-size:24px;font-weight:bold;color:#fff;
     background:linear-gradient(#6aa8ff,#2f6bff);box-shadow:0 5px 0 rgba(0,0,0,.3)}
   .pbtn{position:absolute;pointer-events:auto;border-radius:50%;border:none;color:#fff;font-weight:bold;
-    width:clamp(74px,19vh,130px);height:clamp(74px,19vh,130px);font-size:clamp(15px,3.6vh,26px);font-family:inherit;
-    box-shadow:0 6px 0 rgba(0,0,0,.3);opacity:.85;touch-action:none}
+    width:clamp(68px,18vw,104px);height:clamp(68px,18vw,104px);font-size:clamp(14px,3.4vh,22px);font-family:inherit;
+    box-shadow:0 6px 0 rgba(0,0,0,.3);opacity:.9;touch-action:none}
   .pbtn:active,.pbtn.down{opacity:1;transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
-  #bJump{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#5be36f,#1fb347)}
-  #bFly{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px + clamp(74px,19vh,130px) + 16px);background:linear-gradient(#6aa8ff,#2f6bff)}
-  #bDown{right:calc(env(safe-area-inset-right) + 20px + clamp(74px,19vh,130px) + 16px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ff8a70,#e63946);display:none}
-  #bPow{left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
-  #bKick{left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px + clamp(74px,19vh,130px) + 16px);background:linear-gradient(#fff,#d9d9d9);color:#1c1c55}
-  #bPunch{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ff8a70,#e63946);display:none}
-  #boxHud{display:none;position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);gap:10px}
+  #bJump{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#5be36f,#1fb347)}
+  #bFly{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 132px);background:linear-gradient(#6aa8ff,#2f6bff)}
+  #bDown{right:calc(env(safe-area-inset-right) + 132px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  #bKick{left:calc(env(safe-area-inset-left) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#fff,#d9d9d9);color:#1c1c55}
+  #bPow{left:calc(env(safe-area-inset-left) + 16px);bottom:calc(env(safe-area-inset-bottom) + 132px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
+  #bPunch{right:calc(env(safe-area-inset-right) + 16px);bottom:calc(env(safe-area-inset-bottom) + 16px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  body.mode-box #bJump,body.mode-box #bFly,body.mode-box #bDown,body.mode-box #bKick,body.mode-box #bPow{display:none !important}
+  body.mode-box.touch #bPunch{display:block}
+  body.mode-world #bPunch{display:none !important}
+  body.flying #bDown{display:block}
+  body.mode-box #bDown{display:none !important}
+  #boxHud{display:none;position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 8px);gap:10px;align-items:center}
   #boxHud.show{display:flex}
   .hp{flex:1;height:18px;background:#1c1c55;border-radius:9px;overflow:hidden;border:2px solid #fff}
   .hp > div{height:100%;width:100%;background:#5be36f}
@@ -60,7 +65,9 @@
   .spacer{flex:1}
   .btn{border:none;font-family:inherit;font-weight:bold;color:#fff;border-radius:999px;box-shadow:0 8px 0 rgba(0,0,0,.3);cursor:pointer}
   .btn:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
-  .play{font-size:clamp(28px,8vh,52px);padding:1.4vh 7vh;background:linear-gradient(#5be36f,#1fb347)}
+  .play{font-size:clamp(22px,5.5vh,40px);padding:1.2vh 4vh;background:linear-gradient(#5be36f,#1fb347)}
+  .modes{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;width:min(92vw,520px)}
+  .modes .play{flex:1 1 140px}
   .round{width:clamp(60px,15vh,100px);height:clamp(60px,15vh,100px);font-size:clamp(24px,6vh,40px);background:linear-gradient(#6aa8ff,#2f6bff);padding:0}
   .round.red{background:linear-gradient(#ff8a70,#e63946)}
   .row{display:flex;gap:18px}
@@ -68,13 +75,10 @@
   .big{font-size:clamp(34px,10vh,64px);font-weight:bold}
   #rotate{display:none}
   @media (orientation:portrait){
-    .pbtn{width:clamp(64px,16vw,96px);height:clamp(64px,16vw,96px);font-size:15px}
-    #bJump{right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
-    #bFly{right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px + clamp(64px,16vw,96px) + 12px)}
-    #bDown{right:calc(env(safe-area-inset-right) + 14px + clamp(64px,16vw,96px) + 12px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
-    #bPow{left:calc(env(safe-area-inset-left) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
-    #hint{bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:13px;padding:0 18vw}
-    #banner{top:14%;font-size:clamp(28px,7vh,56px)}
+    .pbtn{width:76px;height:76px;font-size:14px}
+    #bFly,#bPow{bottom:calc(env(safe-area-inset-bottom) + 108px)}
+    #hint{display:none}
+    #banner{top:16%;font-size:clamp(28px,7vh,52px)}
     h1{font-size:clamp(32px,8vh,64px)}
   }
   #loading{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;background:#87cdfb;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
@@ -106,7 +110,7 @@
   <p class="sub stroke">Super Glauk #10</p>
   <p class="sub stroke" style="font-size:clamp(14px,3.2vh,24px)">World: stars and soccer. Boxing: 1v1.</p>
   <div class="spacer"></div>
-  <div class="row">
+  <div class="modes">
     <button class="btn play stroke" id="playBtn">WORLD</button>
     <button class="btn play stroke" id="boxBtn" style="background:linear-gradient(#ff8a70,#e63946)">BOXING</button>
   </div>
@@ -237,14 +241,6 @@ for (let i=0;i<34;i++){
   mesh(G.sphLo, 0x999aa6, x, H(x,z)+r*.3, z, r*2, r*1.4, r*1.8);
   obstacles.push({ x, z, r: r*.9, top: r*1.1 });
 }
-{ // flowers as one instanced mesh (fast on phones)
-  const fl = [0xff6680,0xffd933,0xb373ff,0xffffff], inst = new THREE.InstancedMesh(G.sphLo, new THREE.MeshLambertMaterial(), 220), m4 = new THREE.Matrix4(), cc = new THREE.Color(); let n=0;
-  for (let i=0;i<500 && n<220;i++){
-    const x = rnd(-LIMIT,LIMIT), z = rnd(-LIMIT,LIMIT); if (!free(x,z,.6)) continue;
-    m4.compose(new THREE.Vector3(x,H(x,z)+.2,z), new THREE.Quaternion(), new THREE.Vector3(.4,.4,.4)); inst.setMatrixAt(n, m4); inst.setColorAt(n, cc.set(fl[n%4])); n++;
-  }
-  inst.count = n; scene.add(inst);
-}
 // rainbow
 ['#ff3333','#ff8c1a','#ffe633','#4dcc4d','#4090ff','#6650e6','#b34dd9'].forEach((c,i)=>{
   const t = new THREE.Mesh(new THREE.TorusGeometry(30+i*1.5, .8, 6, 40, Math.PI), M(new THREE.Color(c).getHex()));
@@ -344,7 +340,7 @@ spawnStars();
 
 
 // ---------- boxing ring and rival (Glauk's look stays on hero) ----------
-const ring = new THREE.Group(); ring.position.set(-40, 0, 40); ring.visible = false; scene.add(ring);
+const ring = new THREE.Group(); ring.position.set(0, H(0,48)+.02, 48); ring.visible = false; scene.add(ring);
 mesh(G.box, 0xf2f2f2, 0, .08, 0, 12, .12, 12, ring);
 mesh(G.box, 0xe0242b, 0, .16, 0, 10, .06, 10, ring);
 for (const [x,z] of [[-5,-5],[5,-5],[-5,5],[5,5]]) mesh(G.cyl, 0xeeeeee, x, 1.5, z, .35, 3, .35, ring);
@@ -363,11 +359,9 @@ let mode = 'world', gHp = 100, fHp = 100, punchCd = 0, foeCd = 0, boxOver = fals
 function setHp(){ $('#hpG').firstElementChild.style.width = gHp + '%'; $('#hpF').firstElementChild.style.width = fHp + '%'; }
 function showMode(){
   const box = mode === 'box';
+  document.body.classList.toggle('mode-box', box);
+  document.body.classList.toggle('mode-world', !box);
   ball.visible = !box; stars.forEach(s => s.m.visible = !box && !s.taken); ring.visible = box;
-  $('#bPunch').style.display = box && isTouch ? 'block' : 'none';
-  $('#bKick').style.display = !box && isTouch ? 'block' : 'none';
-  $('#bFly').style.display = !box && isTouch ? 'block' : 'none';
-  $('#bPow').style.display = !box && isTouch ? 'block' : 'none';
   $('#stars').style.display = box ? 'none' : 'block';
   $('#goals').style.display = box ? 'none' : 'block';
   $('#boxHud').classList.toggle('show', box);
@@ -487,11 +481,11 @@ function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList
 function startGame(which){
   unlockAudio(); mode = which || 'world'; vel.set(0,0,0); flying = false; pitch = .35; collected = 0; goals = 0; roundT = 0; boxOver = false;
   stars.forEach(s => { s.taken = false; s.m.visible = true; }); makeBall(); setStarsHud();
-  if (mode === 'box'){ gHp = fHp = 100; setHp(); hero.position.set(ring.position.x - 2.2, H(ring.position.x, ring.position.z), ring.position.z); foe.position.set(2.2,0,0); yaw = 0; banner('Punch!', 1.6); say('Boxing!'); }
+  if (mode === 'box'){ gHp = fHp = 100; setHp(); flying = false; hero.position.set(ring.position.x - 2.2, ring.position.y, ring.position.z); foe.position.set(2.2,0,0); yaw = 0; banner('Punch!', 1.6); say('Boxing!'); }
   else { hero.position.set(0, H(0,0), 0); yaw = 0; banner('Run into the ball to kick it.', 2.4); say('Go, Super Glauk!'); }
   showMode(); state = 'play'; show(null); $('#hud').classList.add('show');
 }
-function goHome(){ state = 'menu'; mode = 'world'; hero.position.set(0, H(0,0), 0); $('#hud').classList.remove('show'); $('#boxHud').classList.remove('show'); ball.visible = true; ring.visible = false; show('#menu'); }
+function goHome(){ state = 'menu'; mode = 'world'; document.body.classList.remove('mode-box','flying'); document.body.classList.add('mode-world'); hero.position.set(0, H(0,0), 0); $('#hud').classList.remove('show'); $('#boxHud').classList.remove('show'); ball.visible = true; ring.visible = false; show('#menu'); }
 function pause(){ if (state === 'play'){ state = 'pause'; show('#pausescr'); } }
 function resume(){ if (state === 'pause'){ state = 'play'; show(null); } }
 $('#playBtn').addEventListener('click', () => startGame('world'));
@@ -542,7 +536,7 @@ function update(dt){
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
   const wx = fx*mz + rx*mx, wz = fz*mz + rz*mx;
   const upHeld = keys.Space || touch.up, downHeld = keys.KeyC || keys.ControlLeft || touch.down;
-  $('#bDown').style.display = flying && isTouch ? 'block' : 'none'; $('#bJump').textContent = flying ? 'UP' : 'JUMP'; $('#bFly').textContent = flying ? 'LAND' : 'FLY';
+  document.body.classList.toggle('flying', flying && mode !== 'box'); $('#bJump').textContent = flying ? 'UP' : 'JUMP'; $('#bFly').textContent = flying ? 'LAND' : 'FLY';
 
   flyGrace = Math.max(0, flyGrace - dt);
   if (flyTap){ flyTap = false; flying = !flying; flyGrace = .4; if (flying){ vel.y = 6; doubleUsed = false; } burst(hero.position.clone().setY(hero.position.y+1), 0xffd940, 10, 4); }
@@ -570,7 +564,7 @@ function update(dt){
   if (p.y > 70 && vel.y > 0) vel.y = 0;
   p.addScaledVector(vel, dt);
   const g2 = H(p.x, p.z); if (p.y < g2){ p.y = g2; if (vel.y < 0) vel.y = 0; }
-  for (const o of obstacles){            // can't walk through trees, houses or rocks (fly over!)
+  if (mode !== 'box') for (const o of obstacles){            // can't walk through trees, houses or rocks (fly over!)
     if (p.y - g2 > o.top - H(o.x,o.z) + .2) continue;
     const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx,dz), r = o.r + .4;
     if (d < r && d > .001){ p.x = o.x + dx/d*r; p.z = o.z + dz/d*r; }
@@ -607,26 +601,26 @@ function update(dt){
 
   if (bannerT > 0){ bannerT -= dt; if (bannerT <= 0) $('#banner').classList.remove('on'); }
 
-  if (mode === 'box' && !boxOver){
+  if (mode === 'box'){
+    flying = false; p.y = ring.position.y; vel.y = 0;
     punchCd = Math.max(0, punchCd - dt); foeCd = Math.max(0, foeCd - dt);
-    const fp = foe.position, rp = ring.position;
-    const wx = p.x - rp.x, wz = p.z - rp.z;
-    if (Math.abs(wx) > 4.4) p.x = rp.x + Math.sign(wx)*4.4;
-    if (Math.abs(wz) > 4.4) p.z = rp.z + Math.sign(wz)*4.4;
-    const toG = new THREE.Vector3(p.x - (rp.x + fp.x), 0, p.z - (rp.z + fp.z));
-    if (toG.length() > 1.3){ fp.x += Math.sign(p.x - rp.x - fp.x) * 2.2 * dt; fp.z += Math.sign(p.z - rp.z - fp.z) * 2.2 * dt; }
-    foe.lookAt(p.x, foe.position.y, p.z);
-    const gap = Math.hypot(p.x - (rp.x+fp.x), p.z - (rp.z+fp.z));
-    if (punchTap && punchCd <= 0){ punchCd = .35; armR.rotation.x = -1.6; if (gap < 1.7){ fHp = Math.max(0, fHp-12); setHp(); sfx.kick(); burst(new THREE.Vector3(rp.x+fp.x, 1.4, rp.z+fp.z), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } }
+    const rp = ring.position, fp = foe.position;
+    const fx = rp.x + fp.x, fz = rp.z + fp.z;
+    p.x = Math.max(rp.x-4.3, Math.min(rp.x+4.3, p.x));
+    p.z = Math.max(rp.z-4.3, Math.min(rp.z+4.3, p.z));
+    const dx = p.x - fx, dz = p.z - fz, gap = Math.hypot(dx, dz) || .001;
+    if (!boxOver && gap > 1.35){ fp.x += (dx/gap) * 2.4 * dt; fp.z += (dz/gap) * 2.4 * dt; }
+    fp.x = Math.max(-4.3, Math.min(4.3, fp.x)); fp.z = Math.max(-4.3, Math.min(4.3, fp.z));
+    foe.lookAt(p.x, rp.y + 1, p.z); hero.rotation.y = Math.atan2(fx - p.x, fz - p.z);
+    if (!boxOver && punchTap && punchCd <= 0){ punchCd = .4; armR.rotation.x = -1.7; if (gap < 1.8){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } }
     punchTap = false;
-    if (foeCd <= 0 && gap < 1.6){ foeCd = .8; foeArmL.rotation.x = -1.5; gHp = Math.max(0, gHp-8); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
-    else { foeArmL.rotation.x *= .8; foeArmR.rotation.x *= .8; armR.rotation.x *= .85; }
+    if (!boxOver && foeCd <= 0 && gap < 1.55){ foeCd = .9; foeArmL.rotation.x = -1.6; gHp = Math.max(0, gHp-9); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
+    else { foeArmL.rotation.x *= .8; armR.rotation.x *= .82; }
   }
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
-  if (mode === 'box'){ const fp = foe.position, rp = ring.position; camTarget.set((p.x+rp.x+fp.x)/2, 1.4, (p.z+rp.z+fp.z)/2); camPos.set(p.x - (rp.x+fp.x-p.x)*1.4, 2.4, p.z - (rp.z+fp.z-p.z)*1.4); }
-  else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); }
-  camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6);
+  if (mode === 'box'){ const fp = foe.position, rp = ring.position; camTarget.set(rp.x, rp.y+1.2, rp.z); camPos.set(rp.x, rp.y+7.5, rp.z+11); }
+  else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6); }
   camera.position.lerp(camPos, 1 - Math.exp(-6*dt)); camera.lookAt(camTarget);
 }
 
