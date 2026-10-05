@@ -340,9 +340,9 @@ spawnStars();
 
 
 // ---------- boxing ring and rival (Glauk's look stays on hero) ----------
-const ring = new THREE.Group(); ring.position.set(0, H(0,48)+.02, 48); ring.visible = false; scene.add(ring);
-mesh(G.box, 0xf2f2f2, 0, .08, 0, 12, .12, 12, ring);
-mesh(G.box, 0xe0242b, 0, .16, 0, 10, .06, 10, ring);
+const ring = new THREE.Group(); ring.position.set(0, 12, 0); ring.visible = false; scene.add(ring);
+mesh(G.box, 0xf7f7f7, 0, .2, 0, 14, .4, 14, ring);
+mesh(G.box, 0xe0242b, 0, .42, 0, 11, .08, 11, ring);
 for (const [x,z] of [[-5,-5],[5,-5],[-5,5],[5,5]]) mesh(G.cyl, 0xeeeeee, x, 1.5, z, .35, 3, .35, ring);
 for (const z of [-5,5]) mesh(G.cyl, 0xffffff, 0, 2.7, z, .08, 10, .08, ring, 0, 0, Math.PI/2);
 for (const x of [-5,5]) mesh(G.cyl, 0xffffff, x, 2.7, 0, .08, 10, .08, ring, Math.PI/2, 0, 0);
@@ -355,7 +355,7 @@ mesh(G.sph, 0x2b2118, 0,.9,-.02, .46,.24,.46, foeModel);
 const foeArmL = new THREE.Group(); foeArmL.position.set(-.36,.38,0); foeModel.add(foeArmL);
 const foeArmR = new THREE.Group(); foeArmR.position.set(.36,.38,0); foeModel.add(foeArmR);
 for (const a of [foeArmL, foeArmR]){ mesh(G.cyl, 0x1d4e89, 0,-.16,0, .15,.36,.15, a); mesh(G.sph, 0xc0392b, 0,-.42,.08, .22,.22,.22, a); }
-let mode = 'world', gHp = 100, fHp = 100, punchCd = 0, foeCd = 0, boxOver = false;
+let mode = 'world', gHp = 100, fHp = 100, punchCd = 0, foeCd = 0, boxOver = false, gPunch = 0, fPunch = 0;
 function setHp(){ $('#hpG').firstElementChild.style.width = gHp + '%'; $('#hpF').firstElementChild.style.width = fHp + '%'; }
 function showMode(){
   const box = mode === 'box';
@@ -521,7 +521,7 @@ function update(dt){
     hero.rotation.y += (Math.sin(time*.9) * .35 - hero.rotation.y) * (1 - Math.exp(-5*dt));
     animate(0,false,false,dt);
     camPos.set(Math.sin(time*.4)*1.6, hero.position.y + 1.7, hero.position.z + 5.2); camTarget.set(0, hero.position.y + 1.25, 0);
-    camera.position.lerp(camPos, 1 - Math.exp(-6*dt)); camera.lookAt(camTarget); return;
+    camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget); return;
   }
   if (state !== 'play') return;
   if (pauseTap){ pauseTap = false; pause(); return; }
@@ -615,16 +615,21 @@ function update(dt){
     if (!boxOver && gap > 1.25){ fp.x += (dx/gap) * 2.1 * dt; fp.z += (dz/gap) * 2.1 * dt; }
     fp.x = Math.max(-4.3, Math.min(4.3, fp.x)); fp.z = Math.max(-4.3, Math.min(4.3, fp.z));
     foe.lookAt(p.x, rp.y + 1, p.z);
-    if (!boxOver && punchTap && punchCd <= 0){ punchCd = .4; armR.rotation.x = -1.7; if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } } else banner('Get closer!', .7); }
+    if (!boxOver && punchTap && punchCd <= 0){
+      punchCd = .45; gPunch = 1;
+      if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } }
+    }
     punchTap = false;
-    if (!boxOver && foeCd <= 0 && gap < 1.55){ foeCd = .9; foeArmL.rotation.x = -1.6; gHp = Math.max(0, gHp-9); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
-    else { foeArmL.rotation.x *= .8; armR.rotation.x *= .82; }
+    if (!boxOver && foeCd <= 0 && gap < 1.55){ foeCd = .9; fPunch = 1; gHp = Math.max(0, gHp-9); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
+    gPunch = Math.max(0, gPunch - dt * 2.4); fPunch = Math.max(0, fPunch - dt * 2.4);
+    armR.rotation.x = -0.35 - gPunch * 1.9; armL.rotation.x = -0.35 - gPunch * .4;
+    foeArmL.rotation.x = -0.3 - fPunch * 1.9; foeArmR.rotation.x = -0.3 - fPunch * .35;
   }
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
-  if (mode === 'box'){ const fp = foe.position, rp = ring.position; camTarget.set(rp.x, rp.y+1.2, rp.z); camPos.set(rp.x, rp.y+7.5, rp.z+11); }
+  if (mode === 'box'){ const rp = ring.position; camTarget.set(rp.x, rp.y+.35, rp.z); camPos.set(rp.x+9, rp.y+8, rp.z+9); }
   else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6); }
-  camera.position.lerp(camPos, 1 - Math.exp(-6*dt)); camera.lookAt(camTarget);
+  camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget);
 }
 
 let last = performance.now();
