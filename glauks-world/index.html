@@ -62,8 +62,17 @@
   .row{display:flex;gap:18px}
   #pausescr{background:rgba(10,15,60,.45)}
   .big{font-size:clamp(34px,10vh,64px);font-weight:bold}
-  #rotate{display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:99;background:#1c2a6b;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:26px;font-weight:bold;text-align:center;padding:20px}
-  @media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
+  #rotate{display:none}
+  @media (orientation:portrait){
+    .pbtn{width:clamp(64px,16vw,96px);height:clamp(64px,16vw,96px);font-size:15px}
+    #bJump{right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
+    #bFly{right:calc(env(safe-area-inset-right) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px + clamp(64px,16vw,96px) + 12px)}
+    #bDown{right:calc(env(safe-area-inset-right) + 14px + clamp(64px,16vw,96px) + 12px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
+    #bPow{left:calc(env(safe-area-inset-left) + 14px);bottom:calc(env(safe-area-inset-bottom) + 16px)}
+    #hint{bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:13px;padding:0 18vw}
+    #banner{top:14%;font-size:clamp(28px,7vh,56px)}
+    h1{font-size:clamp(32px,8vh,64px)}
+  }
   #loading{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;background:#87cdfb;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
 </style>
 </head>
@@ -100,7 +109,6 @@
     <button class="btn round red" id="homeBtn" aria-label="Home">🏠</button>
   </div>
 </div>
-<div id="rotate" class="stroke"><div style="font-size:70px">📱↻</div>Turn your phone sideways to play!</div>
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
@@ -128,7 +136,7 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-30, 60,
 function resize(){
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
-  camera.fov = w / h < 1.2 ? 75 : 62; camera.updateProjectionMatrix();
+  camera.fov = w / h < 1 ? 82 : w / h < 1.2 ? 72 : 62; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 200)); resize();
 
