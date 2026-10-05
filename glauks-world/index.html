@@ -51,9 +51,6 @@
   h1{margin:0;font-size:clamp(34px,11vh,92px);color:#ffd23f;transform:rotate(-2deg);line-height:1}
   .sub{margin:0;font-size:clamp(16px,4vh,32px);font-weight:bold}
   .spacer{flex:1}
-  .capes{display:flex;gap:14px}
-  .cape{width:clamp(36px,8vh,54px);height:clamp(36px,8vh,54px);border-radius:50%;border:5px solid rgba(255,255,255,.6);box-shadow:0 4px 0 rgba(0,0,0,.3);padding:0}
-  .cape.sel{border-color:#fff;transform:scale(1.2)}
   .btn{border:none;font-family:inherit;font-weight:bold;color:#fff;border-radius:999px;box-shadow:0 8px 0 rgba(0,0,0,.3);cursor:pointer}
   .btn:active{transform:translateY(6px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
   .play{font-size:clamp(28px,8vh,52px);padding:1.4vh 7vh;background:linear-gradient(#5be36f,#1fb347)}
@@ -91,7 +88,7 @@
   <button class="pbtn" id="bDown">DOWN</button>
   <button class="pbtn" id="bPow">POW</button>
   <div id="joyBase"></div><div id="joyKnob"></div>
-  <div id="hint" class="stroke">Move: WASD or arrows • Camera follows you • Jump: Space • Fly: F • Super kick: E • Sprint: Shift</div>
+  <div id="hint" class="stroke">Move: WASD or arrows • Look: drag • Jump: Space • Fly: F • Super kick: E • Sprint: Shift</div>
 </div>
 
 <div class="screen show" id="menu">
@@ -99,7 +96,6 @@
   <p class="sub stroke">Super Glauk #10</p>
   <p class="sub stroke" style="font-size:clamp(14px,3.2vh,24px)">Grab stars. Kick goals. Tap FLY.</p>
   <div class="spacer"></div>
-  <div class="capes" id="capes" aria-label="Pick a cape color"></div>
   <button class="btn play stroke" id="playBtn">▶ PLAY</button>
 </div>
 <div class="screen" id="pausescr">
@@ -245,8 +241,6 @@ for (let i=0;i<14;i++){ const c = mesh(G.sphLo, 0xffffff, rnd(-95,95), rnd(28,46
 
 // ---------- Super Glauk (modelled on the real Glauk) ----------
 const SKIN=0xe8c4a2, HAIR=0x6a4a30, HAIR_DK=0x4e351f, JERSEY=0xe0242b, JERSEY_DK=0xb81b22, BLACK=0x17171a;
-const CAPES = [0x1d1d1f,0xe0242b,0x2f6bff,0xffd23f,0x2fbf4a];
-let capeIdx = Math.min(CAPES.length-1, parseInt(store.get('glauk3d-cape','0'),10) || 0);
 const hero = new THREE.Group(); scene.add(hero);
 const model = new THREE.Group(); model.scale.setScalar(1.02); model.position.y = .97; hero.add(model);
 const pivot = (x,y,z) => { const p = new THREE.Group(); p.position.set(x,y,z); model.add(p); return p; };
@@ -271,10 +265,6 @@ for (const s of [-1,1]){
   mesh(G.sph, 0xffb0a0, s*.16,.68,.18, .055,.04,.03, model);
 }
 mesh(G.box, 0xc47a6a, 0,.64,.22, .09,.018,.02, model); // smile
-const capePivot = pivot(0,.42,-.16);
-const capeMeshes = [];
-capeMeshes.push(mesh(G.box, CAPES[capeIdx], 0,-.34,0, .62,.7,.06, capePivot));
-capeMeshes.push(mesh(G.box, 0xe0242b, 0,-.34,.04, .5,.62,.02, capePivot));
 function jerseyTex(draw){
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const g = cv.getContext('2d');
   g.fillStyle = '#e0242b'; g.fillRect(0,0,256,256); draw(g);
@@ -304,7 +294,6 @@ function jerseyTex(draw){
 }
 const starPointer = new THREE.Mesh(new THREE.ConeGeometry(.18,.55,8), new THREE.MeshBasicMaterial({ color: 0xffd426 }));
 starPointer.rotation.x = Math.PI/2; starPointer.position.set(0,2.15,0); hero.add(starPointer);
-function setCape(i){ capeIdx = i; store.set('glauk3d-cape', String(i)); capeMeshes[0].material = M(CAPES[i]); }
 
 // ---------- ball ----------
 let ball;
@@ -368,7 +357,7 @@ function burst(pos, color, n=10, speed=5){
 function confetti(pos){ const cols = [0xff4d4d,0xffd933,0x4dd966,0x4d99ff,0xff80cc]; for (let i=0;i<40;i++) burst(pos.clone().add(new THREE.Vector3(rnd(-3,3), rnd(2,6), rnd(-3,3))), cols[i%5], 1, 2); }
 
 // ---------- input ----------
-const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false, powTap = false, lookActive = 0;
+const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false, powTap = false;
 addEventListener('keydown', e => {
   if (e.repeat) return; keys[e.code] = true;
   if (e.code === 'Space') { jumpTap = true; e.preventDefault(); }
@@ -379,7 +368,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => keys[e.code] = false);
 let yaw = 0, pitch = .35, lookDX = 0, lookDY = 0, mouseDown = false;
 canvas.addEventListener('mousedown', () => mouseDown = true); addEventListener('mouseup', () => mouseDown = false);
-addEventListener('mousemove', e => { if (mouseDown) { lookDX += e.movementX; lookDY += e.movementY; lookActive = .45; } });
+addEventListener('mousemove', e => { if (mouseDown) { lookDX += e.movementX; lookDY += e.movementY; } });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 // touch: left half = joystick, right half = look; buttons for jump/fly/down
 const touch = { joy: null, look: null, jx: 0, jy: 0, up: false, down: false };
@@ -400,7 +389,7 @@ function tMove(e){
       let dx = t.clientX - touch.joy.x, dy = t.clientY - touch.joy.y; const l = Math.hypot(dx,dy), max = 60; if (l > max){ dx *= max/l; dy *= max/l; }
       touch.jx = dx/max; touch.jy = -dy/max; joyKnob.style.left = (touch.joy.x+dx-32)+'px'; joyKnob.style.top = (touch.joy.y+dy-32)+'px';
     }
-    if (touch.look && t.identifier === touch.look.id){ lookDX += (t.clientX - touch.look.x) * 1.3; lookDY += (t.clientY - touch.look.y) * 1.3; touch.look.x = t.clientX; touch.look.y = t.clientY; lookActive = .45; }
+    if (touch.look && t.identifier === touch.look.id){ lookDX += (t.clientX - touch.look.x) * 1.3; lookDY += (t.clientY - touch.look.y) * 1.3; touch.look.x = t.clientX; touch.look.y = t.clientY; }
   }
   if (state === 'play') e.preventDefault();
 }
@@ -460,24 +449,14 @@ $('#homeBtn').addEventListener('click', goHome);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 addEventListener('blur', pause);
 ['pointerdown','touchend','click'].forEach(ev => addEventListener(ev, unlockAudio, { passive: true }));
-const capeBox = $('#capes');
-CAPES.forEach((c,i) => {
-  const b = document.createElement('button'); b.className = 'cape' + (i === capeIdx ? ' sel' : ''); b.style.background = '#' + c.toString(16).padStart(6,'0'); b.setAttribute('aria-label','Cape color');
-  b.addEventListener('click', () => { setCape(i); capeBox.querySelectorAll('.cape').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); });
-  capeBox.appendChild(b);
-});
-setCape(capeIdx);
 
 // ---------- update ----------
 function animate(speed, fly, air, dt){
   const sp = Math.min(1, speed / WALK), sw = Math.sin(walkT) * .66 * sp, k = 1 - Math.exp(-12*dt);
   let lL, lR, aL, aR, tilt = 0;
-  if (fly){ lL = lR = .2; aL = aR = -Math.PI + .25; tilt = Math.min(1, new THREE.Vector2(vel.x,vel.z).length() / 6) * 1.2; capePivot.rotation.x = -.7; capePivot.scale.y = 1.25; }
-  else {
-    capePivot.rotation.x = Math.sin(time*2)*.08; capePivot.scale.y = 1;
-    if (air){ lL = .35; lR = -.25; aL = aR = -2.6; }
-    else { lL = sw; lR = -sw; aL = -sw; aR = sw; }
-  }
+  if (fly){ lL = lR = .2; aL = aR = -Math.PI + .25; tilt = Math.min(1, new THREE.Vector2(vel.x,vel.z).length() / 6) * 1.2; }
+  else if (air){ lL = .35; lR = -.25; aL = aR = -2.6; }
+  else { lL = sw; lR = -sw; aL = -sw; aR = sw; }
   legL.rotation.x += (lL - legL.rotation.x) * k; legR.rotation.x += (lR - legR.rotation.x) * k;
   armL.rotation.x += (aL - armL.rotation.x) * k; armR.rotation.x += (aR - armR.rotation.x) * k;
   armL.rotation.z += ((fly||air ? -.15 : 0) - armL.rotation.z) * k; armR.rotation.z += ((fly||air ? .15 : 0) - armR.rotation.z) * k;
@@ -502,7 +481,6 @@ function update(dt){
 
   // look
   yaw -= lookDX * .0055; pitch = Math.max(-.2, Math.min(1.1, pitch + lookDY * .004)); lookDX = lookDY = 0;
-  lookActive = Math.max(0, lookActive - dt);
   // move input
   let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx;
   let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy;
@@ -545,8 +523,7 @@ function update(dt){
     if (d < r && d > .001){ p.x = o.x + dx/d*r; p.z = o.z + dz/d*r; }
   }
   const hv = Math.hypot(vel.x, vel.z);
-  if (hv > .6){ const target = Math.atan2(vel.x, vel.z); let d = target - hero.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); hero.rotation.y += d * (1 - Math.exp(-12*dt));
-    if (lookActive <= 0){ let cy = hero.rotation.y - yaw; cy = Math.atan2(Math.sin(cy), Math.cos(cy)); yaw += cy * (1 - Math.exp(-2.2*dt)); } }
+  if (hv > .6){ const target = Math.atan2(vel.x, vel.z); let d = target - hero.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); hero.rotation.y += d * (1 - Math.exp(-12*dt)); }
   walkT += hv * dt * 1.6;
   animate(hv, flying, !grounded && !flying, dt);
 
@@ -583,7 +560,7 @@ function update(dt){
   camTarget.set(p.x, p.y + 1.6, p.z);
   camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist);
   camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6);
-  camera.position.lerp(camPos, 1 - Math.exp(-14*dt)); camera.lookAt(camTarget);
+  camera.position.lerp(camPos, 1 - Math.exp(-6*dt)); camera.lookAt(camTarget);
 }
 
 let last = performance.now();
