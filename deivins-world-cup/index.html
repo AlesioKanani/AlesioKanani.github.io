@@ -41,7 +41,7 @@
     <img src="cup.svg" alt="" width="58" height="58">
     <span id="badge" class="badge">THE FAMILY SHOWDOWN</span>
     <h1 id="title">DEIVIN'S WORLD CUP</h1>
-    <p id="lede">6 a side. One unforgettable cup.<br>Joystick on the left. Your winning moves on the right.</p>
+    <p id="lede">Joystick on the left. Your winning moves on the right.</p>
     <section class="languages" aria-labelledby="language-heading">
       <h2 id="language-heading">Language / Gjuha</h2>
       <div class="language-options">
@@ -54,11 +54,11 @@
     <div id="status"></div>
   </div>
   <div id="rotate"><img src="cup.svg" alt="" width="65" height="65"><strong id="rotate-title">TURN YOUR SCREEN</strong><p id="rotate-copy">Play Deivin's World Cup in landscape.</p></div>
-  <script src="Build/MobileGame.loader.js?v=1.8.6"></script>
+  <script src="Build/MobileGame.loader.js?v=1.8.7"></script>
   <script>
     const copy={
-      en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'6 a side. One unforgettable cup.\nJoystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM >',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
-      sq:{title:'Kupa e Botës e Deivinit',badge:'PËRBALLJA FAMILJARE',heading:'KUPA E BOTËS E DEIVINIT',lede:'6 kundër 6. Një kupë e paharrueshme.\nLeva majtas. Veprimet e tua fituese djathtas.',english:'Anglisht',albanian:'Shqip',enter:'HYR NË STADIUM >',opening:'PO HAPEN PORTAT...',loading:'PO PËRGATITET STADIUMI',retry:'PROVO PËRSËRI',failed:'Stadiumi nuk u ngarkua. Kontrollo lidhjen dhe provo përsëri.',rotate:'RROTULLO EKRANIN',rotateCopy:'Luaj Kupën e Botës të Deivinit me ekranin horizontal.'}
+      en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'Joystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM >',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
+      sq:{title:'Kupa e Botës e Deivinit',badge:'PËRBALLJA FAMILJARE',heading:'KUPA E BOTËS E DEIVINIT',lede:'Leva majtas. Veprimet e tua fituese djathtas.',english:'Anglisht',albanian:'Shqip',enter:'HYR NË STADIUM >',opening:'PO HAPEN PORTAT...',loading:'PO PËRGATITET STADIUMI',retry:'PROVO PËRSËRI',failed:'Stadiumi nuk u ngarkua. Kontrollo lidhjen dhe provo përsëri.',rotate:'RROTULLO EKRANIN',rotateCopy:'Luaj Kupën e Botës të Deivinit me ekranin horizontal.'}
     };
     let language='en',loading=false,failed=false;
     try { if(localStorage.getItem('dwwc-language')==='sq') language='sq'; } catch(error) {}
@@ -88,13 +88,13 @@
       if(document.documentElement.requestFullscreen&&matchMedia('(pointer:coarse)').matches) { document.documentElement.requestFullscreen().catch(()=>{}); }
       try {
         const game=await createUnityInstance(canvas,{
-          dataUrl:'Build/MobileGame.data?v=1.8.6',
-          frameworkUrl:'Build/MobileGame.framework.js?v=1.8.6',
-          codeUrl:'Build/MobileGame.wasm?v=1.8.6',
+          dataUrl:'Build/MobileGame.data?v=1.8.7',
+          frameworkUrl:'Build/MobileGame.framework.js?v=1.8.7',
+          codeUrl:'Build/MobileGame.wasm?v=1.8.7',
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Deivin's Games",
           productName:"Deivin's World Cup",
-          productVersion:"1.8.6",
+          productVersion:"1.8.7",
           devicePixelRatio:Math.min(1.5,window.devicePixelRatio||1),
           matchWebGLToCanvasSize:true,
           showBanner:(message,type)=>{ if(type==='error') document.getElementById('status').textContent=t('failed'); }
