@@ -6,6 +6,8 @@ A Unity 6 3D arcade soccer game. Deivin's squad plays Messi's crew in three-minu
 
 Play in landscape on iPad, iPhone, Android phones, or a computer. Tap **Enter the Stadium**, then **Kick Off**.
 
+Both teams wait in a spread kickoff formation in their own halves, with the goalkeepers in goal. Move or kick the ball to start play and the clock. The opening camera shows the wider formation. Goal restarts use the same setup, and the opposing team starts automatically after a short pause.
+
 - Bottom-left joystick: move relative to the screen.
 - Pass / Switch: hold to charge more ball speed, then release. A tap gives a normal assisted pass. Aim backward to pass to the AI goalkeeper, who automatically chooses an outfield outlet. Without possession, the button reads Switch and switches outfield players immediately.
 - Through: hold to charge a farther lead into fixed space ahead of a teammate's run, then release and move the receiver to collect it; tackle immediately while defending.
@@ -33,4 +35,4 @@ Choose **English** or **Albanian** under **Language / Gjuha** on the starting sc
 
 This folder contains the compiled Unity 6000.6.3f1 Web build. The existing website publishes the main branch through GitHub Pages. All game URLs are relative so the build works in this subfolder. Build files are uncompressed; no custom compression headers or backend are required.
 
-All 232 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, charged passing, goalkeeper back-passes, rainbow recovery during continuous running and sprinting, contextual Pass/Switch labels, rainbow-only skill input, first-touch shooting, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.
+All 251 built-game checks passed, covering both squads and numbers, pitch boundaries, automatic possession transfers and goalkeeper exclusion, goalkeeper AI and saves, shot tracking, swept ball contacts, valid goal geometry, match rules, revised touch layouts and spacing, simultaneous fingers, canceled touches, own-half shooting, charged-shot flight, assisted passes, immediate repeat sliding tackles, through balls into fixed space, charged passing, goalkeeper back-passes, rainbow recovery during continuous running and sprinting, contextual Pass/Switch labels, spread kickoff formations and restarts, rainbow-only skill input, first-touch shooting, complete simulated matches, language persistence, and live stadium text updates. Actual mobile hardware remains to be tested.

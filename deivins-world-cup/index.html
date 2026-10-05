@@ -54,7 +54,7 @@
     <div id="status"></div>
   </div>
   <div id="rotate"><img src="cup.svg" alt="" width="65" height="65"><strong id="rotate-title">TURN YOUR SCREEN</strong><p id="rotate-copy">Play Deivin's World Cup in landscape.</p></div>
-  <script src="Build/MobileGame.loader.js?v=1.8.2"></script>
+  <script src="Build/MobileGame.loader.js?v=1.8.3"></script>
   <script>
     const copy={
       en:{title:"Deivin's World Cup",badge:'THE FAMILY SHOWDOWN',heading:"DEIVIN'S WORLD CUP",lede:'6 a side. One unforgettable cup.\nJoystick on the left. Your winning moves on the right.',english:'English',albanian:'Albanian',enter:'ENTER THE STADIUM >',opening:'OPENING THE GATES...',loading:'GETTING THE STADIUM READY',retry:'TRY AGAIN',failed:'The stadium could not load. Check your connection and try again.',rotate:'TURN YOUR SCREEN',rotateCopy:"Play Deivin's World Cup in landscape."},
@@ -88,13 +88,13 @@
       if(document.documentElement.requestFullscreen&&matchMedia('(pointer:coarse)').matches) { document.documentElement.requestFullscreen().catch(()=>{}); }
       try {
         const game=await createUnityInstance(canvas,{
-          dataUrl:'Build/MobileGame.data?v=1.8.2',
-          frameworkUrl:'Build/MobileGame.framework.js?v=1.8.2',
-          codeUrl:'Build/MobileGame.wasm?v=1.8.2',
+          dataUrl:'Build/MobileGame.data?v=1.8.3',
+          frameworkUrl:'Build/MobileGame.framework.js?v=1.8.3',
+          codeUrl:'Build/MobileGame.wasm?v=1.8.3',
           streamingAssetsUrl:'StreamingAssets',
           companyName:"Deivin's Games",
           productName:"Deivin's World Cup",
-          productVersion:"1.8.2",
+          productVersion:"1.8.3",
           devicePixelRatio:Math.min(1.5,window.devicePixelRatio||1),
           matchWebGLToCanvasSize:true,
           showBanner:(message,type)=>{ if(type==='error') document.getElementById('status').textContent=t('failed'); }
