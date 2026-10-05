@@ -40,3 +40,5 @@ All 269 built-game checks passed, covering both squads and numbers, pitch bounda
 Difficulty: Easy uses slower opponents with less frequent tackles and weaker shots; Normal provides balanced opposition; Hard uses full-speed opponents, more aggressive tackling, and stronger shots. Your team keeps the same abilities across all three settings.
 
 A small yellow downward triangle identifies your controlled player. To steal without sliding, move toward the exposed ball in front of an opponent and get within about 1.25 metres of the ball. Running into their back alone will not win it. A successful steal immediately attaches the ball to your player and displays Ball won; newly won possession has a brief protection against instant steal-backs. Slide tackling remains available.
+
+On desktop, circular action buttons show their keyboard shortcuts beneath the action: Shoot/Tackle (SPACE), Pass/Switch (J), Through (L), Sprint & Skill (SHIFT / F). Shift sprints and F performs a rainbow. These key hints are hidden on phones and iPads.
