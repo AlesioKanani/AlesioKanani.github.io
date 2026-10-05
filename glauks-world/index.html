@@ -34,6 +34,7 @@
   #bJump{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#5be36f,#1fb347)}
   #bFly{right:calc(env(safe-area-inset-right) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px + clamp(74px,19vh,130px) + 16px);background:linear-gradient(#6aa8ff,#2f6bff)}
   #bDown{right:calc(env(safe-area-inset-right) + 20px + clamp(74px,19vh,130px) + 16px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ff8a70,#e63946);display:none}
+  #bPow{left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 20px);background:linear-gradient(#ffd23f,#e0a000);color:#1c1c55}
   body:not(.touch) .pbtn{display:none !important}
   #joyBase,#joyKnob{position:absolute;border-radius:50%;display:none;pointer-events:none}
   #joyBase{width:130px;height:130px;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.5)}
@@ -79,13 +80,15 @@
   <button class="pbtn" id="bFly">FLY</button>
   <button class="pbtn" id="bJump">JUMP</button>
   <button class="pbtn" id="bDown">DOWN</button>
+  <button class="pbtn" id="bPow">POW</button>
   <div id="joyBase"></div><div id="joyKnob"></div>
-  <div id="hint" class="stroke">Move: WASD • Look: drag mouse • Jump: Space (twice = double jump) • Fly: F (Space up, C down) • Sprint: Shift</div>
+  <div id="hint" class="stroke">Move: WASD or arrows • Camera follows you • Jump: Space • Fly: F • Super kick: E • Sprint: Shift</div>
 </div>
 
 <div class="screen show" id="menu">
   <h1 class="stroke">Glauk's World</h1>
   <p class="sub stroke">Super Glauk #10</p>
+  <p class="sub stroke" style="font-size:clamp(14px,3.2vh,24px)">Grab stars. Kick goals. Tap FLY.</p>
   <div class="spacer"></div>
   <div class="capes" id="capes" aria-label="Pick a cape color"></div>
   <button class="btn play stroke" id="playBtn">▶ PLAY</button>
@@ -233,47 +236,67 @@ const clouds = [];
 for (let i=0;i<14;i++){ const c = mesh(G.sphLo, 0xffffff, rnd(-95,95), rnd(28,46), rnd(-95,95), rnd(10,18), 3, rnd(6,10)); clouds.push(c); }
 
 // ---------- Super Glauk (modelled on the real Glauk) ----------
-const SKIN=0xe8b890, HAIR=0x5c3d29, JERSEY=0xe0242b, JERSEY_DK=0xb81b22, BLACK=0x17171a;
-const CAPES = [0x1d1d1f,0x2f6bff,0xffd23f,0x8e44ff,0x2fbf4a];
+const SKIN=0xe8c4a2, HAIR=0x6a4a30, HAIR_DK=0x4e351f, JERSEY=0xe0242b, JERSEY_DK=0xb81b22, BLACK=0x17171a;
+const CAPES = [0x1d1d1f,0xe0242b,0x2f6bff,0xffd23f,0x2fbf4a];
 let capeIdx = Math.min(CAPES.length-1, parseInt(store.get('glauk3d-cape','0'),10) || 0);
 const hero = new THREE.Group(); scene.add(hero);
-const model = new THREE.Group(); model.scale.setScalar(.95); model.position.y = .97; hero.add(model);
+const model = new THREE.Group(); model.scale.setScalar(1.02); model.position.y = .97; hero.add(model);
 const pivot = (x,y,z) => { const p = new THREE.Group(); p.position.set(x,y,z); model.add(p); return p; };
 mesh(G.box, JERSEY, 0,.15,0, .56,.62,.30, model);
 mesh(G.box, JERSEY_DK, 0,-.14,0, .58,.05,.32, model);
 mesh(G.box, BLACK, 0,-.42,0, .54,.34,.30, model);
 const legL = pivot(-.14,-.5,0), legR = pivot(.14,-.5,0);
-for (const l of [legL,legR]){ mesh(G.cyl, SKIN, 0,-.22,0, .17,.44,.17, l); mesh(G.box, 0xffffff, 0,-.47,.05, .2,.12,.3, l); }
+for (const l of [legL,legR]){ mesh(G.cyl, SKIN, 0,-.22,0, .17,.44,.17, l); mesh(G.box, 0xf4f4f4, 0,-.47,.05, .2,.12,.3, l); }
 const armL = pivot(-.36,.38,0), armR = pivot(.36,.38,0);
 for (const a of [armL,armR]){ mesh(G.cyl, JERSEY, 0,-.1,0, .15,.3,.15, a); mesh(G.cyl, SKIN, 0,-.32,0, .12,.22,.12, a); mesh(G.sph, SKIN, 0,-.5,0, .15, .15, .15, a); }
-mesh(G.sph, SKIN, 0,.74,0, .46,.5,.46, model);
-for (const s of [-1,1]) mesh(G.sph, SKIN, s*.23,.74,0, .1,.13,.1, model);
-mesh(G.sph, HAIR, 0,.88,-.03, .5,.32,.5, model);
-mesh(G.sph, HAIR, 0,.76,-.09, .47,.42,.42, model);
-mesh(G.sph, HAIR, .06,1.03,.13, .24,.16,.24, model);       // swept-up front
-mesh(G.sph, HAIR, -.06,1.0,.09, .2,.14,.2, model);
+mesh(G.sph, SKIN, 0,.74,0, .44,.48,.44, model);
+for (const s of [-1,1]) mesh(G.sph, SKIN, s*.22,.74,0, .09,.12,.08, model);
+// short brown hair, swept fringe like the photo
+mesh(G.sph, HAIR, 0,.9,-.02, .46,.26,.46, model);
+mesh(G.sph, HAIR_DK, 0,.78,-.08, .44,.28,.36, model);
+mesh(G.sph, HAIR, .02,1.0,.16, .28,.12,.22, model);
+mesh(G.box, HAIR, .08,.96,.2, .22,.06,.1, model, .2, .3, -.2);
 for (const s of [-1,1]){
-  mesh(G.sph, 0xffffff, s*.1,.78,.2, .09,.1,.06, model);
-  mesh(G.sph, 0x4a2e1c, s*.1,.78,.235, .055,.06,.03, model);  // brown eyes
-  mesh(G.box, HAIR, s*.1,.87,.21, .12,.025,.03, model, 0,0,s*.14);
-  mesh(G.sph, 0xff9999, s*.17,.68,.19, .06,.05,.03, model);
-  mesh(G.box, 0x8c4738, s*.06,.648,.225, .03,.025,.03, model);
-  mesh(G.box, BLACK, s*.075,.4,.155, .035,.2,.02, model, 0,0,s*.44);   // V-neck
+  mesh(G.sph, 0xffffff, s*.09,.78,.2, .08,.09,.05, model);
+  mesh(G.sph, 0x4a2e1c, s*.09,.78,.23, .05,.055,.03, model);
+  mesh(G.box, HAIR_DK, s*.09,.88,.2, .11,.03,.03, model, 0,0,s*.2);
+  mesh(G.sph, 0xffb0a0, s*.16,.68,.18, .055,.04,.03, model);
 }
-mesh(G.box, 0x8c4738, 0,.63,.228, .1,.025,.03, model);
-mesh(G.sph, 0xffd240, .17,.22,.155, .1,.1,.03, model);    // little star badge
+mesh(G.box, 0xc47a6a, 0,.64,.22, .09,.018,.02, model); // smile
+const capePivot = pivot(0,.42,-.16);
 const capeMeshes = [];
-for (const s of [-1,1]) capeMeshes.push(mesh(G.box, CAPES[capeIdx], s*.31,.2,-.2, .1,.62,.3, model, .24,0,s*.24));
-{ // jersey back: GLAUK / 10
+capeMeshes.push(mesh(G.box, CAPES[capeIdx], 0,-.34,0, .62,.7,.06, capePivot));
+capeMeshes.push(mesh(G.box, 0xe0242b, 0,-.34,.04, .5,.62,.02, capePivot));
+function jerseyTex(draw){
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const g = cv.getContext('2d');
-  g.fillStyle = '#e0242b'; g.fillRect(0,0,256,256); g.fillStyle = '#17171a'; g.fillRect(40,2,176,20);
-  g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.font = 'bold 54px Arial'; g.fillText('GLAUK', 128, 70); g.font = 'bold 140px Arial'; g.fillText('10', 128, 177);
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  g.fillStyle = '#e0242b'; g.fillRect(0,0,256,256); draw(g);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; return tex;
+}
+{ // front: black V, FSHF eagle on his left chest, small chevron on the other
+  const tex = jerseyTex(g => {
+    g.fillStyle = '#17171a'; g.beginPath(); g.moveTo(78,8); g.lineTo(128,78); g.lineTo(178,8); g.lineTo(158,8); g.lineTo(128,52); g.lineTo(98,8); g.closePath(); g.fill();
+    g.strokeStyle = '#111'; g.lineWidth = 6; g.strokeRect(168,78,62,74);
+    g.fillStyle = '#111'; g.beginPath(); g.moveTo(199,88); g.lineTo(214,118); g.lineTo(184,118); g.closePath(); g.fill();
+    g.fillRect(192,118,14,22); g.font = 'bold 16px Arial'; g.fillText('FSHF', 176, 146);
+    g.beginPath(); g.moveTo(36,96); g.lineTo(58,78); g.lineTo(80,96); g.lineTo(58,114); g.closePath(); g.fill();
+  });
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(.52,.52), new THREE.MeshBasicMaterial({ map: tex }));
+  front.position.set(0,.16,.153); model.add(front);
+}
+{ // back: SHQIPERI, GLAUK, 10
+  const tex = jerseyTex(g => {
+    g.fillStyle = '#17171a'; g.fillRect(70,6,116,22);
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 16px Arial'; g.fillText('SHQIPERI', 128, 17);
+    g.font = 'bold 52px Arial'; g.fillText('GLAUK', 128, 78);
+    g.font = 'bold 132px Arial'; g.fillText('10', 128, 176);
+  });
   const back = new THREE.Mesh(new THREE.PlaneGeometry(.52,.52), new THREE.MeshBasicMaterial({ map: tex }));
   back.position.set(0,.16,-.153); back.rotation.y = Math.PI; model.add(back);
 }
-function setCape(i){ capeIdx = i; store.set('glauk3d-cape', String(i)); capeMeshes.forEach(m => m.material = M(CAPES[i])); }
+const starPointer = new THREE.Mesh(new THREE.ConeGeometry(.18,.55,8), new THREE.MeshBasicMaterial({ color: 0xffd426 }));
+starPointer.rotation.x = Math.PI/2; starPointer.position.set(0,2.15,0); hero.add(starPointer);
+function setCape(i){ capeIdx = i; store.set('glauk3d-cape', String(i)); capeMeshes[0].material = M(CAPES[i]); }
 
 // ---------- ball ----------
 let ball;
@@ -291,14 +314,18 @@ makeBall();
 const stars = [];
 const starShape = (() => { const s = new THREE.Shape(); for (let i=0;i<10;i++){ const a = i/10*Math.PI*2 + Math.PI/2, r = i%2 ? .32 : .75; i ? s.lineTo(Math.cos(a)*r, Math.sin(a)*r) : s.moveTo(Math.cos(a)*r, Math.sin(a)*r); } s.closePath(); return s; })();
 const starGeo = new THREE.ExtrudeGeometry(starShape, { depth: .25, bevelEnabled: false }); starGeo.translate(0,0,-.125);
+function addStar(x,z,y){
+  const m = new THREE.Mesh(starGeo, new THREE.MeshLambertMaterial({ color: 0xffd426, emissive: 0x7a5a00 })); m.position.set(x,y,z); scene.add(m);
+  stars.push({ m, y, taken:false, ph: Math.random()*6 });
+}
 function spawnStars(){
   stars.forEach(s => scene.remove(s.m)); stars.length = 0;
-  for (let i=0;i<STAR_COUNT;i++){
+  [[6,4,1.6],[ -5,7,1.6],[8,-3,1.6],[4,10,6.5],[-8,2,8]].forEach(([x,z,extra]) => addStar(x,z,H(x,z)+extra));
+  for (let i=stars.length;i<STAR_COUNT;i++){
     let x, z, y; const sky = i % 3 === 0;
     for (let t=0;t<80;t++){ x = rnd(-65,65); z = rnd(-65,65); if (free(x,z,1.6)) break; }
     y = H(x,z) + (sky ? rnd(7,16) : 1.5);
-    const m = new THREE.Mesh(starGeo, new THREE.MeshLambertMaterial({ color: 0xffd426, emissive: 0x7a5a00 })); m.position.set(x,y,z); scene.add(m);
-    stars.push({ m, y, taken:false, ph: Math.random()*6 });
+    addStar(x,z,y);
   }
 }
 spawnStars();
@@ -333,17 +360,18 @@ function burst(pos, color, n=10, speed=5){
 function confetti(pos){ const cols = [0xff4d4d,0xffd933,0x4dd966,0x4d99ff,0xff80cc]; for (let i=0;i<40;i++) burst(pos.clone().add(new THREE.Vector3(rnd(-3,3), rnd(2,6), rnd(-3,3))), cols[i%5], 1, 2); }
 
 // ---------- input ----------
-const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false;
+const keys = {}; let jumpTap = false, flyTap = false, pauseTap = false, powTap = false, lookActive = 0;
 addEventListener('keydown', e => {
   if (e.repeat) return; keys[e.code] = true;
   if (e.code === 'Space') { jumpTap = true; e.preventDefault(); }
   if (e.code === 'KeyF') flyTap = true;
+  if (e.code === 'KeyE') powTap = true;
   if (e.code === 'Escape' || e.code === 'KeyP') pauseTap = true;
 });
 addEventListener('keyup', e => keys[e.code] = false);
 let yaw = 0, pitch = .35, lookDX = 0, lookDY = 0, mouseDown = false;
 canvas.addEventListener('mousedown', () => mouseDown = true); addEventListener('mouseup', () => mouseDown = false);
-addEventListener('mousemove', e => { if (mouseDown) { lookDX += e.movementX; lookDY += e.movementY; } });
+addEventListener('mousemove', e => { if (mouseDown) { lookDX += e.movementX; lookDY += e.movementY; lookActive = .45; } });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 // touch: left half = joystick, right half = look; buttons for jump/fly/down
 const touch = { joy: null, look: null, jx: 0, jy: 0, up: false, down: false };
@@ -364,7 +392,7 @@ function tMove(e){
       let dx = t.clientX - touch.joy.x, dy = t.clientY - touch.joy.y; const l = Math.hypot(dx,dy), max = 60; if (l > max){ dx *= max/l; dy *= max/l; }
       touch.jx = dx/max; touch.jy = -dy/max; joyKnob.style.left = (touch.joy.x+dx-32)+'px'; joyKnob.style.top = (touch.joy.y+dy-32)+'px';
     }
-    if (touch.look && t.identifier === touch.look.id){ lookDX += (t.clientX - touch.look.x) * 1.3; lookDY += (t.clientY - touch.look.y) * 1.3; touch.look.x = t.clientX; touch.look.y = t.clientY; }
+    if (touch.look && t.identifier === touch.look.id){ lookDX += (t.clientX - touch.look.x) * 1.3; lookDY += (t.clientY - touch.look.y) * 1.3; touch.look.x = t.clientX; touch.look.y = t.clientY; lookActive = .45; }
   }
   if (state === 'play') e.preventDefault();
 }
@@ -382,6 +410,7 @@ function hold(el, on, off){ const d = e => { e.preventDefault(); el.classList.ad
 hold($('#bJump'), () => { jumpTap = true; touch.up = true; }, () => touch.up = false);
 hold($('#bFly'), () => { flyTap = true; });
 hold($('#bDown'), () => touch.down = true, () => touch.down = false);
+hold($('#bPow'), () => { powTap = true; });
 
 // ---------- game state ----------
 let state = 'menu', time = 0, collected = 0, goals = 0, bannerT = 0, roundT = 0, walkT = 0, kickCd = 0, flyGrace = 0;
@@ -389,13 +418,29 @@ const vel = new THREE.Vector3(); let flying = false, doubleUsed = false, grounde
 let camTarget = new THREE.Vector3(0,1.5,0), camPos = new THREE.Vector3(0,2,6);
 hero.position.set(0, H(0,0), 0);
 
+
+function superPow(){
+  const p = hero.position;
+  burst(p.clone().setY(p.y+1), 0xffd426, 16, 6);
+  const bp = ball.position;
+  if (bp.distanceTo(p) < 5){
+    const goalX = Math.abs(bp.x - 48) < Math.abs(bp.x - 12) ? 50 : 10;
+    const dx = goalX - bp.x, dz = -bp.z, d = Math.hypot(dx,dz) || 1;
+    ballState.v.set(dx/d*16, 6.5, dz/d*7); kickCd = .4; sfx.kick(); banner('Super kick!', 1.2);
+  } else {
+    let n = 0;
+    for (const s of stars){ if (!s.taken && s.m.position.distanceTo(p) < 7){ s.taken = true; s.m.visible = false; collected++; n++; burst(s.m.position, 0xffd940, 6, 4); } }
+    if (n){ setStarsHud(); sfx.star(collected); banner(n + ' star' + (n>1?'s':'') + '!', 1.2); }
+    else { vel.y = Math.max(vel.y, 8); banner('Up, up!', 1); sfx.jump(); }
+  }
+}
 function banner(t, s=2.5){ const b = $('#banner'); b.textContent = t; b.classList.add('on'); bannerT = s; }
-function setStarsHud(){ $('#stars').textContent = '⭐ ' + collected + ' / ' + stars.length; $('#goals').textContent = goals ? '⚽ Goals: ' + goals : ''; }
+function setStarsHud(){ $('#stars').textContent = '⭐ ' + collected + ' / ' + stars.length; $('#goals').textContent = '⚽ Goals: ' + goals; }
 function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('show')); if (id) $(id).classList.add('show'); }
 function startGame(){
   unlockAudio(); hero.position.set(0, H(0,0), 0); vel.set(0,0,0); flying = false; yaw = 0; pitch = .35; collected = 0; goals = 0; roundT = 0;
   stars.forEach(s => { s.taken = false; s.m.visible = true; }); makeBall(); setStarsHud();
-  state = 'play'; show(null); $('#hud').classList.add('show'); banner('Find the stars!', 3); say('Go, Super Glauk!');
+  state = 'play'; show(null); $('#hud').classList.add('show'); banner('Grab the stars! FLY stays on.', 3.2); say('Go, Super Glauk!');
 }
 function goHome(){ state = 'menu'; hero.position.set(0, H(0,0), 0); $('#hud').classList.remove('show'); show('#menu'); }
 function pause(){ if (state === 'play'){ state = 'pause'; show('#pausescr'); } }
@@ -419,9 +464,12 @@ setCape(capeIdx);
 function animate(speed, fly, air, dt){
   const sp = Math.min(1, speed / WALK), sw = Math.sin(walkT) * .66 * sp, k = 1 - Math.exp(-12*dt);
   let lL, lR, aL, aR, tilt = 0;
-  if (fly){ lL = lR = .2; aL = aR = -Math.PI + .25; tilt = Math.min(1, new THREE.Vector2(vel.x,vel.z).length() / 6) * 1.2; }
-  else if (air){ lL = .35; lR = -.25; aL = aR = -2.6; }
-  else { lL = sw; lR = -sw; aL = -sw; aR = sw; }
+  if (fly){ lL = lR = .2; aL = aR = -Math.PI + .25; tilt = Math.min(1, new THREE.Vector2(vel.x,vel.z).length() / 6) * 1.2; capePivot.rotation.x = -.7; capePivot.scale.y = 1.25; }
+  else {
+    capePivot.rotation.x = Math.sin(time*2)*.08; capePivot.scale.y = 1;
+    if (air){ lL = .35; lR = -.25; aL = aR = -2.6; }
+    else { lL = sw; lR = -sw; aL = -sw; aR = sw; }
+  }
   legL.rotation.x += (lL - legL.rotation.x) * k; legR.rotation.x += (lR - legR.rotation.x) * k;
   armL.rotation.x += (aL - armL.rotation.x) * k; armR.rotation.x += (aR - armR.rotation.x) * k;
   armL.rotation.z += ((fly||air ? -.15 : 0) - armL.rotation.z) * k; armR.rotation.z += ((fly||air ? .15 : 0) - armR.rotation.z) * k;
@@ -445,7 +493,8 @@ function update(dt){
   if (pauseTap){ pauseTap = false; pause(); return; }
 
   // look
-  yaw -= lookDX * .0055; pitch = Math.max(-.35, Math.min(1.2, pitch + lookDY * .004)); lookDX = lookDY = 0;
+  yaw -= lookDX * .0055; pitch = Math.max(-.2, Math.min(1.1, pitch + lookDY * .004)); lookDX = lookDY = 0;
+  lookActive = Math.max(0, lookActive - dt);
   // move input
   let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx;
   let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy;
@@ -464,7 +513,7 @@ function update(dt){
     const vert = (upHeld ? 1 : 0) - (downHeld ? 1 : 0);
     const k = 1 - Math.exp(-5*dt);
     vel.x += (wx*FLY*sprint - vel.x) * k; vel.z += (wz*FLY*sprint - vel.z) * k; vel.y += (vert*9 - vel.y) * k;
-    if (grounded && vert <= 0 && flyGrace <= 0) flying = false;
+    // stay airborne until LAND / F, so a tap does not cancel on touchdown
   } else {
     const k = 1 - Math.exp(-9*dt);
     vel.x += (wx*WALK*sprint - vel.x) * k; vel.z += (wz*WALK*sprint - vel.z) * k;
@@ -488,7 +537,8 @@ function update(dt){
     if (d < r && d > .001){ p.x = o.x + dx/d*r; p.z = o.z + dz/d*r; }
   }
   const hv = Math.hypot(vel.x, vel.z);
-  if (hv > .6){ const target = Math.atan2(vel.x, vel.z); let d = target - hero.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); hero.rotation.y += d * (1 - Math.exp(-12*dt)); }
+  if (hv > .6){ const target = Math.atan2(vel.x, vel.z); let d = target - hero.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); hero.rotation.y += d * (1 - Math.exp(-12*dt));
+    if (lookActive <= 0){ let cy = hero.rotation.y - yaw; cy = Math.atan2(Math.sin(cy), Math.cos(cy)); yaw += cy * (1 - Math.exp(-2.2*dt)); } }
   walkT += hv * dt * 1.6;
   animate(hv, flying, !grounded && !flying, dt);
 
@@ -496,9 +546,13 @@ function update(dt){
   tmp.set(p.x, p.y + .95, p.z);
   for (const s of stars){
     if (s.taken) continue;
-    if (s.m.position.distanceTo(tmp) < 1.7){ s.taken = true; s.m.visible = false; collected++; sfx.star(collected); burst(s.m.position, 0xffd940, 12, 5); setStarsHud(); }
+    if (s.m.position.distanceTo(tmp) < 2.15){ s.taken = true; s.m.visible = false; collected++; sfx.star(collected); burst(s.m.position, 0xffd940, 12, 5); setStarsHud(); }
   }
-  if (collected >= stars.length && roundT <= 0){ roundT = 3.5; banner('You found ALL the stars!', 3); sfx.fan(); confetti(p); say('You found all the stars!'); }
+  { let best = null, bd = 1e9; for (const s of stars){ if (s.taken) continue; const d = s.m.position.distanceTo(tmp); if (d < bd){ bd = d; best = s; } }
+    if (best){ const a = Math.atan2(best.m.position.x - p.x, best.m.position.z - p.z); starPointer.visible = true; starPointer.rotation.z = -a + hero.rotation.y; starPointer.position.y = 2.15 + Math.sin(time*4)*.08; }
+    else starPointer.visible = false; }
+  if (powTap){ powTap = false; superPow(); }
+  if (collected >= stars.length && roundT <= 0){ roundT = 3.5; banner('All the stars! Super Glauk!', 3); sfx.fan(); confetti(p); say('You found all the stars!'); }
   if (roundT > 0){ roundT -= dt; if (roundT <= 0){ stars.forEach(s => { s.taken = false; s.m.visible = true; }); collected = 0; setStarsHud(); } }
 
   // ball
