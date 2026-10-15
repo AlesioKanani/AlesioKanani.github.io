@@ -35,12 +35,26 @@ jobs:
         with:
           sparse-checkout: .github/scripts   # skip the game builds; only the script is needed
 
+      # The last published file holds the SATA counts recorded since the seed in the script,
+      # so read it through the API (no CDN cache) and stop if it exists but can't be read.
+      - name: Get the last published file
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(curl -sS -o "$RUNNER_TEMP/previous.json" -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github.raw" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/mnav.json?ref=mnav-data")
+          case "$code" in
+            200) echo "read the last published file ($(wc -c < "$RUNNER_TEMP/previous.json") bytes)" ;;
+            404) echo "no published file yet; starting from the seed"; rm -f "$RUNNER_TEMP/previous.json" ;;
+            *)   echo "::error::could not read the last published file (HTTP $code)"; exit 1 ;;
+          esac
+
       - name: Build mnav.json
-        run: >
-          python3 .github/scripts/mnav_data.py
-          --out "$RUNNER_TEMP/out/mnav.json"
-          --previous "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/mnav-data/mnav.json"
-          --problems "$RUNNER_TEMP/problems.txt"
+        run: |
+          prev=""
+          if [ -f "$RUNNER_TEMP/previous.json" ]; then prev="--previous $RUNNER_TEMP/previous.json"; fi
+          python3 .github/scripts/mnav_data.py --out "$RUNNER_TEMP/out/mnav.json" $prev --problems "$RUNNER_TEMP/problems.txt"
 
       - name: Publish to the mnav-data branch
         env:
