@@ -21,7 +21,7 @@ Market cap uses basic shares outstanding, BTC NAV uses the bitcoin price at the
 
 Standard library only, so the GitHub Actions job needs no installs.
 
-  python3 mnav_data.py --out mnav.json [--previous URL_OR_PATH]
+  python3 mnav_data.py --out mnav.json [--previous LAST_PUBLISHED.json]
   python3 mnav_data.py --out mnav.json --from-dir DIR      # saved API responses
 """
 import argparse
@@ -131,21 +131,16 @@ class Source:
         raise RuntimeError(f"could not fetch {url}: {last}")
 
 
-def load_previous(where):
-    """The file the last run published, if it can be read. Never fatal."""
-    if not where:
+def load_previous(path):
+    """The file the last run published. It carries the SATA counts recorded since the seed,
+    so when one is named but can't be read, stop rather than publish a file without them."""
+    if not path:
         return None
     try:
-        if "://" in where:
-            req = urllib.request.Request(where + ("&" if "?" in where else "?") + f"t={int(time.time())}",
-                                         headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.loads(r.read())
-        with open(where, encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:  # noqa: BLE001
-        print(f"note: previous data not read ({e})")
-        return None
+        raise SystemExit(f"could not read the previous file {path} ({e}); nothing published") from e
 
 
 def num(v):
@@ -275,7 +270,9 @@ def build_mstr(src):
     m = src.get(STRATEGY + "/btc/mstrKpiData", "mstrKpiData")
     m = m[0] if isinstance(m, list) else m
     close_px, close_mc = num(m["ufPrice"]), num(m["marketCap"])
-    px, session, px_time = close_px, "close", et_iso(m.get("timeStamp"))
+    stamp_txt = m.get("timeStamp") or ""
+    px, px_time = close_px, et_iso(stamp_txt)
+    session = "close" if stamp_txt.endswith("04:00 PM") else "market hours"
     ext = m.get("extendedSession") or {}
     ext_time = et_iso(ext.get("timeStamp"))
     if num(ext.get("ufPrice")) and ext_time and px_time and ext_time > px_time:
@@ -311,6 +308,12 @@ def build_asst(src, btc_at_close, live_btc, prev_pref):
     calc = src.get(f"{STRIVE}/dashboard/calculated?fromDate={since}&toDate={today}&currency=USD&stockSymbol=ASST",
                    "calc")
     header = src.get(STRIVE + "/header-market", "header")["data"]
+    try:   # Strive's official closing price; the day's bar can keep moving with after-hours trades
+        q = next(x for x in src.get("https://strive.com/api/quotes", "quotes")["quotes"] if x.get("symbol") == "ASST")
+        official = {q["officialCloseDate"]: num(q["officialClose"])} if num(q.get("officialClose")) else {}
+    except Exception as e:  # noqa: BLE001
+        print(f"note: no official close ({e})")
+        official = {}
 
     def et_day(ms):
         return dt.datetime.fromtimestamp(ms / 1000, ET).date().isoformat()
@@ -343,8 +346,9 @@ def build_asst(src, btc_at_close, live_btc, prev_pref):
     # bitcoin bars are UTC days; only a fallback for days missing from Strategy's 4:00 pm prices
     btc_bars = {dt.datetime.fromtimestamp(b["t"] / 1000, dt.timezone.utc).date().isoformat(): b["c"]
                 for b in agg["btcAggregates"]}
-    bars = sorted((et_day(b["t"]), b["c"]) for b in agg["stockAggregates"])   # stock bars start at midnight ET
-    if bars and provisional_today(bars[-1][0]):
+    # stock bars start at midnight ET; today's only counts as a close once the official close is out
+    bars = sorted((et_day(b["t"]), official.get(et_day(b["t"]), b["c"])) for b in agg["stockAggregates"])
+    if bars and bars[-1][0] == today and (provisional_today(today) or today not in official):
         live_bar = bars.pop()
     else:
         live_bar = None
@@ -401,7 +405,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", required=True)
     ap.add_argument("--from-dir", help="read saved API responses instead of fetching")
-    ap.add_argument("--previous", help="URL or path of the last published file")
+    ap.add_argument("--previous", help="path of the last published file (required once one exists)")
     ap.add_argument("--problems", help="write any partial-failure notes here (for the workflow)")
     a = ap.parse_args()
     src = Source(a.from_dir)
