@@ -1,0 +1,74 @@
+{
+ "/btc/bitcoinKpis": {
+  "status": 200,
+  "wire_bytes": 2178,
+  "bytes": 2178,
+  "Content-Encoding": null,
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ },
+ "/btc/mstrKpiData": {
+  "status": 200,
+  "wire_bytes": 1005,
+  "bytes": 1005,
+  "Content-Encoding": null,
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ },
+ "/btc/kpiData": {
+  "status": 200,
+  "wire_bytes": 25503,
+  "bytes": 25503,
+  "Content-Encoding": null,
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ },
+ "/btc/getPreferreds": {
+  "status": 200,
+  "wire_bytes": 3256,
+  "bytes": 3256,
+  "Content-Encoding": null,
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ },
+ "/v2/btc/credit": {
+  "status": 200,
+  "wire_bytes": 5893,
+  "bytes": 5893,
+  "Content-Encoding": null,
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ },
+ "/btc/timeSeries": {
+  "status": 200,
+  "wire_bytes": 1698367,
+  "bytes": 13271119,
+  "Content-Encoding": "gzip",
+  "Cache-Control": null,
+  "Last-Modified": null,
+  "ETag": null,
+  "Access-Control-Allow-Origin": "*",
+  "Age": null,
+  "Expires": null
+ }
+}
