@@ -59,4 +59,5 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/mnav-probe.yml/enable" || echo "keepalive call failed; not fatal"
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/mnav-probe.yml/enable"
+# strict keepalive test
