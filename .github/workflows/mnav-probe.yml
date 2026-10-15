@@ -1,17 +1,72 @@
+# Refreshes the data behind https://alesiokanani.github.io/mnav/ (MSTR and ASST)
+#
+# Pulls Strategy's and Strive's public dashboard APIs, rebuilds mnav.json and
+# force-pushes it as a single commit to the `mnav-data` branch. The page reads it from
+# raw.githubusercontent.com, so main never gets a stream of bot commits and GitHub Pages
+# doesn't rebuild on every run. If one company's source fails, the other still updates
+# and the run is marked failed; if both fail, the last good file simply stays up.
 name: mnav-probe
+
 on:
+  workflow_dispatch:                 # "Run workflow" button in the Actions tab
   push:
     branches: [mnav-probe]
-    paths: [".github/scripts/mnav_data.py", ".github/workflows/mnav-probe.yml"]
+    paths:
+      - ".github/scripts/mnav_data.py"
+      - ".github/workflows/mnav-probe.yml"
+
 permissions:
-  contents: write
+  contents: write                    # push the mnav-data branch
+  actions: write                     # keep this schedule from being paused for inactivity
+
+concurrency:
+  group: mnav-probe
+  cancel-in-progress: false
+
 jobs:
-  probe:
+  refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
-      - run: python3 .github/scripts/mnav_data.py
-      - run: |
+        with:
+          sparse-checkout: .github/scripts   # skip the game builds; only the script is needed
+
+      - name: Build mnav.json
+        run: >
+          python3 .github/scripts/mnav_data.py
+          --out "$RUNNER_TEMP/out/mnav.json"
+          --previous "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/mnav-data/mnav.json"
+          --problems "$RUNNER_TEMP/problems.txt"
+
+      - name: Publish to the mnav-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/out"
+          cat > README.md <<'EOF'
+          Data for https://alesiokanani.github.io/mnav/, rebuilt through the day by
+          .github/workflows/mnav-data.yml on main. This branch is overwritten on every run;
+          don't commit to it.
+          EOF
+          git init -q -b mnav-data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add probe-out && git commit -q -m "probe results" && git push -q
+          git add mnav.json README.md
+          git commit -q -m "mNAV data $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:mnav-data-test
+
+      # GitHub pauses scheduled workflows in repos with no activity for 60 days.
+      # Re-enabling the workflow from the API resets that clock.
+      - name: Keep the schedule alive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/mnav-data.yml/enable" || echo "keepalive call failed; not fatal"
+
+      - name: Flag a partial update
+        run: |
+          if [ -s "$RUNNER_TEMP/problems.txt" ]; then
+            echo "::error::Published, but one source failed: $(tr '\n' ' ' < "$RUNNER_TEMP/problems.txt")"
+            exit 1
+          fi
