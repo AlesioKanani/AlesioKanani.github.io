@@ -1,0 +1,178 @@
+[
+ {
+  "name": "strategy_page_home",
+  "url": "https://www.strategy.com/",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 370,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_charts",
+  "url": "https://www.strategy.com/charts",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 376,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_bitcoin",
+  "url": "https://www.strategy.com/bitcoin",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 377,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_debt",
+  "url": "https://www.strategy.com/debt",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 374,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_shares",
+  "url": "https://www.strategy.com/shares",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 376,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_ledger",
+  "url": "https://www.strategy.com/ledger",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 376,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_credit_risk",
+  "url": "https://www.strategy.com/credit/risk",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 385,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_strc",
+  "url": "https://www.strategy.com/strc",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 374,
+  "cors": null
+ },
+ {
+  "name": "strategy_page_strf",
+  "url": "https://www.strategy.com/strf",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 374,
+  "cors": null
+ },
+ {
+  "name": "yahoo_mstr",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/MSTR?range=5d&interval=1d",
+  "status": 429,
+  "ctype": "text/html",
+  "bytes": 19,
+  "cors": null
+ },
+ {
+  "name": "yahoo_mstr_q2",
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/MSTR?range=5d&interval=1d",
+  "status": 429,
+  "ctype": "text/html",
+  "bytes": 19,
+  "cors": null
+ },
+ {
+  "name": "yahoo_btc",
+  "url": "https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?range=5d&interval=1d",
+  "status": 429,
+  "ctype": "text/html",
+  "bytes": 19,
+  "cors": null
+ },
+ {
+  "name": "stooq_mstr",
+  "url": "https://stooq.com/q/d/l/?s=mstr.us&i=d",
+  "status": 200,
+  "ctype": "text/html; charset=utf-8",
+  "bytes": 796,
+  "cors": null
+ },
+ {
+  "name": "coingecko_ping",
+  "url": "https://api.coingecko.com/api/v3/ping",
+  "status": 200,
+  "ctype": "application/json; charset=utf-8",
+  "bytes": 34,
+  "cors": "*"
+ },
+ {
+  "name": "coingecko_treasury",
+  "url": "https://api.coingecko.com/api/v3/companies/public_treasury/bitcoin",
+  "status": 200,
+  "ctype": "application/json; charset=utf-8",
+  "bytes": 35469,
+  "cors": "*"
+ },
+ {
+  "name": "coinbase_candles",
+  "url": "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400",
+  "status": 200,
+  "ctype": "application/json; charset=utf-8",
+  "bytes": 21461,
+  "cors": "*"
+ },
+ {
+  "name": "kraken_ohlc",
+  "url": "https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440",
+  "status": 200,
+  "ctype": "application/json",
+  "bytes": 62303,
+  "cors": null
+ },
+ {
+  "name": "bitstamp_ohlc",
+  "url": "https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=10",
+  "status": 200,
+  "ctype": "application/json",
+  "bytes": 1396,
+  "cors": "*"
+ },
+ {
+  "name": "bitcointreasuries_page",
+  "url": "https://bitcointreasuries.net/public-companies/strategy",
+  "status": 200,
+  "ctype": "text/html",
+  "bytes": 246981,
+  "cors": null
+ },
+ {
+  "name": "nasdaq_mstr",
+  "url": "https://api.nasdaq.com/api/quote/MSTR/info?assetclass=stocks",
+  "status": 200,
+  "ctype": "application/json; charset=utf-8",
+  "bytes": 1653,
+  "cors": null
+ },
+ {
+  "name": "sec_submissions",
+  "url": "https://data.sec.gov/submissions/CIK0001050446.json",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 4000,
+  "cors": null
+ },
+ {
+  "name": "sec_companyfacts",
+  "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001050446.json",
+  "status": 403,
+  "ctype": "text/html",
+  "bytes": 4000,
+  "cors": null
+ }
+]
