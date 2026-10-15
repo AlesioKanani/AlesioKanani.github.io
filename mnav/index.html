@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Strategy mNAV</title>
-<meta name="description" content="Strategy (MSTR) mNAV three ways: equity premium, enterprise and basic multiples of the bitcoin it holds. History refreshes hourly; the latest point is live.">
+<title>MSTR and ASST mNAV</title>
+<meta name="description" content="Strategy (MSTR) and Strive (ASST) mNAV three ways: equity premium, enterprise and basic multiples of the bitcoin each holds. Refreshed through the day, with a live latest point.">
 <meta name="theme-color" content="#030210">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Strategy mNAV">
-<meta property="og:description" content="What the market pays for the bitcoin behind each MSTR share, measured three ways and updated live.">
+<meta property="og:title" content="MSTR and ASST mNAV">
+<meta property="og:description" content="What the market pays for the bitcoin behind each MSTR and ASST share, measured three ways and updated live.">
 <meta property="og:url" content="https://alesiokanani.github.io/mnav/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23030210'/%3E%3Cpath d='M32 8 L44 44 L32 38 L20 44 Z' fill='%23e8ecff'/%3E%3Cpath d='M32 8 L32 38' stroke='%235ef2ff' stroke-width='3'/%3E%3Cpath d='M26 46 Q32 60 38 46 Z' fill='%235ef2ff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,7 +39,8 @@
     --sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body {
     min-height: 100vh;
     background: var(--void);
@@ -72,14 +73,19 @@
   .home { display: inline-block; font-size: 14px; color: var(--muted); text-decoration: none; padding: 4px 0; }
   .home:hover { color: var(--ink); }
 
-  .head { margin: 28px 0 22px; max-width: 46rem; }
+  .head { margin: 28px 0 8px; max-width: 46rem; }
   h1 {
     font: 700 clamp(30px, 6vw, 52px)/1.05 'Orbitron', var(--sans);
     letter-spacing: 0.03em;
   }
   .lede { margin-top: 14px; font-size: clamp(16px, 2vw, 18px); color: var(--ink-2); max-width: 40rem; }
+  .jump { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 14px; font-size: 15px; }
 
-  /* ---------- chart card ---------- */
+  /* ---------- one company ---------- */
+  .company { margin-top: 40px; scroll-margin-top: 16px; }
+  .company > h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .company > h2 .tk { color: var(--muted); font-weight: 500; margin-left: 8px; }
+
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -157,17 +163,20 @@
   @keyframes pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4.5); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .pulse { display: none; } }
 
-  /* ---------- explanation ---------- */
-  section.prose { margin-top: 44px; max-width: 46rem; }
-  section.prose h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.005em; margin-bottom: 14px; }
-  section.prose p + p { margin-top: 12px; }
-  section.prose p { color: var(--ink-2); }
+  /* ---------- prose ---------- */
+  .prose { max-width: 46rem; }
+  .breakdown { margin-top: 22px; }
+  .breakdown h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+  section.notes { margin-top: 52px; }
+  section.notes h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.005em; margin-bottom: 14px; }
+  .prose p + p { margin-top: 12px; }
+  .prose p { color: var(--ink-2); }
   .num { color: var(--ink); font-weight: 500; white-space: nowrap; }
 
   .stack { display: flex; gap: 2px; height: 22px; margin: 6px 0 12px; }
   .stack span { display: block; height: 100%; min-width: 2px; }
   .stack span:last-child { border-radius: 0 4px 4px 0; }
-  .stack-keys { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-bottom: 18px; font-size: 14px; color: var(--ink-2); }
+  .stack-keys { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-bottom: 16px; font-size: 14px; color: var(--ink-2); }
   .stack-keys li { list-style: none; display: flex; align-items: center; gap: 8px; }
   .stack-keys i { width: 12px; height: 12px; border-radius: 3px; background: var(--c); flex: none; }
 
@@ -175,9 +184,10 @@
   .defs dt { font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 10px; }
   .defs dt .swatch { width: 16px; }
   .defs dd { color: var(--ink-2); margin-top: 2px; }
+  .notes h3 { font-size: 16px; font-weight: 600; color: var(--ink); margin: 22px 0 6px; }
 
   /* ---------- table view ---------- */
-  details { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
+  details { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
   summary { cursor: pointer; color: var(--ink); font-weight: 500; }
   .table-scroll { overflow-x: auto; margin-top: 12px; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -201,91 +211,96 @@
   <a class="home" href="/">alesiokanani.github.io</a>
 
   <header class="head">
-    <h1>Strategy mNAV</h1>
-    <p class="lede">What the market pays for the bitcoin behind each MSTR share, measured three ways. The history refreshes every hour from Strategy's own figures, and the latest point is fetched live when you open the page.</p>
+    <h1>MSTR and ASST mNAV</h1>
+    <p class="lede">What the market pays for the bitcoin behind each share of Strategy and Strive, measured three ways. The history refreshes through the day from each company's own figures, and the newest point updates when you open the page.</p>
+    <nav class="jump" aria-label="Companies on this page">
+      <a href="#mstr">Strategy (MSTR)</a>
+      <a href="#asst">Strive (ASST)</a>
+    </nav>
   </header>
 
-  <section class="card" aria-labelledby="chart-title">
-    <h2 id="chart-title" class="sr-only">Strategy mNAV and MSTR price over time</h2>
-    <div class="toolbar">
-      <div class="ranges" role="group" aria-label="Date range">
-        <button type="button" data-years="1" aria-pressed="false">1Y</button>
-        <button type="button" data-years="2" aria-pressed="false">2Y</button>
-        <button type="button" data-years="3" aria-pressed="true">3Y</button>
-        <button type="button" data-years="0" aria-pressed="false">All</button>
-      </div>
-      <p class="stamp" id="stamp">Loading the latest figures</p>
-    </div>
+  <div id="companies"></div>
 
-    <div class="readout" id="readout">
-      <button type="button" class="key" data-series="1" aria-pressed="true" style="--c: var(--eq)">
-        <span class="swatch"></span><span class="name">Equity premium</span><span class="val" id="v-eq">&nbsp;</span>
-      </button>
-      <button type="button" class="key" data-series="2" aria-pressed="true" style="--c: var(--ent)">
-        <span class="swatch"></span><span class="name">Enterprise</span><span class="val" id="v-ent">&nbsp;</span>
-      </button>
-      <button type="button" class="key" data-series="3" aria-pressed="false" style="--c: var(--basic)">
-        <span class="swatch"></span><span class="name">Basic</span><span class="val" id="v-basic">&nbsp;</span>
-      </button>
-      <div class="key static" style="--c: var(--px)">
-        <span class="swatch"></span><span class="name">MSTR price</span><span class="val" id="v-px">&nbsp;</span>
-      </div>
-      <div class="key static">
-        <span></span><span class="name">Bitcoin price</span><span class="val" id="v-btc">&nbsp;</span>
-      </div>
-    </div>
-
-    <div class="plots loading" id="plots" tabindex="0" role="group"
-         aria-label="Chart of Strategy's mNAV with MSTR's price below it. Use the left and right arrow keys to step through days."
-         aria-describedby="chart-hint">
-      <div class="plot" id="plot-mnav"><span class="plot-label">mNAV</span></div>
-      <div class="plot" id="plot-px"><span class="plot-label">MSTR price, log scale</span></div>
-      <p class="state" id="state">Loading the history</p>
-    </div>
-    <p class="hint" id="chart-hint"><span class="fine">Drag across the chart to zoom in and double-click to zoom back out.</span><span class="coarse">Slide a finger along the chart to read any day.</span></p>
-    <p class="sr-only" id="kbd-live" aria-live="polite"></p>
-  </section>
-
-  <section class="prose" aria-labelledby="calc-title">
-    <h2 id="calc-title">Where the equity premium comes from</h2>
-    <div class="stack" id="stack" role="img" aria-label="Strategy's bitcoin split into debt, preferred stock and the residual left for common shareholders"></div>
-    <ul class="stack-keys" id="stack-keys"></ul>
-    <p id="calc-1">Waiting for data.</p>
-    <p id="calc-2"></p>
-  </section>
-
-  <section class="prose" aria-labelledby="defs-title">
+  <section class="notes prose" aria-labelledby="defs-title">
     <h2 id="defs-title">The three multiples</h2>
     <dl class="defs">
       <div>
         <dt><span class="swatch" style="--c: var(--eq)"></span>Equity premium</dt>
-        <dd>Market cap divided by the bitcoin left for common shareholders once debt and preferred stock at par are paid in BTC terms. Cash is left out, since Strategy earmarks its USD reserve for dividends and interest.</dd>
+        <dd>Market cap divided by the bitcoin left for common shareholders once debt and preferred stock at par are paid in BTC terms. Cash is left out, since both companies earmark theirs for dividends and interest.</dd>
       </div>
       <div>
         <dt><span class="swatch" style="--c: var(--ent)"></span>Enterprise</dt>
-        <dd>Market cap plus debt and preferred, minus the USD reserve and cash, divided by the value of the bitcoin. This was Strategy's headline mNAV until July 2026.</dd>
+        <dd>Market cap plus debt and preferred, minus cash and similar assets, divided by the value of the bitcoin.</dd>
       </div>
       <div>
         <dt><span class="swatch" style="--c: var(--basic)"></span>Basic</dt>
         <dd>Market cap divided by the value of the bitcoin, with no adjustment for what sits ahead of the common stock.</dd>
       </div>
     </dl>
-    <p id="strategy-figure" style="margin-top:16px"></p>
-    <p>Market cap uses basic shares outstanding. The value of the bitcoin is holdings times the BTC price at the 4:00 pm ET close. Debt is principal outstanding and preferred is notional at par, as Strategy reports them (since August 31, 2026 Strategy counts only its convertible notes as debt). Before 2025 the company had no preferred stock and the debt figures come from its filings. The equity premium is blank for parts of 2022, when the debt nearly matched the value of the bitcoin and the ratio stops meaning anything.</p>
+    <p style="margin-top:16px">Market cap uses basic shares outstanding. The value of the bitcoin is holdings times the BTC price at the 4:00 pm ET close. Debt is principal outstanding and preferred is notional at par or stated amount.</p>
 
-    <details id="table-view">
-      <summary>Month-end values for the range shown</summary>
-      <div class="table-scroll"><table id="table"></table></div>
-    </details>
-    <div class="actions"><button type="button" class="btn" id="csv">Download the daily data (CSV)</button></div>
+    <h3>Strategy</h3>
+    <p>Debt and preferred are as Strategy reports them (since August 31, 2026 it counts only its convertible notes as debt), and cash means its USD reserve plus cash. Before 2025 the company had no preferred stock and the debt figures come from its filings. The equity premium is blank for parts of 2022, when the debt nearly matched the value of the bitcoin and the ratio stops meaning anything.</p>
+
+    <h3>Strive</h3>
+    <p>The history starts on September 15, 2025, the first trading day after Strive's merger with Asset Entities and its first large bitcoin purchase. Prices and share counts are adjusted for the 1-for-20 reverse split in February 2026, and shares are Class A and Class B plus pre-funded warrants. Preferred is SATA at its $100 stated amount; cash includes the Strategy preferred stock Strive holds. Strive's dashboard reports holdings, shares and cash weekly, while the SATA count and the months before April 2026 come from its SEC filings, so days between filings are interpolated. The debt is the Semler Scientific notes and loan taken on in the January 2026 merger, retired by May 2026.</p>
   </section>
 
   <footer>
-    <p>Figures from Strategy's public dashboard API, the same data behind strategy.com. The latest point is requested from that API by your browser; debt before 2025 comes from the company's filings.</p>
+    <p>Figures from Strategy's and Strive's public dashboard APIs (the data behind strategy.com and strive.com/treasury) and the companies' SEC filings. Your browser requests the newest bitcoin price and MSTR quote from Strategy's API; Strive's quote is refreshed with the history.</p>
     <p id="freshness"></p>
-    <p>Not affiliated with Strategy. Not investment advice.</p>
+    <p>Not affiliated with Strategy or Strive. Not investment advice.</p>
   </footer>
 </main>
+
+<template id="company-tpl">
+  <section class="company">
+    <h2><span class="co-name"></span><span class="tk"></span></h2>
+    <div class="card">
+      <div class="toolbar">
+        <div class="ranges" role="group" aria-label="Date range"></div>
+        <p class="stamp">Loading the latest figures</p>
+      </div>
+      <div class="readout">
+        <button type="button" class="key" data-si="1" aria-pressed="true" style="--c: var(--eq)">
+          <span class="swatch"></span><span class="name">Equity premium</span><span class="val v-eq">&nbsp;</span>
+        </button>
+        <button type="button" class="key" data-si="2" aria-pressed="true" style="--c: var(--ent)">
+          <span class="swatch"></span><span class="name">Enterprise</span><span class="val v-ent">&nbsp;</span>
+        </button>
+        <button type="button" class="key" data-si="3" aria-pressed="false" style="--c: var(--basic)">
+          <span class="swatch"></span><span class="name">Basic</span><span class="val v-basic">&nbsp;</span>
+        </button>
+        <div class="key static" style="--c: var(--px)">
+          <span class="swatch"></span><span class="name px-name"></span><span class="val v-px">&nbsp;</span>
+        </div>
+        <div class="key static">
+          <span></span><span class="name">Bitcoin price</span><span class="val v-btc">&nbsp;</span>
+        </div>
+      </div>
+      <div class="plots loading" tabindex="0" role="group">
+        <div class="plot plot-m"></div>
+        <div class="plot plot-p"><span class="plot-label px-label"></span></div>
+        <p class="state">Loading the history</p>
+      </div>
+      <p class="hint"><span class="fine">Drag across the chart to zoom in and double-click to zoom back out.</span><span class="coarse">Slide a finger along the chart to read any day.</span></p>
+      <p class="sr-only kbd-live" aria-live="polite"></p>
+    </div>
+    <div class="breakdown prose">
+      <h3>Where the equity premium comes from</h3>
+      <div class="stack" role="img"></div>
+      <ul class="stack-keys"></ul>
+      <p class="calc-1"></p>
+      <p class="calc-2"></p>
+      <p class="co-note"></p>
+      <details>
+        <summary>Month-end values for the range shown</summary>
+        <div class="table-scroll"><table></table></div>
+      </details>
+      <div class="actions"><button type="button" class="btn csv"></button></div>
+    </div>
+  </section>
+</template>
 
 <script src="vendor/uPlot.iife.min.js"></script>
 <script>
@@ -296,13 +311,18 @@
   const LIVE_BTC = 'https://api.strategy.com/btc/bitcoinKpis';
   const LIVE_MSTR = 'https://api.strategy.com/btc/mstrKpiData';
   const ET = 'America/New_York';
-  const YEAR = 365.25 * 86400;
+  const MONTH = 30.4375 * 86400;
+
+  const COMPANIES = [
+    { key: 'MSTR', id: 'mstr', name: 'Strategy', short: 'Strategy', ranges: [[12, '1Y'], [24, '2Y'], [36, '3Y'], [0, 'All']], months: 36 },
+    { key: 'ASST', id: 'asst', name: 'Strive', short: 'Strive', ranges: [[3, '3M'], [6, '6M'], [12, '1Y'], [0, 'All']], months: 12 },
+  ];
 
   // ?data=relative/path.json and ?live=0 exist for local testing only
   const params = new URLSearchParams(location.search);
   const override = params.get('data');
   const dataUrl = override && !/^[a-z][a-z0-9+.-]*:|^\/\//i.test(override)
-    ? override : DATA_URL + '?v=' + Math.floor(Date.now() / 6e5);
+    ? override : DATA_URL + '?v=' + Math.floor(Date.now() / 3e5);
   const wantLive = params.get('live') !== '0';
 
   const $ = id => document.getElementById(id);
@@ -323,8 +343,8 @@
   const usd2 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const int = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   const mult = x => (x == null || !isFinite(x)) ? '–' : x.toFixed(2) + 'x';
-  const bn = m => '$' + (m / 1000).toFixed(1) + 'B';      // m is in $ millions
-  const kbtc = b => (b / 1000).toFixed(1) + 'k BTC';
+  const bn = m => '$' + (m / 1000).toFixed(m < 9950 ? 2 : 1) + 'B';   // m is in $ millions
+  const kbtc = b => b >= 9950 ? (b / 1000).toFixed(1) + 'k BTC' : int.format(b) + ' BTC';
 
   const num = v => {
     if (v == null) return null;
@@ -337,11 +357,7 @@
   function multiples(mc, nav, debt, pref, usd) {
     if (!(mc > 0 && nav > 0)) return [null, null, null];
     const residual = nav - debt - pref;
-    return [
-      mc / nav,
-      (mc + debt + pref - usd) / nav,
-      residual > 0.05 * nav ? mc / residual : null,
-    ];
+    return [mc / nav, (mc + debt + pref - usd) / nav, residual > 0.05 * nav ? mc / residual : null];
   }
 
   // '10/15/2026 08:51 AM' in New York time -> epoch ms
@@ -357,28 +373,6 @@
     return naive - (shown - naive);
   }
 
-  // ---------- data ----------
-  let S = null;                     // columnar series, x in epoch seconds
-  let latestMeta = null;            // the intraday point appended after the last close, if any
-  let strategyMnav = null;          // Strategy's own headline figure, for the note below the chart
-  let uM = null, uP = null;         // the two uPlot charts
-  let years = 3;                    // active range preset (0 = all)
-  let cursorIdx = null;             // index the readout shows; null = latest
-
-  function fromDoc(doc) {
-    const r = doc.rows, n = r.d.length;
-    const s = { x: [], px: [], eq: [], ent: [], basic: [], btcPx: [], btc: [], mc: [], nav: [], debt: [], pref: [], usd: [] };
-    for (let i = 0; i < n; i++) {
-      const [y, m, d] = r.d[i].split('-').map(Number);
-      s.x.push(Date.UTC(y, m - 1, d, 20, 0) / 1000);   // the 4:00 pm ET close
-      s.px.push(r.px[i]); s.eq.push(r.eq[i]); s.ent.push(r.ent[i]); s.basic.push(r.basic[i]);
-      s.btc.push(r.btc[i]); s.mc.push(r.mc[i]); s.nav.push(r.nav[i]);
-      s.debt.push(r.debt[i]); s.pref.push(r.pref[i]); s.usd.push(r.usd[i]);
-      s.btcPx.push(r.nav[i] * 1e6 / r.btc[i]);
-    }
-    return s;
-  }
-
   async function getJson(url, ms) {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), ms);
@@ -389,15 +383,13 @@
     } finally { clearTimeout(t); }
   }
 
-  // The live point: Strategy's current KPIs, priced the same way as the history
-  async function fetchLive() {
-    const [bRaw, mRaw] = await Promise.all([getJson(LIVE_BTC, 8000), getJson(LIVE_MSTR, 8000)]);
-    const b = bRaw.results || bRaw;
+  // ---------- the newest point ----------
+  // MSTR: Strategy's current KPIs, priced the same way as the history.
+  function liveMstr(b, mRaw) {
     const m = Array.isArray(mRaw) ? mRaw[0] : mRaw;
     const closePx = num(m.ufPrice), closeMc = num(m.marketCap);
     const shares = closeMc * 1e6 / closePx;
-    let px = closePx;
-    let t = parseEt(m.timeStamp);
+    let px = closePx, t = parseEt(m.timeStamp);
     let session = /04:00 PM$/i.test(m.timeStamp || '') ? 'close' : 'market hours';
     const ext = m.extendedSession || {};
     const extT = parseEt(ext.timeStamp);
@@ -405,36 +397,31 @@
     const btcPx = num(b.ufPrice), hold = num(b.btcHoldings);
     const nav = hold * btcPx / 1e6;
     const usd = b.totalReserve != null ? num(b.totalReserve) / 1e6 - nav : 0;
-    const debt = num(m.debt), pref = num(m.pref);
-    const mc = shares * px / 1e6;
+    const debt = num(m.debt), pref = num(m.pref), mc = shares * px / 1e6;
     const [basic, ent, eq] = multiples(mc, nav, debt, pref, usd);
     const btcT = b.msTimestamp ? +b.msTimestamp : Date.now();
     const p = { t: Math.max(t || 0, btcT) / 1000, px, btcPx, btc: hold, mc, nav, debt, pref, usd, basic, ent, eq,
-                mstrTime: t, session, strategyMnav: num(b.mNav), live: true };
+                stockTime: t, btcLive: true, session, companyMnav: num(b.mNav), live: true };
     const ok = [px, btcPx, hold, mc, nav, debt, pref, usd, ent].every(v => v != null && isFinite(v)) && ent > 0.05 && ent < 20;
     if (!ok) throw new Error('live figures look wrong');
     return p;
   }
 
-  function fromLatest(l) {
+  // From the data file's snapshot; a live bitcoin price, when there is one, replaces its own.
+  function fromLatest(l, liveBtc) {
     if (!l) return null;
-    const t = Date.parse(l.mstr.time || '') || null;
-    const bt = Date.parse(l.btc.time || '') || null;
-    return { t: Math.max(t || 0, bt || 0) / 1000, px: l.mstr.price, btcPx: l.btc.price, btc: l.holdings, mc: l.mc, nav: l.nav,
-             debt: l.debt, pref: l.pref, usd: l.usd, basic: l.basic, ent: l.ent, eq: l.eq,
-             mstrTime: t, session: (l.mstr.session || 'close').toLowerCase(), strategyMnav: l.strategyMnav, live: false };
+    const stock = l.stock || l.mstr || {};
+    const stockTime = Date.parse(stock.time || '') || null;
+    let btcPx = l.btc && l.btc.price, btcTime = Date.parse((l.btc && l.btc.time) || '') || null;
+    if (liveBtc && liveBtc.price) { btcPx = liveBtc.price; btcTime = liveBtc.time; }
+    const nav = l.holdings * btcPx / 1e6, mc = l.shares * stock.price / 1e6;
+    const [basic, ent, eq] = multiples(mc, nav, l.debt, l.pref, l.usd);
+    return { t: Math.max(stockTime || 0, btcTime || 0) / 1000, px: stock.price, btcPx, btc: l.holdings, mc, nav,
+             debt: l.debt, pref: l.pref, usd: l.usd, basic, ent, eq, stockTime, btcLive: !!(liveBtc && liveBtc.price),
+             session: (stock.session || 'close').toLowerCase(), companyMnav: l.companyMnav ?? l.strategyMnav ?? null, live: false };
   }
 
-  function appendLatest(p) {
-    if (!p) return;
-    const lastX = S.x[S.x.length - 1];
-    if (!(p.t > lastX + 60)) return;
-    for (const k of ['px', 'btcPx', 'btc', 'mc', 'nav', 'debt', 'pref', 'usd', 'basic', 'ent', 'eq']) S[k].push(p[k]);
-    S.x.push(p.t);
-    latestMeta = p;
-  }
-
-  // ---------- chart helpers ----------
+  // ---------- shared chart helpers ----------
   const pxr = () => uPlot.pxRatio;
   const AXIS = 54;
   const FONT = '12px "Space Grotesk", system-ui, sans-serif';
@@ -461,44 +448,37 @@
   const usdTick = v => v == null ? '' : v >= 1000 ? '$' + (v / 1000) + 'k' : '$' + v;
 
   // Date ticks on whole months aligned to January, so the year always shows on its January
-  // tick; whole years when zoomed far out; days when zoomed in close.
+  // tick; whole years when zoomed far out; days when zoomed in close. One label map per axis.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  let xLabels = new Map();
-  function dateSplits(u, ai, min, max) {
-    const maxTicks = Math.max(2, Math.floor(u.bbox.width / pxr() / 64));
-    const days = (max - min) / 86400;
-    const out = [];
-    xLabels = new Map();
-    if (days >= 75) {
-      const step = [1, 2, 3, 6, 12, 24].find(s => days / 30.44 / s <= maxTicks) || 48;
-      const a = new Date(min * 1000), b = new Date(max * 1000);
-      for (let k = a.getUTCFullYear() * 12 + a.getUTCMonth(); k <= b.getUTCFullYear() * 12 + b.getUTCMonth() + 1; k++) {
-        const y = Math.floor(k / 12), m = k % 12;
-        if (step <= 12 ? k % step !== 0 : (m !== 0 || y % (step / 12) !== 0)) continue;
-        const t = Date.UTC(y, m, 1, 5) / 1000;           // about midnight in New York
-        if (t < min || t > max) continue;
-        out.push(t); xLabels.set(t, m === 0 ? String(y) : MONTHS[m]);
+  function dateAxis() {
+    let labels = new Map();
+    const splits = (u, ai, min, max) => {
+      const maxTicks = Math.max(2, Math.floor(u.bbox.width / pxr() / 64));
+      const days = (max - min) / 86400;
+      const out = [];
+      labels = new Map();
+      if (days >= 75) {
+        const step = [1, 2, 3, 6, 12, 24].find(s => days / 30.44 / s <= maxTicks) || 48;
+        const a = new Date(min * 1000), b = new Date(max * 1000);
+        for (let k = a.getUTCFullYear() * 12 + a.getUTCMonth(); k <= b.getUTCFullYear() * 12 + b.getUTCMonth() + 1; k++) {
+          const y = Math.floor(k / 12), m = k % 12;
+          if (step <= 12 ? k % step !== 0 : (m !== 0 || y % (step / 12) !== 0)) continue;
+          const t = Date.UTC(y, m, 1, 5) / 1000;           // about midnight in New York
+          if (t < min || t > max) continue;
+          out.push(t); labels.set(t, m === 0 ? String(y) : MONTHS[m]);
+        }
+      } else {
+        const step = [1, 2, 7, 14].find(s => days / s <= maxTicks) || 28;
+        const a = new Date(min * 1000);
+        for (let t = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate(), 12) / 1000; t <= max; t += 86400) {
+          const d = new Date(t * 1000);
+          if (t < min || (step >= 7 && d.getUTCDay() !== 1) || (step === 2 && d.getUTCDate() % 2) || (step === 14 && Math.floor(t / 86400 / 7) % 2)) continue;
+          out.push(t); labels.set(t, MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate());
+        }
       }
-    } else {
-      const step = [1, 2, 7, 14].find(s => days / s <= maxTicks) || 28;
-      const a = new Date(min * 1000);
-      for (let t = Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate(), 12) / 1000; t <= max; t += 86400) {
-        const d = new Date(t * 1000);
-        if (t < min || (step >= 7 && d.getUTCDay() !== 1) || (step === 2 && d.getUTCDate() % 2) || (step === 14 && Math.floor(t / 86400 / 7) % 2)) continue;
-        out.push(t); xLabels.set(t, MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate());
-      }
-    }
-    return out;
-  }
-  const dateTicks = (u, splits) => splits.map(t => xLabels.get(t) || '');
-
-  function lastIndex() { return S.x.length - 1; }
-  function visibleRange(u) {
-    const { min, max } = u.scales.x;
-    let i0 = 0, i1 = S.x.length - 1;
-    while (i0 < i1 && S.x[i0] < min) i0++;
-    while (i1 > i0 && S.x[i1] > max) i1--;
-    return [i0, i1];
+      return out;
+    };
+    return { splits, values: (u, ss) => ss.map(t => labels.get(t) || '') };
   }
 
   function dot(ctx, x, y, color, r) {
@@ -517,14 +497,12 @@
       ctx.fillStyle = C.band; ctx.fillRect(left, y3, width, y2 - y3);
     }
     ctx.lineWidth = pxr();
-    // plain gridlines above the reference levels (only reached in the zoomed-out view)
-    ctx.strokeStyle = C.hair;
+    ctx.strokeStyle = C.hair;            // plain gridlines above the reference levels
     for (const v of [0, 4, 6, 8]) {
       if (v > max) break;
       ctx.beginPath(); ctx.moveTo(left, y(v)); ctx.lineTo(left + width, y(v)); ctx.stroke();
     }
-    // the reference levels from the original chart, dashed because they are thresholds
-    ctx.setLineDash([4 * pxr(), 5 * pxr()]);
+    ctx.setLineDash([4 * pxr(), 5 * pxr()]);   // the reference levels, dashed because they are thresholds
     for (const v of [1, 1.5, 2, 2.5, 3]) {
       if (v >= max) break;
       ctx.strokeStyle = v === 1 ? 'rgba(232, 236, 255, 0.45)' : C.threshold;
@@ -533,327 +511,382 @@
     ctx.restore();
   }
 
-  // end dots on the newest point, plus one label on the highest equity premium in view
-  function drawMarks(u) {
-    const ctx = u.ctx, { left, top, width, height } = u.bbox, k = lastIndex();
-    const [i0, i1] = visibleRange(u);
-    ctx.save();
-    ctx.beginPath(); ctx.rect(left - 8 * pxr(), top - 8 * pxr(), width + 16 * pxr(), height + 16 * pxr()); ctx.clip();
-
-    if (u.series[1].show) {
-      let pi = -1;
-      for (let i = i0; i <= i1; i++) { const v = S.eq[i]; if (v != null && (pi < 0 || v > S.eq[pi])) pi = i; }
-      const nearEnd = pi >= 0 && (S.x[k] - S.x[pi]) < 0.08 * (u.scales.x.max - u.scales.x.min);
-      if (pi >= 0 && !nearEnd && S.eq[pi] < u.scales.m.max) {
-        const cx = u.valToPos(S.x[pi], 'x', true), cy = u.valToPos(S.eq[pi], 'm', true);
-        ctx.strokeStyle = C.ink2; ctx.lineWidth = pxr();
-        ctx.beginPath(); ctx.arc(cx, cy, 6 * pxr(), 0, 2 * Math.PI); ctx.stroke();
-        const label = 'Peak ' + mult(S.eq[pi]) + ', ' + fDate.format(new Date(S.x[pi] * 1000));
-        ctx.font = (12 * pxr()) + 'px ' + FONT.split('px ')[1];
-        const w = ctx.measureText(label).width;
-        let lx = cx + 10 * pxr(), ly = cy - 8 * pxr();
-        if (lx + w > left + width) lx = cx - 10 * pxr() - w;
-        if (ly < top + 14 * pxr()) ly = cy + 18 * pxr();
-        ctx.fillStyle = C.ink2; ctx.textBaseline = 'alphabetic';
-        ctx.fillText(label, lx, ly);
-      }
-    }
-    if (S.x[k] <= u.scales.x.max) {
-      for (let si = 1; si <= 3; si++) {
-        const v = u.data[si][k];
-        if (!u.series[si].show || v == null || v > u.scales.m.max) continue;
-        dot(ctx, u.valToPos(S.x[k], 'x', true), u.valToPos(v, 'm', true), SERIES_COLOR[si], 4 * pxr());
-      }
-    }
-    ctx.restore();
-  }
-
-  function drawPriceDot(u) {
-    const k = lastIndex();
-    if (S.x[k] > u.scales.x.max) return;
-    dot(u.ctx, u.valToPos(S.x[k], 'x', true), u.valToPos(S.px[k], 'p', true), C.px, 3.5 * pxr());
-  }
-
-  // ---------- range + readout ----------
-  function setX(min, max) {
-    uM.setScale('x', { min, max });
-    uP.setScale('x', { min, max });
-  }
-  let tq = 0;
-  function onScale(u, key) {
-    if (key !== 'x') return;
-    clearTimeout(tq);
-    tq = setTimeout(renderTable, 60);
-  }
-  function applyYears(y) {
-    years = y;
-    const first = S.x[0], last = S.x[lastIndex()];
-    const min = y ? Math.max(first, last - y * YEAR) : first;
-    setX(min, last + (last - min) * 0.015);
-    document.querySelectorAll('.ranges button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.years === y)));
-  }
-  function onSelect(u) {
-    const sel = u.select;
-    if (sel.width < 6) return;
-    const min = u.posToVal(sel.left, 'x'), max = u.posToVal(sel.left + sel.width, 'x');
-    u.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
-    if (max - min < 10 * 86400) return;
-    setX(min, max);
-    document.querySelectorAll('.ranges button').forEach(b => b.setAttribute('aria-pressed', 'false'));
-  }
-
-  function stampText(k) {
-    if (!latestMeta || k !== lastIndex()) return fDate.format(new Date(S.x[k] * 1000)) + ' close';
-    const t = latestMeta.mstrTime ? new Date(latestMeta.mstrTime) : new Date(latestMeta.t * 1000);
-    const when = fDay.format(t) + ' at ' + fTime.format(t) + ' ET';
-    return latestMeta.live
-      ? 'Now, ' + when + ', MSTR ' + latestMeta.session
-      : 'As of ' + when + ', MSTR ' + latestMeta.session + ' (live update unavailable)';
-  }
-
-  function showReadout(i) {
-    const k = i == null ? lastIndex() : i;
-    $('v-eq').textContent = mult(S.eq[k]);
-    $('v-ent').textContent = mult(S.ent[k]);
-    $('v-basic').textContent = mult(S.basic[k]);
-    $('v-px').textContent = usd2.format(S.px[k]);
-    $('v-btc').textContent = usd0.format(S.btcPx[k]);
-    $('stamp').textContent = stampText(k);
-  }
-  let rq = 0;
-  function onCursor(u) {
-    const idx = u.cursor.idx;
-    cursorIdx = idx == null || u.cursor.left < 0 ? null : idx;
-    cancelAnimationFrame(rq);
-    rq = requestAnimationFrame(() => showReadout(cursorIdx));
-  }
-
-  // ---------- explanation + table ----------
-  function renderExplainer() {
-    const k = lastIndex();
-    const btcPx = S.btcPx[k], hold = S.btc[k];
-    const debtBtc = S.debt[k] * 1e6 / btcPx, prefBtc = S.pref[k] * 1e6 / btcPx;
-    const resid = hold - debtBtc - prefBtc;
-    const stack = $('stack'); stack.textContent = '';
-    for (const [v, c] of [[resid, C.eq], [prefBtc, C.pref], [debtBtc, C.debt]]) {
-      const s = document.createElement('span');
-      s.style.flex = String(Math.max(v, 0)); s.style.background = c;
-      stack.appendChild(s);
-    }
-    const keys = $('stack-keys'); keys.textContent = '';
-    for (const [label, v, c] of [['Left for common shareholders', resid, C.eq], ['Preferred stock at par', prefBtc, C.pref], ['Debt', debtBtc, C.debt]]) {
-      const li = document.createElement('li'); const sw = document.createElement('i'); sw.style.setProperty('--c', c);
-      li.append(sw, document.createTextNode(label + ': ' + kbtc(v)));
-      keys.appendChild(li);
-    }
-    const p1 = $('calc-1'); p1.textContent = '';
-    const n = t => { const s = document.createElement('span'); s.className = 'num'; s.textContent = t; return s; };
-    const tx = t => document.createTextNode(t);
-    p1.append(tx('Strategy holds '), n(int.format(hold) + ' BTC'), tx(', worth '), n(bn(S.nav[k])), tx(' at '), n(usd0.format(btcPx)),
-      tx(' a coin. Its '), n(bn(S.debt[k])), tx(' of debt equals '), n(int.format(debtBtc) + ' BTC'),
-      tx(' and its '), n(bn(S.pref[k])), tx(' of preferred stock at par equals '), n(int.format(prefBtc) + ' BTC'),
-      tx('. That leaves '), n(int.format(resid) + ' BTC'), tx(' for common shareholders, worth '), n(bn(resid * btcPx / 1e6)), tx('.'));
-    const p2 = $('calc-2'); p2.textContent = '';
-    p2.append(tx('MSTR\'s market cap is '), n(bn(S.mc[k])), tx(', so the market is paying '), n(mult(S.eq[k])),
-      tx(' for that residual bitcoin. At 1x, the stock would be priced at exactly the bitcoin it can call its own.'));
-    const sm = strategyMnav;
-    $('strategy-figure').textContent = sm
-      ? 'Strategy\'s own headline mNAV (' + mult(sm) + ' at the last close) is built on the same residual idea, but it adds the USD reserve back in and counts diluted shares, so it reads lower.'
-      : '';
-  }
-
-  function renderTable() {
-    if (!uM) return;
-    const [i0, i1] = visibleRange(uM);
-    const rows = [];
-    for (let i = i0; i <= i1; i++) {
-      const next = i + 1 <= i1 ? S.x[i + 1] : null;
-      const sameMonth = next != null && fMonth.format(new Date(S.x[i] * 1000)) === fMonth.format(new Date(next * 1000));
-      if (!sameMonth) rows.push(i);
-    }
-    const t = $('table'); t.textContent = '';
-    const head = t.createTHead().insertRow();
-    for (const h of ['Date', 'Equity premium', 'Enterprise', 'Basic', 'MSTR', 'Bitcoin', 'BTC held']) {
-      const th = document.createElement('th'); th.scope = 'col'; th.textContent = h; head.appendChild(th);
-    }
-    const body = t.createTBody();
-    for (const i of rows.reverse()) {
-      const tr = body.insertRow();
-      const label = i === lastIndex() && latestMeta ? 'Latest' : fDate.format(new Date(S.x[i] * 1000));
-      for (const v of [label, mult(S.eq[i]), mult(S.ent[i]), mult(S.basic[i]), usd2.format(S.px[i]), usd0.format(S.btcPx[i]), int.format(S.btc[i])]) {
-        tr.insertCell().textContent = v;
-      }
-    }
-  }
-
-  function downloadCsv(doc) {
-    const r = doc.rows;
-    const lines = ['date,mstr_price_usd,market_cap_musd,btc_nav_musd,btc_holdings,debt_musd,preferred_musd,usd_reserve_musd,equity_premium_mnav,enterprise_mnav,basic_mnav'];
-    for (let i = 0; i < r.d.length; i++) {
-      lines.push([r.d[i], r.px[i], r.mc[i], r.nav[i], r.btc[i], r.debt[i], r.pref[i], r.usd[i], r.eq[i] ?? '', r.ent[i], r.basic[i]].join(','));
-    }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
-    a.download = 'strategy-mnav-daily.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  }
-
-  // ---------- build ----------
-  function sizes() {
-    const w = $('plots').clientWidth;
+  function sizes(el) {
+    const w = el.clientWidth;
     return { w, hM: Math.round(Math.min(420, Math.max(240, w * 0.4))), hP: Math.round(Math.min(210, Math.max(150, w * 0.17))) + 30 };
   }
 
-  function baseOpts(width, height) {
-    return {
-      width, height,
-      tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), ET),
-      legend: { show: false },
-      padding: [12, 4, 0, 4],
-      cursor: {
-        sync: { key: 'mnav' },
-        y: false,
-        drag: { x: true, y: false, setScale: false },
-        points: { size: 9, width: 2, stroke: () => C.surface, fill: (u, i) => u === uP ? C.px : SERIES_COLOR[i] },
-        bind: { dblclick: () => null },
-      },
-    };
-  }
-
-  function build() {
-    const { w, hM, hP } = sizes();
-    const xs = S.x;
-    uM = new uPlot({
-      ...baseOpts(w, hM),
-      padding: [12, 4, 10, 4],
-      scales: { x: { time: true }, m: { range: (u, mn, mx) => [0, niceMax(mx)] } },
-      series: [
-        {},
-        { label: 'Equity premium', scale: 'm', stroke: C.eq, width: 2, points: { show: false } },
-        { label: 'Enterprise', scale: 'm', stroke: C.ent, width: 2, points: { show: false } },
-        { label: 'Basic', scale: 'm', stroke: C.basic, width: 2, show: false, points: { show: false } },
-      ],
-      axes: [
-        { show: false },
-        {
-          scale: 'm', side: 1, size: AXIS, gap: 8, font: FONT, stroke: C.muted,
-          grid: { show: false }, ticks: { show: false },
-          splits: (u, ai, mn, mx) => { const out = [], step = mx > 5.5 ? 2 : 1; for (let t = 0; t <= mx + 1e-9; t += step) out.push(t); return out; },
-          values: (u, vals) => vals.map(t => t + 'x'),
-        },
-      ],
-      hooks: { drawClear: [drawLevels], draw: [drawMarks], setSelect: [onSelect], setCursor: [onCursor], setScale: [onScale] },
-    }, [xs, S.eq, S.ent, S.basic], $('plot-mnav'));
-
-    uP = new uPlot({
-      ...baseOpts(w, hP),
-      padding: [26, 4, 0, 4],
-      scales: { x: { time: true }, p: { distr: 3, log: 10, range: (u, mn, mx) => (mn > 0 ? [mn / 1.18, mx * 1.18] : [1, 1000]) } },
-      series: [{}, { label: 'MSTR', scale: 'p', stroke: C.px, width: 1.5, points: { show: false } }],
-      axes: [
-        { scale: 'x', font: FONT, stroke: C.muted, size: 30, gap: 6, splits: dateSplits, values: dateTicks,
-          grid: { show: false }, ticks: { stroke: C.hair, width: 1, size: 4 } },
-        {
-          scale: 'p', side: 1, size: AXIS, gap: 8, font: FONT, stroke: C.muted,
-          grid: { stroke: C.hair, width: 1 }, ticks: { show: false },
-          splits: logSplits, filter: (u, splits) => splits, values: (u, vals) => vals.map(usdTick),
-        },
-      ],
-      hooks: { draw: [drawPriceDot], setSelect: [onSelect], setCursor: [onCursor] },
-    }, [xs, S.px], $('plot-px'));
-
-    applyYears(years);
-    showReadout(null);
-    wireUp();
-    pulseNow();
-  }
-
-  function pulseNow() {
-    if (!latestMeta || !latestMeta.live || S.eq[lastIndex()] == null) return;
-    const host = $('plot-mnav'), k = lastIndex();
-    const over = uM.over, o = over.getBoundingClientRect(), h = host.getBoundingClientRect();
-    const el = document.createElement('span'); el.className = 'pulse';
-    el.style.left = (o.left - h.left + uM.valToPos(S.x[k], 'x')) + 'px';
-    el.style.top = (o.top - h.top + uM.valToPos(S.eq[k], 'm')) + 'px';
-    el.addEventListener('animationend', () => el.remove());
-    host.appendChild(el);
-  }
-
-  function wireUp() {
-    document.querySelectorAll('.ranges button').forEach(b => b.addEventListener('click', () => applyYears(+b.dataset.years)));
-    document.querySelectorAll('button.key').forEach(b => b.addEventListener('click', () => {
-      const si = +b.dataset.series, show = b.getAttribute('aria-pressed') !== 'true';
-      uM.setSeries(si, { show });
-      b.setAttribute('aria-pressed', String(show));
-    }));
-    for (const u of [uM, uP]) {
-      u.over.addEventListener('dblclick', () => applyYears(years || 0));
-      // touch: slide a finger along the chart to move the crosshair
-      let timer = 0, active = false;
-      const scrub = e => { const r = u.over.getBoundingClientRect(); u.setCursor({ left: e.clientX - r.left, top: e.clientY - r.top }, true, true); };
-      u.over.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; active = true; clearTimeout(timer); scrub(e); });
-      u.over.addEventListener('pointermove', e => { if (active && e.pointerType !== 'mouse') scrub(e); });
-      const end = () => { if (!active) return; active = false; clearTimeout(timer); timer = setTimeout(() => u.setCursor({ left: -10, top: -10 }, true, true), 2500); };
-      u.over.addEventListener('pointerup', end);
-      u.over.addEventListener('pointercancel', end);
+  // ---------- one company's chart, readout, breakdown and table ----------
+  function Company(cfg, part, now) {
+    const root = $('company-tpl').content.firstElementChild.cloneNode(true);
+    root.id = cfg.id;
+    const q = sel => root.querySelector(sel);
+    q('.co-name').textContent = cfg.name;
+    q('.tk').textContent = cfg.key;
+    q('.px-name').textContent = cfg.key + ' price';
+    q('.px-label').textContent = cfg.key + ' price, log scale';
+    q('.plots').setAttribute('aria-label', 'Chart of ' + cfg.name + "'s mNAV with " + cfg.key + "'s price below it. Use the left and right arrow keys to step through days.");
+    q('.stack').setAttribute('aria-label', cfg.name + "'s bitcoin split into debt, preferred stock and the residual left for common shareholders");
+    q('.csv').textContent = 'Download ' + cfg.key + ' daily data (CSV)';
+    for (const [m, label] of cfg.ranges) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.dataset.months = m; b.textContent = label;
+      b.setAttribute('aria-pressed', String(m === cfg.months));
+      q('.ranges').appendChild(b);
     }
-    // keyboard: step through days
-    $('plots').addEventListener('keydown', e => {
-      const n = S.x.length;
-      let i = cursorIdx == null ? n - 1 : cursorIdx;
+    $('companies').appendChild(root);
+
+    if (!part || !part.rows || !part.rows.d.length) {
+      const s = q('.state'); s.textContent = cfg.name + "'s figures aren't in the data file yet. They should appear after the next refresh."; s.hidden = false;
+      q('.stamp').textContent = '';
+      q('.breakdown').hidden = true;
+      return;
+    }
+
+    // columnar series, x in epoch seconds at the 4:00 pm ET close
+    const r = part.rows;
+    const S = { x: [], px: [], eq: [], ent: [], basic: [], btcPx: [], btc: [], mc: [], nav: [], debt: [], pref: [], usd: [] };
+    for (let i = 0; i < r.d.length; i++) {
+      const [y, mo, d] = r.d[i].split('-').map(Number);
+      S.x.push(Date.UTC(y, mo - 1, d, 20, 0) / 1000);
+      for (const k of ['px', 'eq', 'ent', 'basic', 'btc', 'mc', 'nav', 'debt', 'pref', 'usd']) S[k].push(r[k][i]);
+      S.btcPx.push(r.nav[i] * 1e6 / r.btc[i]);
+    }
+    let latestMeta = null;                   // the point appended after the last close, if any
+    if (now && now.t > S.x[S.x.length - 1] + 60) {
+      for (const k of ['px', 'btcPx', 'btc', 'mc', 'nav', 'debt', 'pref', 'usd', 'basic', 'ent', 'eq']) S[k].push(now[k]);
+      S.x.push(now.t);
+      latestMeta = now;
+    }
+    const last = () => S.x.length - 1;
+
+    let uM = null, uP = null, months = cfg.months, cursorIdx = null;
+
+    function visibleRange(u) {
+      const { min, max } = u.scales.x;
+      let i0 = 0, i1 = S.x.length - 1;
+      while (i0 < i1 && S.x[i0] < min) i0++;
+      while (i1 > i0 && S.x[i1] > max) i1--;
+      return [i0, i1];
+    }
+
+    // end dots on the newest point, plus one label on the highest equity premium in view
+    function drawMarks(u) {
+      const ctx = u.ctx, { left, top, width, height } = u.bbox, k = last();
+      const [i0, i1] = visibleRange(u);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(left - 8 * pxr(), top - 8 * pxr(), width + 16 * pxr(), height + 16 * pxr()); ctx.clip();
+      if (u.series[1].show) {
+        let pi = -1;
+        for (let i = i0; i <= i1; i++) { const v = S.eq[i]; if (v != null && (pi < 0 || v > S.eq[pi])) pi = i; }
+        const nearEnd = pi >= 0 && (S.x[k] - S.x[pi]) < 0.03 * (u.scales.x.max - u.scales.x.min);
+        if (pi >= 0 && !nearEnd && S.eq[pi] < u.scales.m.max) {
+          const cx = u.valToPos(S.x[pi], 'x', true), cy = u.valToPos(S.eq[pi], 'm', true);
+          ctx.strokeStyle = C.ink2; ctx.lineWidth = pxr();
+          ctx.beginPath(); ctx.arc(cx, cy, 6 * pxr(), 0, 2 * Math.PI); ctx.stroke();
+          const label = 'Peak ' + mult(S.eq[pi]) + ', ' + fDate.format(new Date(S.x[pi] * 1000));
+          ctx.font = (12 * pxr()) + 'px ' + FONT.split('px ')[1];
+          const w = ctx.measureText(label).width;
+          let lx = cx + 10 * pxr(), ly = cy - 8 * pxr();
+          if (lx + w > left + width) lx = cx - 10 * pxr() - w;
+          if (lx < left) lx = left + 4 * pxr();
+          if (ly < top + 14 * pxr()) ly = cy + 18 * pxr();
+          ctx.fillStyle = C.ink2; ctx.textBaseline = 'alphabetic';
+          ctx.fillText(label, lx, ly);
+        }
+      }
+      if (S.x[k] <= u.scales.x.max) {
+        for (let si = 1; si <= 3; si++) {
+          const v = u.data[si][k];
+          if (!u.series[si].show || v == null || v > u.scales.m.max) continue;
+          dot(ctx, u.valToPos(S.x[k], 'x', true), u.valToPos(v, 'm', true), SERIES_COLOR[si], 4 * pxr());
+        }
+      }
+      ctx.restore();
+    }
+    function drawPriceDot(u) {
+      const k = last();
+      if (S.x[k] > u.scales.x.max) return;
+      dot(u.ctx, u.valToPos(S.x[k], 'x', true), u.valToPos(S.px[k], 'p', true), C.px, 3.5 * pxr());
+    }
+
+    function setX(min, max) { uM.setScale('x', { min, max }); uP.setScale('x', { min, max }); }
+    let tq = 0;
+    function onScale(u, key) { if (key === 'x') { clearTimeout(tq); tq = setTimeout(renderTable, 60); } }
+    function applyMonths(m) {
+      months = m;
+      const first = S.x[0], end = S.x[last()];
+      const min = m ? Math.max(first, end - m * MONTH) : first;
+      setX(min, end + (end - min) * 0.015);
+      root.querySelectorAll('.ranges button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.months === m)));
+    }
+    function onSelect(u) {
+      const sel = u.select;
+      if (sel.width < 6) return;
+      const min = u.posToVal(sel.left, 'x'), max = u.posToVal(sel.left + sel.width, 'x');
+      u.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
+      if (max - min < 10 * 86400) return;
+      setX(min, max);
+      root.querySelectorAll('.ranges button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    }
+
+    function stampText(k) {
+      if (!latestMeta || k !== last()) return fDate.format(new Date(S.x[k] * 1000)) + ' close';
+      const p = latestMeta, st = p.stockTime ? new Date(p.stockTime) : new Date(p.t * 1000);
+      const stockAt = fDay.format(st) + ' at ' + fTime.format(st) + ' ET';
+      if (p.live) return 'Now, ' + stockAt + ', ' + cfg.key + ' ' + p.session;
+      if (p.btcLive) return 'Now: bitcoin live, ' + cfg.key + ' as of ' + stockAt + ' (' + p.session + ')';
+      return 'As of ' + stockAt + ', ' + cfg.key + ' ' + p.session + ' (live update unavailable)';
+    }
+    function showReadout(i) {
+      const k = i == null ? last() : i;
+      q('.v-eq').textContent = mult(S.eq[k]);
+      q('.v-ent').textContent = mult(S.ent[k]);
+      q('.v-basic').textContent = mult(S.basic[k]);
+      q('.v-px').textContent = usd2.format(S.px[k]);
+      q('.v-btc').textContent = usd0.format(S.btcPx[k]);
+      q('.stamp').textContent = stampText(k);
+    }
+    let rq = 0;
+    function onCursor(u) {
+      const idx = u.cursor.idx;
+      cursorIdx = idx == null || u.cursor.left < 0 ? null : idx;
+      cancelAnimationFrame(rq);
+      rq = requestAnimationFrame(() => showReadout(cursorIdx));
+    }
+
+    function renderBreakdown() {
+      const k = last(), btcPx = S.btcPx[k], hold = S.btc[k];
+      const debtBtc = S.debt[k] * 1e6 / btcPx, prefBtc = S.pref[k] * 1e6 / btcPx;
+      const resid = hold - debtBtc - prefBtc;
+      const stack = q('.stack'); stack.textContent = '';
+      for (const [v, c] of [[resid, C.eq], [prefBtc, C.pref], [debtBtc, C.debt]]) {
+        if (!(v > 0)) continue;
+        const s = document.createElement('span');
+        s.style.flex = String(v); s.style.background = c;
+        stack.appendChild(s);
+      }
+      const keys = q('.stack-keys'); keys.textContent = '';
+      for (const [label, v, c] of [['Left for common shareholders', resid, C.eq], ['Preferred stock at par', prefBtc, C.pref], ['Debt', debtBtc, C.debt]]) {
+        if (!(v > 0) && label === 'Debt') continue;
+        const li = document.createElement('li'); const sw = document.createElement('i'); sw.style.setProperty('--c', c);
+        li.append(sw, document.createTextNode(label + ': ' + kbtc(Math.max(v, 0))));
+        keys.appendChild(li);
+      }
+      const n = t => { const s = document.createElement('span'); s.className = 'num'; s.textContent = t; return s; };
+      const tx = t => document.createTextNode(t);
+      const p1 = q('.calc-1'); p1.textContent = '';
+      p1.append(tx(cfg.short + ' holds '), n(int.format(hold) + ' BTC'), tx(', worth '), n(bn(S.nav[k])), tx(' at '), n(usd0.format(btcPx)), tx(' a coin. '));
+      if (S.debt[k] > 0.5) p1.append(tx('Its '), n(bn(S.debt[k])), tx(' of debt equals '), n(int.format(debtBtc) + ' BTC'), tx(' and its '));
+      else p1.append(tx('It has no debt, and its '));
+      p1.append(n(bn(S.pref[k])), tx(' of preferred stock at par equals '), n(int.format(prefBtc) + ' BTC'),
+        tx('. That leaves '), n(int.format(resid) + ' BTC'), tx(' for common shareholders, worth '), n(bn(resid * btcPx / 1e6)), tx('.'));
+      const p2 = q('.calc-2'); p2.textContent = '';
+      p2.append(tx(cfg.key + "'s market cap is "), n(bn(S.mc[k])), tx(', so the market is paying '), n(mult(S.eq[k])),
+        tx(' for that residual bitcoin. At 1x, the stock would be priced at exactly the bitcoin it can call its own.'));
+      const own = latestMeta ? latestMeta.companyMnav : (part.latest && (part.latest.companyMnav ?? part.latest.strategyMnav));
+      q('.co-note').textContent = !own ? '' : cfg.key === 'MSTR'
+        ? "Strategy's own headline mNAV (" + mult(own) + ' at the last close) is built on the same residual idea, but it adds the USD reserve back in and counts diluted shares, so it reads lower.'
+        : "Strive's own headline mNAV (" + mult(own) + ') is enterprise value over the value of its bitcoin, counting fully diluted shares; it is close to the enterprise line here.';
+    }
+
+    function renderTable() {
       const [i0, i1] = visibleRange(uM);
-      if (e.key === 'ArrowLeft') i = Math.max(i0, i - (e.shiftKey ? 20 : 1));
-      else if (e.key === 'ArrowRight') i = Math.min(i1, i + (e.shiftKey ? 20 : 1));
-      else if (e.key === 'Home') i = i0;
-      else if (e.key === 'End') i = i1;
-      else if (e.key === 'Escape') { uM.setCursor({ left: -10, top: -10 }, true, true); return; }
-      else return;
-      e.preventDefault();
-      uM.setCursor({ left: uM.valToPos(S.x[i], 'x'), top: 10 }, true, true);
-      $('kbd-live').textContent = fDate.format(new Date(S.x[i] * 1000)) + ': equity premium ' + mult(S.eq[i]) +
-        ', enterprise ' + mult(S.ent[i]) + ', basic ' + mult(S.basic[i]) + ', MSTR ' + usd2.format(S.px[i]);
-    });
-    $('plots').addEventListener('blur', () => uM.setCursor({ left: -10, top: -10 }, true, true));
-    let rt = 0;
-    new ResizeObserver(() => {
-      clearTimeout(rt);
-      rt = setTimeout(() => { const { w, hM, hP } = sizes(); uM.setSize({ width: w, height: hM }); uP.setSize({ width: w, height: hP }); }, 80);
-    }).observe($('plots'));
+      const rows = [];
+      for (let i = i0; i <= i1; i++) {
+        const next = i + 1 <= i1 ? S.x[i + 1] : null;
+        if (next == null || fMonth.format(new Date(S.x[i] * 1000)) !== fMonth.format(new Date(next * 1000))) rows.push(i);
+      }
+      const t = q('table'); t.textContent = '';
+      const head = t.createTHead().insertRow();
+      for (const h of ['Date', 'Equity premium', 'Enterprise', 'Basic', cfg.key, 'Bitcoin', 'BTC held']) {
+        const th = document.createElement('th'); th.scope = 'col'; th.textContent = h; head.appendChild(th);
+      }
+      const body = t.createTBody();
+      for (const i of rows.reverse()) {
+        const tr = body.insertRow();
+        const label = i === last() && latestMeta ? 'Latest' : fDate.format(new Date(S.x[i] * 1000));
+        for (const v of [label, mult(S.eq[i]), mult(S.ent[i]), mult(S.basic[i]), usd2.format(S.px[i]), usd0.format(S.btcPx[i]), int.format(S.btc[i])]) {
+          tr.insertCell().textContent = v;
+        }
+      }
+    }
+
+    function downloadCsv() {
+      const lines = ['date,' + cfg.key.toLowerCase() + '_price_usd,market_cap_musd,btc_nav_musd,btc_holdings,debt_musd,preferred_musd,cash_musd,equity_premium_mnav,enterprise_mnav,basic_mnav'];
+      for (let i = 0; i < r.d.length; i++) {
+        lines.push([r.d[i], r.px[i], r.mc[i], r.nav[i], r.btc[i], r.debt[i], r.pref[i], r.usd[i], r.eq[i] ?? '', r.ent[i], r.basic[i]].join(','));
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
+      a.download = cfg.id + '-mnav-daily.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+
+    function baseOpts(width, height) {
+      return {
+        width, height,
+        tzDate: ts => uPlot.tzDate(new Date(ts * 1e3), ET),
+        legend: { show: false },
+        padding: [12, 4, 0, 4],
+        cursor: {
+          sync: { key: 'mnav-' + cfg.id },
+          y: false,
+          drag: { x: true, y: false, setScale: false },
+          points: { size: 9, width: 2, stroke: () => C.surface, fill: (u, i) => u === uP ? C.px : SERIES_COLOR[i] },
+          bind: { dblclick: () => null },
+        },
+      };
+    }
+
+    function build() {
+      const { w, hM, hP } = sizes(q('.plots'));
+      const axis = dateAxis();
+      uM = new uPlot({
+        ...baseOpts(w, hM),
+        padding: [12, 4, 10, 4],
+        scales: { x: { time: true }, m: { range: (u, mn, mx) => [0, niceMax(mx)] } },
+        series: [
+          {},
+          { label: 'Equity premium', scale: 'm', stroke: C.eq, width: 2, points: { show: false } },
+          { label: 'Enterprise', scale: 'm', stroke: C.ent, width: 2, points: { show: false } },
+          { label: 'Basic', scale: 'm', stroke: C.basic, width: 2, show: false, points: { show: false } },
+        ],
+        axes: [
+          { show: false },
+          {
+            scale: 'm', side: 1, size: AXIS, gap: 8, font: FONT, stroke: C.muted,
+            grid: { show: false }, ticks: { show: false },
+            splits: (u, ai, mn, mx) => { const out = [], step = mx > 5.5 ? 2 : 1; for (let t = 0; t <= mx + 1e-9; t += step) out.push(t); return out; },
+            values: (u, vals) => vals.map(t => t + 'x'),
+          },
+        ],
+        hooks: { drawClear: [drawLevels], draw: [drawMarks], setSelect: [onSelect], setCursor: [onCursor], setScale: [onScale] },
+      }, [S.x, S.eq, S.ent, S.basic], q('.plot-m'));
+
+      uP = new uPlot({
+        ...baseOpts(w, hP),
+        padding: [26, 4, 0, 4],
+        scales: { x: { time: true }, p: { distr: 3, log: 10, range: (u, mn, mx) => (mn > 0 ? [mn / 1.18, mx * 1.18] : [1, 1000]) } },
+        series: [{}, { label: cfg.key, scale: 'p', stroke: C.px, width: 1.5, points: { show: false } }],
+        axes: [
+          { scale: 'x', font: FONT, stroke: C.muted, size: 30, gap: 6, splits: axis.splits, values: axis.values,
+            grid: { show: false }, ticks: { stroke: C.hair, width: 1, size: 4 } },
+          {
+            scale: 'p', side: 1, size: AXIS, gap: 8, font: FONT, stroke: C.muted,
+            grid: { stroke: C.hair, width: 1 }, ticks: { show: false },
+            splits: logSplits, filter: (u, splits) => splits, values: (u, vals) => vals.map(usdTick),
+          },
+        ],
+        hooks: { draw: [drawPriceDot], setSelect: [onSelect], setCursor: [onCursor] },
+      }, [S.x, S.px], q('.plot-p'));
+
+      applyMonths(months);
+      showReadout(null);
+      wireUp();
+      if (latestMeta && latestMeta.live && S.eq[last()] != null) {
+        const host = q('.plot-m'), k = last(), o = uM.over.getBoundingClientRect(), h = host.getBoundingClientRect();
+        const el = document.createElement('span'); el.className = 'pulse';
+        el.style.left = (o.left - h.left + uM.valToPos(S.x[k], 'x')) + 'px';
+        el.style.top = (o.top - h.top + uM.valToPos(S.eq[k], 'm')) + 'px';
+        el.addEventListener('animationend', () => el.remove());
+        host.appendChild(el);
+      }
+    }
+
+    function wireUp() {
+      root.querySelectorAll('.ranges button').forEach(b => b.addEventListener('click', () => applyMonths(+b.dataset.months)));
+      root.querySelectorAll('button.key').forEach(b => b.addEventListener('click', () => {
+        const si = +b.dataset.si, show = b.getAttribute('aria-pressed') !== 'true';
+        uM.setSeries(si, { show });
+        b.setAttribute('aria-pressed', String(show));
+      }));
+      for (const u of [uM, uP]) {
+        u.over.addEventListener('dblclick', () => applyMonths(months));
+        // touch: slide a finger along the chart to move the crosshair
+        let timer = 0, active = false;
+        const scrub = e => { const rc = u.over.getBoundingClientRect(); u.setCursor({ left: e.clientX - rc.left, top: e.clientY - rc.top }, true, true); };
+        u.over.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; active = true; clearTimeout(timer); scrub(e); });
+        u.over.addEventListener('pointermove', e => { if (active && e.pointerType !== 'mouse') scrub(e); });
+        const end = () => { if (!active) return; active = false; clearTimeout(timer); timer = setTimeout(() => u.setCursor({ left: -10, top: -10 }, true, true), 2500); };
+        u.over.addEventListener('pointerup', end);
+        u.over.addEventListener('pointercancel', end);
+      }
+      const plots = q('.plots');
+      plots.addEventListener('keydown', e => {
+        let i = cursorIdx == null ? last() : cursorIdx;
+        const [i0, i1] = visibleRange(uM);
+        if (e.key === 'ArrowLeft') i = Math.max(i0, i - (e.shiftKey ? 20 : 1));
+        else if (e.key === 'ArrowRight') i = Math.min(i1, i + (e.shiftKey ? 20 : 1));
+        else if (e.key === 'Home') i = i0;
+        else if (e.key === 'End') i = i1;
+        else if (e.key === 'Escape') { uM.setCursor({ left: -10, top: -10 }, true, true); return; }
+        else return;
+        e.preventDefault();
+        uM.setCursor({ left: uM.valToPos(S.x[i], 'x'), top: 10 }, true, true);
+        q('.kbd-live').textContent = fDate.format(new Date(S.x[i] * 1000)) + ': equity premium ' + mult(S.eq[i]) +
+          ', enterprise ' + mult(S.ent[i]) + ', basic ' + mult(S.basic[i]) + ', ' + cfg.key + ' ' + usd2.format(S.px[i]);
+      });
+      plots.addEventListener('blur', () => uM.setCursor({ left: -10, top: -10 }, true, true));
+      let rt = 0;
+      new ResizeObserver(() => {
+        clearTimeout(rt);
+        rt = setTimeout(() => { const { w, hM, hP } = sizes(plots); uM.setSize({ width: w, height: hM }); uP.setSize({ width: w, height: hP }); }, 80);
+      }).observe(plots);
+      q('.csv').addEventListener('click', downloadCsv);
+    }
+
+    try {
+      q('.state').hidden = true;
+      q('.plots').classList.remove('loading');
+      build();
+      renderBreakdown();
+    } catch (e) {
+      console.error(e);
+      const s = q('.state'); s.hidden = false; q('.plots').classList.add('loading');
+      s.textContent = 'Something in ' + cfg.name + "'s figures did not add up, so this chart is hidden rather than wrong. It should be back after the next refresh.";
+    }
   }
 
   function freshness(doc) {
     const g = Date.parse(doc.generated);
     if (!g) return;
-    const mins = Math.max(0, Math.round((Date.now() - g) / 60000));
-    const ago = mins < 2 ? 'a minute ago' : mins < 90 ? mins + ' minutes ago' : Math.round(mins / 60) + ' hours ago';
-    $('freshness').textContent = 'History last refreshed ' + ago + ' (' + fDate.format(new Date(g)) + ', ' + fTime.format(new Date(g)) + ' ET).';
+    const ago = t => { const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+      return mins < 2 ? 'a minute ago' : mins < 90 ? mins + ' minutes ago' : Math.round(mins / 60) + ' hours ago'; };
+    let text = 'History last refreshed ' + ago(g) + ' (' + fDate.format(new Date(g)) + ', ' + fTime.format(new Date(g)) + ' ET).';
+    for (const [k, v] of Object.entries(doc.asOf || {})) {
+      const t = Date.parse(v);
+      if (t && g - t > 3 * 3600e3) text += ' ' + k + ' figures are from ' + ago(t) + '; its source did not answer since.';
+    }
+    $('freshness').textContent = text;
   }
-
-  function fail(msg) { const s = $('state'); s.textContent = msg; s.hidden = false; $('stamp').textContent = ''; }
 
   async function main() {
     let doc;
     try { doc = await getJson(dataUrl, 20000); }
-    catch (e) { fail('The chart data did not load. Check your connection, then reload the page.'); return; }
-    try {
-      S = fromDoc(doc);
-      let p = null;
-      if (wantLive) { try { p = await fetchLive(); } catch (e) { p = null; } }
-      const now = p || fromLatest(doc.latest);
-      strategyMnav = now ? now.strategyMnav : null;
-      appendLatest(now);
-      await Promise.race([document.fonts ? document.fonts.ready : null, new Promise(r => setTimeout(r, 1500))]);
-      $('state').hidden = true;
-      $('plots').classList.remove('loading');
-      build();
-      renderExplainer();
-      freshness(doc);
-      $('csv').addEventListener('click', () => downloadCsv(doc));
-    } catch (e) {
-      console.error(e);
-      fail('Something in the data did not add up, so the chart is hidden rather than wrong. It should be back after the next hourly refresh.');
+    catch (e) {
+      for (const cfg of COMPANIES) Company(cfg, null, null);
+      document.querySelectorAll('.company .state').forEach(s => { s.textContent = 'The chart data did not load. Check your connection, then reload the page.'; });
+      return;
     }
+    let b = null, m = null;
+    if (wantLive) {
+      try { [b, m] = await Promise.all([getJson(LIVE_BTC, 8000), getJson(LIVE_MSTR, 8000)]); b = b.results || b; }
+      catch (e) { b = m = null; }
+    }
+    let liveBtc = null;
+    if (b && num(b.ufPrice) && num(b.ufPrice) > 1000) liveBtc = { price: num(b.ufPrice), time: b.msTimestamp ? +b.msTimestamp : Date.now() };
+    let mstrNow = null;
+    if (b && m) { try { mstrNow = liveMstr(b, m); } catch (e) { mstrNow = null; } }
+    if (!mstrNow) mstrNow = fromLatest(doc.latest, liveBtc);
+    const asst = doc.asst || null;
+    const asstNow = asst ? fromLatest(asst.latest, liveBtc) : null;
+    await Promise.race([document.fonts ? document.fonts.ready : null, new Promise(r => setTimeout(r, 1500))]);
+    Company(COMPANIES[0], { rows: doc.rows, latest: doc.latest }, mstrNow);
+    Company(COMPANIES[1], asst, asstNow);
+    freshness(doc);
+    if (location.hash) { const t = document.querySelector(location.hash); if (t) t.scrollIntoView(); }
   }
   main();
 })();

@@ -32,18 +32,20 @@ The previous site lives at [`puzzle.html`](https://alesiokanani.github.io/puzzle
 [Play Glauk's World](https://alesiokanani.github.io/glauks-world/): a Three.js superhero game for Glauk. Collect stars, kick goals, fly, and use POW for a super kick. Camera follows him. Phone controls are FLY, JUMP, and POW.
 
 
-## Strategy mNAV
+## MSTR and ASST mNAV
 
-[Strategy mNAV](https://alesiokanani.github.io/mnav/): a live version of the "Strategy mNAV (Multiple of Net Asset Value)" chart. Three multiples on top (equity premium, enterprise and basic), MSTR's price underneath on a log scale, the dashed 1x to 3x reference levels with the 2x to 3x band, a live point for right now, and a breakdown of how much bitcoin is left for common shareholders once debt and preferred stock are paid.
+[MSTR and ASST mNAV](https://alesiokanani.github.io/mnav/): a live version of the "Strategy mNAV (Multiple of Net Asset Value)" chart, for Strategy (MSTR) and Strive (ASST) on one page. Each company gets three multiples on top (equity premium, enterprise and basic), its share price underneath on a log scale, the dashed 1x to 3x reference levels with the 2x to 3x band, a live point for right now, and a breakdown of how much bitcoin is left for common shareholders once debt and preferred stock are paid.
 
 - Equity premium = market cap / (BTC NAV - debt - preferred at par), cash left out
-- Enterprise = (market cap + debt + preferred - USD reserve and cash) / BTC NAV
+- Enterprise = (market cap + debt + preferred - cash and similar) / BTC NAV
 - Basic = market cap / BTC NAV
 
 How it stays up to date:
 
-- `.github/workflows/mnav-data.yml` runs every hour, and whenever a push changes it or the script. It runs `.github/scripts/mnav_data.py`, which pulls Strategy's public dashboard API (api.strategy.com, the data behind strategy.com), computes the three multiples for every trading day since August 2020, and force-pushes the result as `mnav.json` to the `mnav-data` branch. Debt before 2025, when that API doesn't carry it, comes from a short list of note issues and repayments in the script.
-- The page reads that file from raw.githubusercontent.com, so `main` doesn't fill up with bot commits and Pages doesn't rebuild every hour. Don't commit to `mnav-data`; it's overwritten on every run.
-- On every visit the page also asks the same API for the current figures and adds a live point (BTC moves 24/7; MSTR updates in market, pre-market and after-hours sessions).
-- If the API is down or changes shape, the job fails without publishing, and the page keeps showing the last good data with the time it was refreshed. To refresh by hand: Actions, then "mNAV data", then "Run workflow".
+- `.github/workflows/mnav-data.yml` runs every hour, every 20 minutes through the US trading day, and whenever a push changes it or the script. It runs `.github/scripts/mnav_data.py` and force-pushes the result as `mnav.json` to the `mnav-data` branch.
+- MSTR comes from Strategy's public dashboard API (api.strategy.com, the data behind strategy.com): every trading day since August 2020. Debt before 2025, when that API doesn't carry it, is a short list of note issues and repayments in the script.
+- ASST comes from Strive's public dashboard API (strive.com/treasury): bitcoin purchases, weekly share counts, cash and debt, from September 15, 2025. That API only reports today's SATA preferred count, so the earlier counts come from Strive's 8-K and 10-Q filings (listed in the script) and each run adds the newest count to the published file. Days between filings are interpolated.
+- The page reads the file from raw.githubusercontent.com, so `main` doesn't fill up with bot commits and Pages doesn't rebuild on every run. Don't commit to `mnav-data`; it's overwritten on every run.
+- On every visit the page asks Strategy's API for the current bitcoin price and MSTR quote and adds a live point. Strive's API doesn't allow browser requests, so ASST's newest price is the one from the last run (at most about 20 minutes old during the trading day) combined with the live bitcoin price.
+- If one company's source fails, the other still updates, the failed one keeps its last good figures, and the run shows as failed in the Actions tab. If both fail, nothing is published and the page keeps the last good file. To refresh by hand: Actions, then "mNAV data", then "Run workflow".
 - The chart is drawn with [uPlot](https://github.com/leeoniya/uPlot) (MIT), kept in `mnav/vendor/`.

@@ -1,15 +1,17 @@
-# Refreshes the data behind https://alesiokanani.github.io/mnav/
+# Refreshes the data behind https://alesiokanani.github.io/mnav/ (MSTR and ASST)
 #
-# Every hour this pulls Strategy's public dashboard API, rebuilds mnav.json and
+# Pulls Strategy's and Strive's public dashboard APIs, rebuilds mnav.json and
 # force-pushes it as a single commit to the `mnav-data` branch. The page reads it from
 # raw.githubusercontent.com, so main never gets a stream of bot commits and GitHub Pages
-# doesn't rebuild every hour. If a run fails, the last good file simply stays up.
+# doesn't rebuild on every run. If one company's source fails, the other still updates
+# and the run is marked failed; if both fail, the last good file simply stays up.
 name: mNAV data
 
 on:
   schedule:
-    - cron: "23 * * * *"          # hourly, off the top of the hour when GitHub's scheduler is busiest
-  workflow_dispatch:               # "Run workflow" button in the Actions tab
+    - cron: "23 * * * *"            # hourly, off the top of the hour when GitHub's scheduler is busiest
+    - cron: "3,43 13-21 * * 1-5"    # plus every 20 minutes through the US trading day (times are UTC)
+  workflow_dispatch:                 # "Run workflow" button in the Actions tab
   push:
     branches: [main]
     paths:
@@ -17,8 +19,8 @@ on:
       - ".github/workflows/mnav-data.yml"
 
 permissions:
-  contents: write                  # push the mnav-data branch
-  actions: write                   # keep this schedule from being paused for inactivity
+  contents: write                    # push the mnav-data branch
+  actions: write                     # keep this schedule from being paused for inactivity
 
 concurrency:
   group: mnav-data
@@ -34,7 +36,11 @@ jobs:
           sparse-checkout: .github/scripts   # skip the game builds; only the script is needed
 
       - name: Build mnav.json
-        run: python3 .github/scripts/mnav_data.py --out "$RUNNER_TEMP/out/mnav.json"
+        run: >
+          python3 .github/scripts/mnav_data.py
+          --out "$RUNNER_TEMP/out/mnav.json"
+          --previous "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/mnav-data/mnav.json"
+          --problems "$RUNNER_TEMP/problems.txt"
 
       - name: Publish to the mnav-data branch
         env:
@@ -42,7 +48,7 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/out"
           cat > README.md <<'EOF'
-          Data for https://alesiokanani.github.io/mnav/, rebuilt hourly by
+          Data for https://alesiokanani.github.io/mnav/, rebuilt through the day by
           .github/workflows/mnav-data.yml on main. This branch is overwritten on every run;
           don't commit to it.
           EOF
@@ -60,3 +66,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/mnav-data.yml/enable" || echo "keepalive call failed; not fatal"
+
+      - name: Flag a partial update
+        run: |
+          if [ -s "$RUNNER_TEMP/problems.txt" ]; then
+            echo "::error::Published, but one source failed: $(tr '\n' ' ' < "$RUNNER_TEMP/problems.txt")"
+            exit 1
+          fi
