@@ -1,0 +1,101 @@
+[
+ {
+  "name": "strat_btc_bitcoinKpis",
+  "ua": "honest",
+  "url": "https://api.strategy.com/btc/bitcoinKpis",
+  "status": 200,
+  "bytes": 2183,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "strat_btc_mstrKpiData",
+  "ua": "honest",
+  "url": "https://api.strategy.com/btc/mstrKpiData",
+  "status": 200,
+  "bytes": 1004,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "strat_btc_kpiData",
+  "ua": "honest",
+  "url": "https://api.strategy.com/btc/kpiData",
+  "status": 200,
+  "bytes": 25503,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "strat_btc_getPreferreds",
+  "ua": "honest",
+  "url": "https://api.strategy.com/btc/getPreferreds",
+  "status": 200,
+  "bytes": 3260,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "strat_v2_btc_credit",
+  "ua": "honest",
+  "url": "https://api.strategy.com/v2/btc/credit",
+  "status": 200,
+  "bytes": 5893,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "strat_timeSeries",
+  "ua": "honest",
+  "url": "https://api.strategy.com/btc/timeSeries",
+  "status": 200,
+  "bytes": 13271119,
+  "ctype": "application/json",
+  "cors": "*"
+ },
+ {
+  "name": "nasdaq_hist_mstr",
+  "ua": "browser",
+  "url": "https://api.nasdaq.com/api/quote/MSTR/historical?assetclass=stocks&fromdate=2024-08-01&todate=2024-08-20&limit=50",
+  "status": 200,
+  "bytes": 180,
+  "ctype": "application/json; charset=utf-8",
+  "cors": null
+ },
+ {
+  "name": "nasdaq_hist_mstr_honest",
+  "ua": "honest",
+  "url": "https://api.nasdaq.com/api/quote/MSTR/historical?assetclass=stocks&fromdate=2026-10-01&todate=2026-10-15&limit=50",
+  "status": -1,
+  "bytes": 44,
+  "ctype": null,
+  "cors": null
+ },
+ {
+  "name": "coinbase_hist",
+  "ua": "honest",
+  "url": "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400&start=2023-01-01T00:00:00Z&end=2023-03-01T00:00:00Z",
+  "status": 200,
+  "bytes": 3735,
+  "ctype": "application/json; charset=utf-8",
+  "cors": null
+ },
+ {
+  "name": "cg_entity",
+  "ua": "honest",
+  "url": "https://api.coingecko.com/api/v3/public_treasury/strategy",
+  "status": 200,
+  "bytes": 629,
+  "ctype": "application/json; charset=utf-8",
+  "cors": null
+ },
+ {
+  "name": "cg_holding_chart",
+  "ua": "honest",
+  "url": "https://api.coingecko.com/api/v3/public_treasury/strategy/bitcoin/holding_chart?days=max",
+  "status": 401,
+  "bytes": 253,
+  "ctype": "application/json; charset=utf-8",
+  "cors": null
+ }
+]
