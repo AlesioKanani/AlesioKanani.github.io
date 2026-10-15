@@ -30,3 +30,20 @@ The previous site lives at [`puzzle.html`](https://alesiokanani.github.io/puzzle
 ## Glauk's World
 
 [Play Glauk's World](https://alesiokanani.github.io/glauks-world/): a Three.js superhero game for Glauk. Collect stars, kick goals, fly, and use POW for a super kick. Camera follows him. Phone controls are FLY, JUMP, and POW.
+
+
+## Strategy mNAV
+
+[Strategy mNAV](https://alesiokanani.github.io/mnav/): a live version of the "Strategy mNAV (Multiple of Net Asset Value)" chart. Three multiples on top (equity premium, enterprise and basic), MSTR's price underneath on a log scale, the dashed 1x to 3x reference levels with the 2x to 3x band, a live point for right now, and a breakdown of how much bitcoin is left for common shareholders once debt and preferred stock are paid.
+
+- Equity premium = market cap / (BTC NAV - debt - preferred at par), cash left out
+- Enterprise = (market cap + debt + preferred - USD reserve and cash) / BTC NAV
+- Basic = market cap / BTC NAV
+
+How it stays up to date:
+
+- `.github/workflows/mnav-data.yml` runs every hour, and whenever a push changes it or the script. It runs `.github/scripts/mnav_data.py`, which pulls Strategy's public dashboard API (api.strategy.com, the data behind strategy.com), computes the three multiples for every trading day since August 2020, and force-pushes the result as `mnav.json` to the `mnav-data` branch. Debt before 2025, when that API doesn't carry it, comes from a short list of note issues and repayments in the script.
+- The page reads that file from raw.githubusercontent.com, so `main` doesn't fill up with bot commits and Pages doesn't rebuild every hour. Don't commit to `mnav-data`; it's overwritten on every run.
+- On every visit the page also asks the same API for the current figures and adds a live point (BTC moves 24/7; MSTR updates in market, pre-market and after-hours sessions).
+- If the API is down or changes shape, the job fails without publishing, and the page keeps showing the last good data with the time it was refreshed. To refresh by hand: Actions, then "mNAV data", then "Run workflow".
+- The chart is drawn with [uPlot](https://github.com/leeoniya/uPlot) (MIT), kept in `mnav/vendor/`.
