@@ -28,13 +28,13 @@ import argparse
 import bisect
 import datetime as dt
 import gzip
+import http.client
 import json
 import math
 import os
 import sys
 import time
 import traceback
-import urllib.error
 import urllib.request
 from zoneinfo import ZoneInfo
 
@@ -111,23 +111,24 @@ class Source:
     def __init__(self, from_dir=None):
         self.from_dir = from_dir
 
-    def get(self, url, name, attempts=4):
+    def get(self, url, name, attempts=3):
         if self.from_dir:
             with open(os.path.join(self.from_dir, name + ".json"), encoding="utf-8") as f:
                 return json.load(f)
         last = None
-        for i in range(attempts):
+        for i in range(attempts):   # at most about 3 minutes per source, well inside the job's limit
             try:
                 req = urllib.request.Request(url, headers={
                     "User-Agent": UA, "Accept": "application/json", "Accept-Encoding": "gzip"})
-                with urllib.request.urlopen(req, timeout=90) as r:
+                with urllib.request.urlopen(req, timeout=55) as r:
                     raw = r.read()
                     if r.headers.get("Content-Encoding") == "gzip":
                         raw = gzip.decompress(raw)
                     return json.loads(raw)
-            except (urllib.error.URLError, TimeoutError, ValueError) as e:
+            except (OSError, http.client.HTTPException, ValueError) as e:   # OSError covers URLError, timeouts, resets
                 last = e
-                time.sleep(5 * (i + 1))
+                if i + 1 < attempts:
+                    time.sleep(5 * (i + 1))
         raise RuntimeError(f"could not fetch {url}: {last}")
 
 
@@ -141,6 +142,17 @@ def load_previous(path):
             return json.load(f)
     except Exception as e:  # noqa: BLE001
         raise SystemExit(f"could not read the previous file {path} ({e}); nothing published") from e
+
+
+def no_lost_history(name, rows, prev_rows):
+    """A source that suddenly starts later or returns fewer days is broken or trimmed;
+    keep the last good history instead of publishing the shorter one."""
+    if not prev_rows or not prev_rows.get("d"):
+        return
+    if rows["d"][0] > prev_rows["d"][0] or len(rows["d"]) < len(prev_rows["d"]) - 2:
+        raise RuntimeError(f"{name}: source returned less history than last time "
+                           f"({rows['d'][0]}..{rows['d'][-1]}, {len(rows['d'])} days vs "
+                           f"{prev_rows['d'][0]}..{prev_rows['d'][-1]}, {len(prev_rows['d'])} days)")
 
 
 def num(v):
@@ -418,11 +430,12 @@ def main():
     live_btc = (None, None)
     try:
         rows, latest, live_btc = build_mstr(src)
+        no_lost_history("MSTR", rows, (prev or {}).get("rows"))
         mstr = {"rows": rows, "latest": latest}
         as_of["MSTR"] = stamp
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
-        problems.append(f"MSTR: {e}")
+        problems.append(str(e) if str(e).startswith("MSTR") else f"MSTR: {e}")
         if prev and prev.get("rows"):
             mstr = {"rows": prev["rows"], "latest": prev["latest"]}
 
@@ -435,11 +448,12 @@ def main():
     try:
         prev_pref = ((prev or {}).get("asst") or {}).get("prefHistory")
         rows, latest, pref_list = build_asst(src, btc_at_close, live_btc, prev_pref)
+        no_lost_history("ASST", rows, ((prev or {}).get("asst") or {}).get("rows"))
         asst = {"rows": rows, "latest": latest, "prefHistory": pref_list}
         as_of["ASST"] = stamp
     except Exception as e:  # noqa: BLE001
         traceback.print_exc()
-        problems.append(f"ASST: {e}")
+        problems.append(str(e) if str(e).startswith("ASST") else f"ASST: {e}")
         if prev and prev.get("asst"):
             asst = prev["asst"]
 
