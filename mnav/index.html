@@ -265,7 +265,7 @@
         <button type="button" class="key" data-si="1" aria-pressed="true" style="--c: var(--eq)">
           <span class="swatch"></span><span class="name">Equity premium</span><span class="val v-eq">&nbsp;</span>
         </button>
-        <button type="button" class="key" data-si="2" aria-pressed="true" style="--c: var(--ent)">
+        <button type="button" class="key" data-si="2" aria-pressed="false" style="--c: var(--ent)">
           <span class="swatch"></span><span class="name">Enterprise</span><span class="val v-ent">&nbsp;</span>
         </button>
         <button type="button" class="key" data-si="3" aria-pressed="false" style="--c: var(--basic)">
@@ -750,7 +750,7 @@
         series: [
           {},
           { label: 'Equity premium', scale: 'm', stroke: C.eq, width: 2, points: { show: false } },
-          { label: 'Enterprise', scale: 'm', stroke: C.ent, width: 2, points: { show: false } },
+          { label: 'Enterprise', scale: 'm', stroke: C.ent, width: 2, show: false, points: { show: false } },
           { label: 'Basic', scale: 'm', stroke: C.basic, width: 2, show: false, points: { show: false } },
         ],
         axes: [
