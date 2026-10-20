@@ -384,6 +384,21 @@ const sfx = {
 let lastSay = 0;
 function say(t){ try{ if (!('speechSynthesis' in window) || performance.now()-lastSay < 2500) return; lastSay = performance.now(); speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(t); u.rate = .9; u.pitch = 1.3; speechSynthesis.speak(u); }catch(e){} }
+const fightQuotes = [
+  "I'm Glauk and I'm going to beat you!",
+  "My name is Glauk!",
+  "Call me Super Glauk!",
+  "You can't beat Super Glauk!",
+  "I'm Glauk number 10!",
+  "Super Glauk is here!",
+  "Get ready, I'm Glauk!"
+];
+let lastFightQuote = 0;
+function glaukFightTalk(){
+  if (performance.now() - lastFightQuote < 4200) return;
+  lastFightQuote = performance.now();
+  say(fightQuotes[Math.floor(Math.random() * fightQuotes.length)]);
+}
 
 // ---------- particles ----------
 const bits = [];
@@ -538,7 +553,7 @@ function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList
 function startGame(which){
   unlockAudio(); mode = which || 'world'; vel.set(0,0,0); flying = false; pitch = .35; collected = 0; goals = 0; roundT = 0; boxOver = false;
   stars.forEach(s => { s.taken = false; s.m.visible = true; }); makeBall(); setStarsHud();
-  if (mode === 'box'){ gHp = fHp = 100; setHp(); flying = false; hero.position.set(ring.position.x - 1.5, ring.position.y, ring.position.z); foe.position.set(1.5,0,0); yaw = 0; banner('Walk in and punch!', 1.8); say('Boxing!'); }
+  if (mode === 'box'){ gHp = fHp = 100; setHp(); flying = false; hero.position.set(ring.position.x - 1.5, ring.position.y, ring.position.z); foe.position.set(1.5,0,0); yaw = 0; banner('Walk in and punch!', 1.8); say("I'm Glauk and I'm going to beat you!"); lastFightQuote = performance.now(); }
   else { hero.position.set(0, H(0,0), 0); yaw = 0; banner('Run into the ball to kick it.', 2.4); say('Go, Super Glauk!'); }
   showMode(); state = 'play'; show(null); $('#hud').classList.add('show');
 }
@@ -676,13 +691,15 @@ function update(dt){
     foe.lookAt(p.x, rp.y + 1, p.z);
     if (!boxOver && (punchTap || (gp && gp.punch)) && punchCd <= 0){
       punchCd = .45; gPunch = 1;
-      if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } }
+      if (Math.random() < 0.45) glaukFightTalk();
+      if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('Call me Super Glauk!'); confetti(p); } }
     }
     punchTap = false;
     if (!boxOver && foeCd <= 0 && gap < 1.55){ foeCd = .9; fPunch = 1; gHp = Math.max(0, gHp-9); setHp(); sfx.kick(); if (gHp <= 0){ boxOver = true; banner('Try again!', 3); say('Try again!'); } }
     gPunch = Math.max(0, gPunch - dt * 2.4); fPunch = Math.max(0, fPunch - dt * 2.4);
     armR.rotation.x = -0.35 - gPunch * 1.9; armL.rotation.x = -0.35 - gPunch * .4;
     foeArmL.rotation.x = -0.3 - fPunch * 1.9; foeArmR.rotation.x = -0.3 - fPunch * .35;
+    if (!boxOver && Math.random() < 0.004) glaukFightTalk();
   }
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
