@@ -459,40 +459,43 @@ function pollGamepad() {
   }
   if (!gp) { gamepadIndex = null; return null; }
 
-  // Deadzone
-  const dead = 0.18;
-  const ax = (i) => { const v = gp.axes[i] || 0; return Math.abs(v) < dead ? 0 : v; };
+  const dead = 0.16;
+  const ax = (i) => {
+    let v = gp.axes[i] || 0;
+    if (Math.abs(v) < dead) return 0;
+    // slight response curve for smoother feel
+    const s = Math.sign(v);
+    v = Math.abs(v);
+    v = (v - dead) / (1 - dead);
+    return s * v * v;
+  };
 
   const leftX = ax(0);
-  const leftY = ax(1);          // negative = up
+  const leftY = ax(1);
   const rightX = ax(2);
   const rightY = ax(3);
 
-  // Buttons (pressed this frame, not held)
-  const btn = (i) => gp.buttons[i] && gp.buttons[i].pressed;
-  const just = (i) => {
+  const btn = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
+  const justPressed = [];
+  for (let i = 0; i < 16; i++) {
     const pressed = btn(i);
-    const was = gpPrev.buttons[i];
+    justPressed[i] = pressed && !gpPrev.buttons[i];
     gpPrev.buttons[i] = pressed;
-    return pressed && !was;
-  };
-
-  // Store for next frame
-  for (let i = 0; i < 16; i++) gpPrev.buttons[i] = btn(i);
+  }
 
   return {
-    leftX, leftY: -leftY,   // invert Y so positive = forward (like touch.jy)
+    leftX, leftY: -leftY,
     rightX, rightY,
-    jump: just(0) || btn(0),          // A / Cross
-    fly: just(2),                     // X / Square
-    kick: just(1),                    // B / Circle
-    punch: just(1),                   // B also punch in boxing
-    pow: just(3),                     // Y / Triangle
-    pause: just(9) || just(8),        // Start / Select
-    sprint: btn(6) || btn(7) || btn(10), // L2/R2 or L3
-    upHeld: btn(0),                   // A held = up when flying
-    downHeld: btn(1) && false,        // optional
-    dpadUp: btn(12), dpadDown: btn(13), dpadLeft: btn(14), dpadRight: btn(15)
+    jump: justPressed[0] || btn(0),
+    fly: justPressed[2],
+    kick: justPressed[1],
+    punch: justPressed[1],
+    pow: justPressed[3],
+    pause: justPressed[9] || justPressed[8],
+    sprint: btn(6) || btn(7) || btn(10),
+    upHeld: btn(0),
+    dpadX: (btn(15) ? 1 : 0) - (btn(14) ? 1 : 0),
+    dpadY: (btn(12) ? 1 : 0) - (btn(13) ? 1 : 0)
   };
 }
 addEventListener('gamepadconnected', e => { gamepadIndex = e.gamepad.index; console.log('Gamepad connected:', e.gamepad.id); });
@@ -578,15 +581,15 @@ function update(dt){
     camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget); return;
   }
   if (state !== 'play') return;
+  const gp = pollGamepad();
   if (pauseTap || (gp && gp.pause)){ pauseTap = false; pause(); return; }
 
   // look (mouse/touch + right stick)
-  if (gp) { lookDX += gp.rightX * 120; lookDY += gp.rightY * 80; }
+  if (gp) { lookDX += gp.rightX * 140; lookDY += gp.rightY * 90; }
   yaw -= lookDX * .0055; pitch = Math.max(-.2, Math.min(1.1, pitch + lookDY * .004)); lookDX = lookDY = 0;
   // move input (keyboard + touch + gamepad)
-  const gp = pollGamepad();
-  let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx + (gp ? gp.leftX : 0);
-  let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy + (gp ? gp.leftY : 0);
+  let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx + (gp ? gp.leftX + (gp.dpadX||0) : 0);
+  let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy + (gp ? gp.leftY + (gp.dpadY||0) : 0);
   const ml = Math.hypot(mx,mz); if (ml > 1){ mx /= ml; mz /= ml; }
   const sprint = (keys.ShiftLeft || keys.ShiftRight || (gp && gp.sprint)) ? 1.7 : 1;
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
@@ -623,7 +626,7 @@ function update(dt){
   if (mode !== 'box') for (const o of obstacles){            // can't walk through trees, houses or rocks (fly over!)
     if (p.y - g2 > o.top - H(o.x,o.z) + .2) continue;
     const dx = p.x - o.x, dz = p.z - o.z, d = Math.hypot(dx,dz), r = o.r + .4;
-    if (d < r && d > .001){ p.x = o.x + dx/d*r; p.z = o.z + dz/d*r; }
+    if (d < r && d > .001){ const push = r + 0.05; p.x = o.x + dx/d*push; p.z = o.z + dz/d*push; }
   }
   const hv = Math.hypot(vel.x, vel.z);
   if (hv > .6){ const target = Math.atan2(vel.x, vel.z); let d = target - hero.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); hero.rotation.y += d * (1 - Math.exp(-12*dt)); }
@@ -684,7 +687,7 @@ function update(dt){
   // chase camera
   const dist = flying ? 8.5 : 6.5, cp = Math.cos(pitch);
   if (mode === 'box'){ const rp = ring.position; camTarget.set(rp.x, rp.y+.8, rp.z); camPos.set(rp.x+13, rp.y+11, rp.z+13); }
-  else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + .6); }
+  else { camTarget.set(p.x, p.y + 1.6, p.z); camPos.set(p.x + Math.sin(yaw)*cp*dist, p.y + 1.6 + Math.sin(pitch)*dist, p.z + Math.cos(yaw)*cp*dist); camPos.y = Math.max(camPos.y, H(camPos.x, camPos.z) + 0.85); }
   camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget);
 }
 
