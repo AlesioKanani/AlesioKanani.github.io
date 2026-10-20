@@ -101,7 +101,7 @@
   <button class="pbtn" id="bKick">KICK</button>
   <button class="pbtn" id="bPunch">PUNCH</button>
   <div id="joyBase"></div><div id="joyKnob"></div>
-  <div id="hint" class="stroke">World: WASD, K kick, F fly. Boxing: WASD, J punch.</div>
+  <div id="hint" class="stroke">World: WASD/Stick, K/B kick, F/X fly. Boxing: Stick, J/B punch. Controller supported.</div>
   <div id="boxHud"><div class="hp" id="hpG"><div></div></div><b class="stroke">VS</b><div class="hp foe" id="hpF"><div></div></div></div>
 </div>
 
@@ -443,6 +443,60 @@ function tEnd(e){
 }
 addEventListener('touchstart', tStart, { passive: true }); addEventListener('touchmove', tMove, { passive: false });
 addEventListener('touchend', tEnd); addEventListener('touchcancel', tEnd);
+
+// ---------- gamepad support (Nimbus+ and standard controllers) ----------
+let gamepadIndex = null;
+const gpPrev = { buttons: [] };
+function pollGamepad() {
+  const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+  let gp = null;
+  if (gamepadIndex !== null && gps[gamepadIndex] && gps[gamepadIndex].connected) {
+    gp = gps[gamepadIndex];
+  } else {
+    for (const g of gps) {
+      if (g && g.connected) { gamepadIndex = g.index; gp = g; break; }
+    }
+  }
+  if (!gp) { gamepadIndex = null; return null; }
+
+  // Deadzone
+  const dead = 0.18;
+  const ax = (i) => { const v = gp.axes[i] || 0; return Math.abs(v) < dead ? 0 : v; };
+
+  const leftX = ax(0);
+  const leftY = ax(1);          // negative = up
+  const rightX = ax(2);
+  const rightY = ax(3);
+
+  // Buttons (pressed this frame, not held)
+  const btn = (i) => gp.buttons[i] && gp.buttons[i].pressed;
+  const just = (i) => {
+    const pressed = btn(i);
+    const was = gpPrev.buttons[i];
+    gpPrev.buttons[i] = pressed;
+    return pressed && !was;
+  };
+
+  // Store for next frame
+  for (let i = 0; i < 16; i++) gpPrev.buttons[i] = btn(i);
+
+  return {
+    leftX, leftY: -leftY,   // invert Y so positive = forward (like touch.jy)
+    rightX, rightY,
+    jump: just(0) || btn(0),          // A / Cross
+    fly: just(2),                     // X / Square
+    kick: just(1),                    // B / Circle
+    punch: just(1),                   // B also punch in boxing
+    pow: just(3),                     // Y / Triangle
+    pause: just(9) || just(8),        // Start / Select
+    sprint: btn(6) || btn(7) || btn(10), // L2/R2 or L3
+    upHeld: btn(0),                   // A held = up when flying
+    downHeld: btn(1) && false,        // optional
+    dpadUp: btn(12), dpadDown: btn(13), dpadLeft: btn(14), dpadRight: btn(15)
+  };
+}
+addEventListener('gamepadconnected', e => { gamepadIndex = e.gamepad.index; console.log('Gamepad connected:', e.gamepad.id); });
+addEventListener('gamepaddisconnected', e => { if (e.gamepad.index === gamepadIndex) gamepadIndex = null; });
 document.addEventListener('gesturestart', e => e.preventDefault());   // no pinch-zoom on iOS
 function hold(el, on, off){ const d = e => { e.preventDefault(); el.classList.add('down'); on(); }, u = e => { e.preventDefault(); el.classList.remove('down'); off && off(); };
   el.addEventListener('pointerdown', d); el.addEventListener('pointerup', u); el.addEventListener('pointercancel', u); el.addEventListener('pointerleave', u); }
@@ -524,22 +578,24 @@ function update(dt){
     camera.position.lerp(camPos, 1 - Math.exp(mode === 'box' ? -10*dt : -6*dt)); camera.lookAt(camTarget); return;
   }
   if (state !== 'play') return;
-  if (pauseTap){ pauseTap = false; pause(); return; }
+  if (pauseTap || (gp && gp.pause)){ pauseTap = false; pause(); return; }
 
-  // look
+  // look (mouse/touch + right stick)
+  if (gp) { lookDX += gp.rightX * 120; lookDY += gp.rightY * 80; }
   yaw -= lookDX * .0055; pitch = Math.max(-.2, Math.min(1.1, pitch + lookDY * .004)); lookDX = lookDY = 0;
-  // move input
-  let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx;
-  let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy;
+  // move input (keyboard + touch + gamepad)
+  const gp = pollGamepad();
+  let mx = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + touch.jx + (gp ? gp.leftX : 0);
+  let mz = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy + (gp ? gp.leftY : 0);
   const ml = Math.hypot(mx,mz); if (ml > 1){ mx /= ml; mz /= ml; }
-  const sprint = keys.ShiftLeft || keys.ShiftRight ? 1.7 : 1;
+  const sprint = (keys.ShiftLeft || keys.ShiftRight || (gp && gp.sprint)) ? 1.7 : 1;
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
   const wx = fx*mz + rx*mx, wz = fz*mz + rz*mx;
-  const upHeld = keys.Space || touch.up, downHeld = keys.KeyC || keys.ControlLeft || touch.down;
+  const upHeld = keys.Space || touch.up || (gp && gp.upHeld), downHeld = keys.KeyC || keys.ControlLeft || touch.down;
   document.body.classList.toggle('flying', flying && mode !== 'box'); $('#bJump').textContent = flying ? 'UP' : 'JUMP'; $('#bFly').textContent = flying ? 'LAND' : 'FLY';
 
   flyGrace = Math.max(0, flyGrace - dt);
-  if (flyTap){ flyTap = false; flying = !flying; flyGrace = .4; if (flying){ vel.y = 6; doubleUsed = false; } burst(hero.position.clone().setY(hero.position.y+1), 0xffd940, 10, 4); }
+  if (flyTap || (gp && gp.fly)){ flyTap = false; flying = !flying; flyGrace = .4; if (flying){ vel.y = 6; doubleUsed = false; } burst(hero.position.clone().setY(hero.position.y+1), 0xffd940, 10, 4); }
   const gy = H(hero.position.x, hero.position.z);
   grounded = hero.position.y <= gy + .02;
   if (flying){
@@ -580,7 +636,7 @@ function update(dt){
     if (s.taken) continue;
     if (s.m.position.distanceTo(tmp) < 2.15){ s.taken = true; s.m.visible = false; collected++; sfx.star(collected); burst(s.m.position, 0xffd940, 12, 5); setStarsHud(); }
   }
-  if (powTap){ powTap = false; if (mode !== 'box') superPow(); }
+  if (powTap || (gp && gp.pow)){ powTap = false; if (mode !== 'box') superPow(); }
   if (collected >= stars.length && roundT <= 0){ roundT = 3.5; banner('All the stars! Super Glauk!', 3); sfx.fan(); confetti(p); say('You found all the stars!'); }
   if (roundT > 0){ roundT -= dt; if (roundT <= 0){ stars.forEach(s => { s.taken = false; s.m.visible = true; }); collected = 0; setStarsHud(); } }
 
@@ -588,8 +644,8 @@ function update(dt){
   kickCd = Math.max(0, kickCd - dt);
   const bp = ball.position, bv = ballState.v;
   if (mode !== 'box'){ const dx = bp.x - p.x, dz = bp.z - p.z, d = Math.hypot(dx,dz);
-    const want = kickTap || hv > .4;
-    if (d < 1.8 && kickCd <= 0 && want && Math.abs(bp.y - p.y) < 2){ const sp = kickTap ? 12 : Math.max(hv, 5) * 1.3; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); bv.set(fx*sp, kickTap ? 4 : 2.4, fz*sp); kickCd = .25; sfx.kick(); banner('Kick!', .6); }
+    const want = kickTap || (gp && gp.kick) || hv > .4;
+    if (d < 1.8 && kickCd <= 0 && want && Math.abs(bp.y - p.y) < 2){ const sp = (kickTap || (gp && gp.kick)) ? 12 : Math.max(hv, 5) * 1.3; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); bv.set(fx*sp, (kickTap || (gp && gp.kick)) ? 4 : 2.4, fz*sp); kickCd = .25; sfx.kick(); banner('Kick!', .6); }
   } kickTap = false;
   bv.y -= 22*dt; bp.addScaledVector(bv, dt);
   const gb = H(bp.x, bp.z) + .45;
@@ -610,12 +666,12 @@ function update(dt){
     p.z = Math.max(rp.z-4.3, Math.min(rp.z+4.3, p.z));
     const dx = p.x - fx, dz = p.z - fz, gap = Math.hypot(dx, dz) || .001;
     hero.rotation.y = Math.atan2(fx - p.x, fz - p.z);
-    const toward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy;
+    const toward = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) + touch.jy + (gp ? gp.leftY : 0);
     if (toward){ p.x += (dx/gap) * toward * 3.2 * dt; p.z += (dz/gap) * toward * 3.2 * dt; }
     if (!boxOver && gap > 1.25){ fp.x += (dx/gap) * 2.1 * dt; fp.z += (dz/gap) * 2.1 * dt; }
     fp.x = Math.max(-4.3, Math.min(4.3, fp.x)); fp.z = Math.max(-4.3, Math.min(4.3, fp.z));
     foe.lookAt(p.x, rp.y + 1, p.z);
-    if (!boxOver && punchTap && punchCd <= 0){
+    if (!boxOver && (punchTap || (gp && gp.punch)) && punchCd <= 0){
       punchCd = .45; gPunch = 1;
       if (gap < 2.1){ fHp = Math.max(0, fHp-14); setHp(); sfx.kick(); burst(new THREE.Vector3(fx, rp.y+1.4, fz), 0xffd23f, 8, 3); if (fHp <= 0){ boxOver = true; banner('Glauk wins!', 4); say('You win!'); confetti(p); } }
     }
